@@ -3,7 +3,6 @@ package io.github.miclean.module;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Build;
 import android.util.Log;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public final class HookEntry implements IXposedHookLoadPackage {
             return;
         }
         // Primary processes only: leave BLE, device plugins and background sync alone.
-        if (!Rules.target(lp.packageName) || !lp.packageName.equals(lp.processName)) return;
+        if (!Rules.targetProcess(lp.packageName, lp.processName)) return;
         XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
             @Override protected void afterHookedMethod(MethodHookParam p) {
                 if (!installed.compareAndSet(false, true)) return;
@@ -47,11 +46,6 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     private void install(Context context, String pkg, ClassLoader loader) throws Exception {
         PackageInfo info = context.getPackageManager().getPackageInfo(pkg, 0);
-        long version = Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
-        if (!Rules.supported(pkg, version)) {
-            report("unsupported version: " + pkg + " " + version + "; no hooks installed");
-            return;
-        }
         XSharedPreferences prefs = new XSharedPreferences(Rules.MODULE, Rules.PREFS);
         prefs.reload();
         if (!prefs.getFile().canRead()) {

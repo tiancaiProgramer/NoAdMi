@@ -13,7 +13,7 @@
 - `HealthViewModel.queryOperationalBannerList()` 返回空列表初始值的 MutableLiveData，走原生空列表渲染分支。
 - `DeviceTabV4ViewModel.fillBannerList(List,BannerRequestParamV2,boolean)` 仅对非空且全部为整数 11/12 的资源位列表清空广告列表并跳过请求。其他资源位、正常设备连接、表盘市场及设置不在该规则内。
 - 两个已核对的 RN 加载器 `CatalystInstanceImpl`、`YRNCatalystInstanceImpl`：只对匹配指定页面完整结构指纹的 bundle 生成私有缓存副本。“我的”页跳过 AdBanner 和选定营销卡片的创建表达式。保留其他组件、原文件和 source URL；指纹变化原样放行。
-- “运动”页仅过滤 `fetchSportTabData` 的返回列表，分别移除 `sportGroup`、`activityRecommend`、数值类型 3（横幅）。保留运动入口、记录、训练指标、路线和其他类型。请求和原始脚本保持不变，不修改共享活动详情组件。校验应用版本、唯一导出、运动数据结构和目标表达式；允许动态更新重新编号 Metro 模块，结构变化时跳过。
+- “运动”页仅过滤 `fetchSportTabData` 的返回列表，分别移除 `sportGroup`、`activityRecommend`、数值类型 3（横幅）。保留运动入口、记录、训练指标、路线和其他类型。请求和原始脚本保持不变，不修改共享活动详情组件。校验唯一导出、运动数据结构和目标表达式；允许动态更新重新编号 Metro 模块，结构变化时跳过。不使用应用版本号限制加载。
 - “我的”功能入口：仅在唯一的 `QuickActions` 模块内按图标与翻译键核对并移除活动、课程、亲友、订单、资产的创建表达式。已知横栏所有子项均为 null 时整行收起；未知入口保留，旧内置脚本中的奖品入口也不会被误删。仅在匹配完整结构的 `CNFeatureCards` 模块内重排小习惯、周报、活力竞赛，自动收起对应列和间隔；三项全隐藏时整块返回 null。组件详情页、数据与记录保持原样，改变后的布局指纹不匹配时跳过。
 
 本模块不全局拦截网络请求、弹窗或所有包含“广告”文字的视图。失败的规则独立记录并跳过，日志不输出账号或健康数据。

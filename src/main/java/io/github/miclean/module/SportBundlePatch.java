@@ -31,7 +31,7 @@ public final class SportBundlePatch {
         int end = source.indexOf("\n__d(", position);
         if (end < 0) end = source.length();
         String module = source.substring(start, end);
-        // Host version is checked by HookEntry. OTA bundles may renumber Metro modules.
+        // OTA bundles may renumber Metro modules; version numbers are not used as a gate.
         // Require the complete Sport data fingerprint; shared cards remain unchanged.
         if (!hasSportModuleId(module)
                 || !module.contains("usage:b.SportMenuTabType.Sport,locale:t")

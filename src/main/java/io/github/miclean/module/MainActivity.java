@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -92,7 +91,7 @@ public final class MainActivity extends Activity {
         launcherIconControl(status);
         homeCard();
         healthCard();
-        label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，其他应用版本会自动跳过。", 12, MUTED, false);
+        label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，不同版本效果以实际使用为准。", 12, MUTED, false);
         for (Runnable refresh : refreshers) refresh.run();
     }
 
@@ -140,68 +139,67 @@ public final class MainActivity extends Activity {
     private void homeCard() {
         LinearLayout box = card();
         label(box, "米家", 21, INK, true);
-        boolean compatible = version(box, Rules.HOME, "11.8.705", Rules.HOME_BUILD);
-        LinearLayout ads = section(box, "home_ads", "广告与横幅", "开屏、个人中心", new String[]{Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH}, new boolean[]{true, true}, compatible);
-        addToggle(ads, "隐藏启动页广告", Rules.HOME_SWITCH, true, compatible);
-        addToggle(ads, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, compatible);
+        boolean installed = installedAppInfo(box, Rules.HOME, Rules.HOME_TESTED_VERSION);
+        LinearLayout ads = section(box, "home_ads", "广告与横幅", "开屏、个人中心", new String[]{Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH}, new boolean[]{true, true}, installed);
+        addToggle(ads, "隐藏启动页广告", Rules.HOME_SWITCH, true, installed);
+        addToggle(ads, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, installed);
         String[] tabKeys = new String[Rules.HOME_TAB_IDS.length];
         boolean[] tabDefaults = new boolean[tabKeys.length];
         for (int i = 0; i < tabKeys.length; i++) {
             tabKeys[i] = Rules.tabKey(Rules.HOME_TAB_IDS[i]);
             tabDefaults[i] = Rules.productTab(Rules.HOME_TAB_IDS[i]);
         }
-        LinearLayout tabs = section(box, "home_tabs", "底栏", "5 个页面入口", tabKeys, tabDefaults, compatible);
+        LinearLayout tabs = section(box, "home_tabs", "底栏", "5 个页面入口", tabKeys, tabDefaults, installed);
         label(tabs, "关闭单项隐藏后遵循米家原配置；商城仍可由原生开关关闭。至少保留一个页面，否则恢复原底栏。", 12, MUTED, false);
-        for (int i = 0; i < tabKeys.length; i++) addToggle(tabs, "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", tabKeys[i], tabDefaults[i], compatible);
+        for (int i = 0; i < tabKeys.length; i++) addToggle(tabs, "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", tabKeys[i], tabDefaults[i], installed);
         String[] mineKeys = new String[Rules.HOME_MINE_IDS.length];
         for (int i = 0; i < mineKeys.length; i++) mineKeys[i] = Rules.mineKey(Rules.HOME_MINE_IDS[i]);
-        LinearLayout mine = section(box, "home_mine", "我的", "13 个功能与服务入口", mineKeys, new boolean[mineKeys.length], compatible);
+        LinearLayout mine = section(box, "home_mine", "我的", "13 个功能与服务入口", mineKeys, new boolean[mineKeys.length], installed);
         label(mine, "这些项目包含常用功能，请按需隐藏。应用原本未显示的入口不会被强制打开。", 12, MUTED, false);
-        for (int i = 0; i < mineKeys.length; i++) addToggle(mine, "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", mineKeys[i], false, compatible);
+        for (int i = 0; i < mineKeys.length; i++) addToggle(mine, "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", mineKeys[i], false, installed);
     }
 
     private void healthCard() {
         LinearLayout box = card();
         label(box, "小米运动健康", 21, INK, true);
-        boolean compatible = version(box, Rules.HEALTH, "3.59.1", Rules.HEALTH_BUILD);
-        LinearLayout general = section(box, "health_general", "通用与横幅", "合并原启动页、健康与设备分类", new String[]{Rules.HEALTH_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH, Rules.HEALTH_DEVICE_BANNER_SWITCH}, new boolean[]{true, true, true}, compatible);
-        addToggle(general, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, compatible);
-        addToggle(general, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, compatible);
-        addToggle(general, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, compatible);
-        LinearLayout sport = section(box, "health_sport", "运动", "分别控制运动页三个推荐区块", new String[]{Rules.HEALTH_SPORT_GROUP_SWITCH, Rules.HEALTH_SPORT_ACTIVITY_SWITCH, Rules.HEALTH_SPORT_BANNER_SWITCH}, new boolean[]{true, true, true}, compatible);
+        boolean installed = installedAppInfo(box, Rules.HEALTH, Rules.HEALTH_TESTED_VERSION);
+        LinearLayout general = section(box, "health_general", "通用与横幅", "合并原启动页、健康与设备分类", new String[]{Rules.HEALTH_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH, Rules.HEALTH_DEVICE_BANNER_SWITCH}, new boolean[]{true, true, true}, installed);
+        addToggle(general, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, installed);
+        addToggle(general, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, installed);
+        addToggle(general, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, installed);
+        LinearLayout sport = section(box, "health_sport", "运动", "分别控制运动页三个推荐区块", new String[]{Rules.HEALTH_SPORT_GROUP_SWITCH, Rules.HEALTH_SPORT_ACTIVITY_SWITCH, Rules.HEALTH_SPORT_BANNER_SWITCH}, new boolean[]{true, true, true}, installed);
         label(sport, "保留运动入口、运动记录、训练指标和跑步路线。", 12, MUTED, false);
-        addToggle(sport, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true, compatible);
-        addToggle(sport, "隐藏活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, compatible);
-        addToggle(sport, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, compatible);
+        addToggle(sport, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true, installed);
+        addToggle(sport, "隐藏活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, installed);
+        addToggle(sport, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, installed);
         String[] mineKeys = new String[2 + Rules.HEALTH_MINE_IDS.length];
         boolean[] mineDefaults = new boolean[mineKeys.length];
         mineKeys[0] = Rules.HEALTH_BANNER_SWITCH;
         mineKeys[1] = Rules.HEALTH_MEMBER_SWITCH;
         for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) mineKeys[i + 2] = Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]);
         java.util.Arrays.fill(mineDefaults, true);
-        LinearLayout mine = section(box, "health_mine", "我的", "广告、营销卡片与功能入口", mineKeys, mineDefaults, compatible);
-        addToggle(mine, "隐藏活动横幅", Rules.HEALTH_BANNER_SWITCH, true, compatible);
-        addToggle(mine, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, compatible);
+        LinearLayout mine = section(box, "health_mine", "我的", "广告、营销卡片与功能入口", mineKeys, mineDefaults, installed);
+        addToggle(mine, "隐藏活动横幅", Rules.HEALTH_BANNER_SWITCH, true, installed);
+        addToggle(mine, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, installed);
         label(mine, "以下为功能入口，可分别隐藏；关闭隐藏后恢复原有显示。", 12, MUTED, false);
         for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) addToggle(mine,
-            "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, compatible);
+            "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, installed);
     }
 
-    private boolean version(LinearLayout parent, String pkg, String supported, long build) {
-        boolean compatible = false;
+    private boolean installedAppInfo(LinearLayout parent, String pkg, String tested) {
+        boolean installed = false;
         String text;
         try {
             PackageInfo p = getPackageManager().getPackageInfo(pkg, 0);
-            long v = Build.VERSION.SDK_INT >= 28 ? p.getLongVersionCode() : p.versionCode;
-            compatible = v == build;
-            text = "已安装 " + p.versionName + (compatible ? " · 版本匹配" : " · 此版本暂未适配");
-        } catch (Exception e) { text = "未安装 · 适配 " + supported; }
+            installed = true;
+            text = "已安装 " + p.versionName + " · 已测试 " + tested;
+        } catch (Exception e) { text = "未安装 · 已测试 " + tested; }
         label(parent, text, 12, MUTED, false);
-        return compatible;
+        return installed;
     }
 
     private LinearLayout section(LinearLayout parent, String id, String title, String detail,
-            String[] keys, boolean[] defaults, boolean compatible) {
+            String[] keys, boolean[] defaults, boolean installed) {
         TextView header = label(parent, "", 16, INK, true);
         header.setPadding(0, dp(15), 0, dp(15));
         header.setFocusable(true);
@@ -226,7 +224,7 @@ public final class MainActivity extends Activity {
     }
 
     private Switch addToggle(LinearLayout parent, String text, String key, boolean defaultValue,
-            boolean compatible) {
+            boolean installed) {
         Switch toggle = new Switch(this);
         toggle.setText(text);
         toggle.setTextSize(14);
@@ -234,7 +232,7 @@ public final class MainActivity extends Activity {
         toggle.setPadding(0, dp(12), 0, dp(12));
         toggle.setMinHeight(dp(50));
         toggle.setChecked(prefs.getBoolean(key, defaultValue));
-        refreshers.add(() -> toggle.setEnabled(frameworkReady && compatible));
+        refreshers.add(() -> toggle.setEnabled(frameworkReady && installed));
         toggle.setOnCheckedChangeListener((button, checked) -> {
             boolean saved = prefs.edit().putBoolean(key, checked).commit();
             for (Runnable refresh : refreshers) refresh.run();

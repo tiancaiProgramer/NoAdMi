@@ -1,11 +1,7 @@
 {
   "module": "NoAdMi",
-  "version": "0.6.1-preview",
+  "version": "0.6.2-preview",
   "date": "2026-10-19",
-  "target_versions": {
-    "com.mi.health": "3.59.1 (359001)",
-    "com.xiaomi.smarthome": "11.8.705 (110817051)"
-  },
   "build": "PASS",
   "rule_boundary_tests": "PASS: 3185 assertions",
   "apk_signature": "PASS: APK v2 and v3",
@@ -18,15 +14,20 @@
     "page_isolation": "Sport and Mine patches remain isolated",
     "migration": "All legacy-master/migration/selection combinations checked; actual stored migration checked",
     "launcher": "AdaptiveIconDrawable, solid orange background and monochrome layer verified on Android 16; independent module-settings entry remains available with launcher alias disabled",
-    "device_checks": "Listed advertising sections and selected native/RN menu items checked during iterative builds; not all comparisons repeated on final version"
+    "device_checks": "0.6.2 settings UI checked: installed/tested labels, framework injection and prior selections retained. Target page checks come from iterative earlier builds; not rerun for other app versions.",
+    "version_policy": "No app version gate: package and main-process selection only; installed app switches stay available regardless of version. Method, return-type, resource-slot and script-fingerprint checks retained."
   },
   "limitations": [
-    "App versions outside the exact whitelist are skipped.",
+    "Listed app versions are tested versions, not a runtime whitelist; other app versions have not been fully validated.",
     "Dynamic script changes can cause guarded rules to skip.",
     "All toggle combinations were not separately verified visually on a phone.",
     "No full business-function regression was performed.",
     "No concrete baseline bottom Sport campaign was captured; no visual comparison claim for a specific campaign.",
     "Third-party device plugins and other advertising placements are not exhaustively covered."
   ],
-  "apk_sha256": "d912db4dbb34ab5e10131457d8cca6bc6a684c2f9e002b6c510473f5c32112c2"
+  "apk_sha256": "9ad66b54bd00eb745c28afc552e2782a6c8ef7c46592c755ffd56ce4358eb336",
+  "tested_versions": {
+    "com.mi.health": "3.59.1 (359001)",
+    "com.xiaomi.smarthome": "11.8.705 (110817051)"
+  }
 }

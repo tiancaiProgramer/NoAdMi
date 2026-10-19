@@ -1,13 +1,13 @@
 package io.github.miclean.module;
 
-/** Exact versions extracted from the user's device; unknown builds are left alone. */
+/** Target app/process selection and known page rules; no app-version gate. */
 public final class Rules {
     public static final String MODULE = "io.github.miclean.module";
     public static final String PREFS = "miclean";
     public static final String HEALTH = "com.mi.health";
     public static final String HOME = "com.xiaomi.smarthome";
-    public static final long HEALTH_BUILD = 359001L;
-    public static final long HOME_BUILD = 110817051L;
+    public static final String HEALTH_TESTED_VERSION = "3.59.1";
+    public static final String HOME_TESTED_VERSION = "11.8.705";
     public static final String HOME_SPLASH_PREF = "switch_manger_open_screen_cache_data";
     public static final String HEALTH_SWITCH = "health_splash";
     public static final String HOME_SWITCH = "home_splash";
@@ -62,9 +62,8 @@ public final class Rules {
 
     private Rules() {}
 
-    public static boolean supported(String pkg, long version) {
-        return (HEALTH.equals(pkg) && version == HEALTH_BUILD)
-            || (HOME.equals(pkg) && version == HOME_BUILD);
+    public static boolean targetProcess(String pkg, String process) {
+        return target(pkg) && pkg.equals(process);
     }
 
     public static boolean target(String pkg) {

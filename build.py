@@ -23,7 +23,7 @@ def main():
     p.add_argument('--platform', default='android-35')
     p.add_argument('--build-tools', default='36.0.0')
     p.add_argument('--work-dir', default=str(ROOT / 'build'))
-    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.6.1-preview.apk'))
+    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.6.2-preview.apk'))
     a = p.parse_args()
     if not all((a.sdk, a.java_home, a.xposed_api)):
         p.error('Supply --sdk, --java-home, --xposed-api or their environment variables.')
