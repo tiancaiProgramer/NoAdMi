@@ -1,0 +1,32 @@
+{
+  "module": "NoAdMi",
+  "version": "0.6.1-preview",
+  "date": "2026-10-19",
+  "target_versions": {
+    "com.mi.health": "3.59.1 (359001)",
+    "com.xiaomi.smarthome": "11.8.705 (110817051)"
+  },
+  "build": "PASS",
+  "rule_boundary_tests": "PASS: 3185 assertions",
+  "apk_signature": "PASS: APK v2 and v3",
+  "framework_packaging": "No Xposed framework class definitions included",
+  "android_permissions": "None requested",
+  "checks": {
+    "navigation": "Native pager registry and indices preserved; hide-all fallback covered",
+    "mine_entries": "All 256 toggle combinations covered by unit tests",
+    "actual_javascript": "44 real-script cases parsed; isolated layout expressions checked using stubs without executing app code",
+    "page_isolation": "Sport and Mine patches remain isolated",
+    "migration": "All legacy-master/migration/selection combinations checked; actual stored migration checked",
+    "launcher": "AdaptiveIconDrawable, solid orange background and monochrome layer verified on Android 16; independent module-settings entry remains available with launcher alias disabled",
+    "device_checks": "Listed advertising sections and selected native/RN menu items checked during iterative builds; not all comparisons repeated on final version"
+  },
+  "limitations": [
+    "App versions outside the exact whitelist are skipped.",
+    "Dynamic script changes can cause guarded rules to skip.",
+    "All toggle combinations were not separately verified visually on a phone.",
+    "No full business-function regression was performed.",
+    "No concrete baseline bottom Sport campaign was captured; no visual comparison claim for a specific campaign.",
+    "Third-party device plugins and other advertising placements are not exhaustively covered."
+  ],
+  "apk_sha256": "d912db4dbb34ab5e10131457d8cca6bc6a684c2f9e002b6c510473f5c32112c2"
+}
