@@ -5,9 +5,32 @@ public final class Rules {
     public static final String MODULE = "io.github.miclean.module";
     public static final String PREFS = "miclean";
     public static final String HEALTH = "com.mi.health";
+    public static final String HEALTH_PLAY = "com.xiaomi.wearable";
     public static final String HOME = "com.xiaomi.smarthome";
-    public static final String HEALTH_TESTED_VERSION = "3.59.1";
-    public static final String HOME_TESTED_VERSION = "11.8.705";
+    public static final class TestedApp {
+        public final String label, pkg, version;
+        public final long code;
+        private TestedApp(String label, String pkg, String version, long code) {
+            this.label = label;
+            this.pkg = pkg;
+            this.version = version;
+            this.code = code;
+        }
+    }
+    public static final TestedApp[] TESTED_APPS = {
+        new TestedApp("米家（国内版）", HOME, "11.8.705", 110817051L),
+        new TestedApp("米家（Play 版）", HOME, "11.7.704", 11070704L),
+        new TestedApp("运动健康（国内版）", HEALTH, "3.59.1", 359001L),
+        new TestedApp("运动健康（Play 版）", HEALTH_PLAY, "3.59.1i", 359001L)
+    };
+    public static boolean testedVersion(String pkg, String version, long code) {
+        for (TestedApp app : TESTED_APPS) {
+            if (app.pkg.equals(pkg) && app.version.equals(version) && app.code == code) return true;
+        }
+        return false;
+    }
+    public static final String HOME_REGION_SWITCH = "home_play_mainland";
+    public static final String HEALTH_REGION_SWITCH = "health_play_mainland";
     public static final String HOME_SPLASH_PREF = "switch_manger_open_screen_cache_data";
     public static final String HEALTH_SWITCH = "health_splash";
     public static final String HOME_SWITCH = "home_splash";
@@ -44,6 +67,28 @@ public final class Rules {
     public static final int[] HOME_MINE_VIEWS = {0x7f0b1600, 0x7f0b162a, 0x7f0b1629, 0x7f0b1613,
         0x7f0b1616, 0x7f0b1608, 0x7f0b15fa, 0x7f0b1620, 0x7f0b15f4, 0x7f0b161f,
         0x7f0b1610, 0x7f0b1612, 0x7f0b1609};
+    public static final String[] HOME_MINE_RESOURCE_NAMES = {"dcc", "ddh", "ddg", "dcv", "dcy", "dck",
+        "dc7", "dd8", "dc1", "dd7", "dcs", "dcu", "dcl"};
+    // Play 11.7.704: verified against both menu layouts and their ItemOptionView labels.
+    public static final int[] HOME_PLAY_MINE_VIEWS = {0x7f0b1537, 0x7f0b1562, 0x7f0b1561, 0x7f0b1548,
+        0x7f0b154b, 0x7f0b153d, 0x7f0b1532, 0x7f0b1558, 0x7f0b152d, 0x7f0b1554,
+        0x7f0b1545, 0x7f0b1547, 0x7f0b153e};
+    public static final String[] HOME_PLAY_MINE_RESOURCE_NAMES = {"rl_consumables", "rl_voice_control",
+        "rl_voice_assistant", "rl_multi_terminal", "rl_pad_mode", "rl_family_net", "rl_bluetooth_gateway",
+        "rl_third_account", "rl_about", "rl_shop", "rl_house_intelligence", "rl_mi_service", "rl_feedback"};
+
+    public static java.util.Set<Integer> homeMineViews(java.util.Set<Integer> selected, boolean play) {
+        java.util.Set<Integer> result = new java.util.HashSet<>();
+        for (int i = 0; i < HOME_MINE_VIEWS.length; i++) {
+            if (selected.contains(HOME_MINE_VIEWS[i]))
+                result.add(play ? HOME_PLAY_MINE_VIEWS[i] : HOME_MINE_VIEWS[i]);
+        }
+        return result;
+    }
+
+    public static boolean healthRules(String pkg) {
+        return HEALTH.equals(pkg) || HEALTH_PLAY.equals(pkg);
+    }
 
     public static String tabKey(String id) {
         return productTab(id) ? HOME_PRODUCT_TAB_SWITCH : "home_hide_tab_" + id;
@@ -67,7 +112,7 @@ public final class Rules {
     }
 
     public static boolean target(String pkg) {
-        return HEALTH.equals(pkg) || HOME.equals(pkg);
+        return HEALTH.equals(pkg) || HEALTH_PLAY.equals(pkg) || HOME.equals(pkg);
     }
 
     public static boolean blockHomePreference(Object fileName) {

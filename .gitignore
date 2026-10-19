@@ -4,3 +4,8 @@ build/
 *.idsig
 __pycache__/
 local.properties
+*.jks
+*.p12
+*.keystore
+password.txt
+signing.env

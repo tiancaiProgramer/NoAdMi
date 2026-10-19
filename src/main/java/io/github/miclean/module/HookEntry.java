@@ -52,7 +52,10 @@ public final class HookEntry implements IXposedHookLoadPackage {
             report("settings unavailable; open module after enabling LSPosed, then restart target");
             return;
         }
-        if (Rules.HEALTH.equals(pkg) && prefs.getBoolean(Rules.HEALTH_SWITCH, true)) {
+        if (Rules.HEALTH_PLAY.equals(pkg) && prefs.getBoolean(Rules.HEALTH_REGION_SWITCH, false)) {
+            RegionHooks.fitness(loader);
+        }
+        if (Rules.healthRules(pkg) && prefs.getBoolean(Rules.HEALTH_SWITCH, true)) {
             // SplashActivity already goes to its normal destination when this returns false.
             constant(loader, "com.xiaomi.fitness.login.ad.SplashAdPreference",
                 "checkShowSplashAdEnable", boolean.class, Boolean.FALSE);
@@ -62,7 +65,7 @@ public final class HookEntry implements IXposedHookLoadPackage {
             constant(loader, "com.xiaomi.fitness.login.ad.SplashAdImpl",
                 "refreshSplashAdInfo", void.class, null, boolean.class);
         }
-        if (Rules.HEALTH.equals(pkg)) {
+        if (Rules.healthRules(pkg)) {
             if (prefs.getBoolean(Rules.HEALTH_HOME_BANNER_SWITCH, true)) healthHomeBanner(loader);
             if (prefs.getBoolean(Rules.HEALTH_DEVICE_BANNER_SWITCH, true)) healthDeviceBanners(loader);
             java.util.Set<String> hiddenMineEntries = new java.util.HashSet<>();
@@ -77,14 +80,14 @@ public final class HookEntry implements IXposedHookLoadPackage {
                 prefs.getBoolean(Rules.HEALTH_SPORT_BANNER_SWITCH, true), hiddenMineEntries);
         }
         if (Rules.HOME.equals(pkg)) {
+            if (prefs.getBoolean(Rules.HOME_REGION_SWITCH, false)) RegionHooks.home(loader);
             final boolean splash = prefs.getBoolean(Rules.HOME_SWITCH, true);
             final boolean banners = prefs.getBoolean(Rules.HOME_BANNER_SWITCH, true);
             // Preserve all other shared preferences. This particular file controls opening ads.
             try {
-                Class<?> cls = XposedHelpers.findClass("_m_j.uf1", loader);
-                Method m = cls.getDeclaredMethod("OoooOOO", Context.class, String.class,
-                    String.class, boolean.class);
-                if (m.getReturnType() != boolean.class) throw new NoSuchMethodException("return type");
+                Method m = homeMethod(loader, new String[][]{{"_m_j.uf1", "OoooOOO"},
+                    {"_m_j.l22", "OooOooo"}}, boolean.class, true,
+                    Context.class, String.class, String.class, boolean.class);
                 XposedBridge.hookMethod(m, new XC_MethodHook() {
                     private final AtomicBoolean splashLogged = new AtomicBoolean();
                     private final AtomicBoolean bannerLogged = new AtomicBoolean();
@@ -98,7 +101,8 @@ public final class HookEntry implements IXposedHookLoadPackage {
                         }
                     }
                 });
-                report("installed home.preferences splash=" + splash + " banners=" + banners);
+                report("installed home.preferences " + m.getDeclaringClass().getName() + "." + m.getName()
+                    + " splash=" + splash + " banners=" + banners);
             } catch (Throwable e) {
                 report("skip home.splash.preference: " + e.getClass().getSimpleName());
             }
@@ -199,8 +203,11 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     private static void homeBannerList(ClassLoader loader) {
         try {
-            XposedHelpers.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
-                loader, "Oooo000", android.view.View.class, ArrayList.class, boolean.class,
+            Method method = homeMethod(loader, new String[][]{
+                {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo000"},
+                {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo0"}},
+                void.class, false, android.view.View.class, ArrayList.class, boolean.class);
+            XposedBridge.hookMethod(method,
                 new XC_MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
                     @Override protected void beforeHookedMethod(MethodHookParam p) {
@@ -214,6 +221,21 @@ public final class HookEntry implements IXposedHookLoadPackage {
         } catch (Throwable e) {
             report("skip home.mine.banner-list: " + e.getClass().getSimpleName());
         }
+    }
+
+    private static Method homeMethod(ClassLoader loader, String[][] candidates,
+            Class<?> result, boolean isStatic, Class<?>... parameters) throws NoSuchMethodException {
+        for (String[] candidate : candidates) {
+            Class<?> cls = XposedHelpers.findClassIfExists(candidate[0], loader);
+            if (cls == null) continue;
+            try {
+                Method method = cls.getDeclaredMethod(candidate[1], parameters);
+                if (method.getReturnType() == result
+                        && java.lang.reflect.Modifier.isStatic(method.getModifiers()) == isStatic)
+                    return method;
+            } catch (NoSuchMethodException ignored) { }
+        }
+        throw new NoSuchMethodException("known home method shape");
     }
 
     static void report(String text) {

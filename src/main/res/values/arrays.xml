@@ -3,6 +3,7 @@
     <string-array name="xposed_scope">
         <item>io.github.miclean.module</item>
         <item>com.mi.health</item>
+        <item>com.xiaomi.wearable</item>
         <item>com.xiaomi.smarthome</item>
     </string-array>
 </resources>

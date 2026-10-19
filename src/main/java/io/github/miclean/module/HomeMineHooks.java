@@ -23,14 +23,32 @@ public final class HomeMineHooks {
         try {
             final Map<View, Boolean> watched = new WeakHashMap<>();
             final AtomicBoolean logged = new AtomicBoolean();
+            final AtomicBoolean resourceRejected = new AtomicBoolean();
             XposedHelpers.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
                 loader, "onViewCreated", View.class, Bundle.class, new XC_MethodHook() {
                     @Override protected void afterHookedMethod(MethodHookParam p) {
                         if (p.hasThrowable() || !(p.args[0] instanceof View)) return;
                         View root = (View) p.args[0];
+                        // Resolve each distribution independently: integer IDs overlap.
+                        final boolean play;
+                        try {
+                            if (matches(root, Rules.HOME_MINE_VIEWS, Rules.HOME_MINE_RESOURCE_NAMES)) {
+                                play = false;
+                            } else if (matches(root, Rules.HOME_PLAY_MINE_VIEWS, Rules.HOME_PLAY_MINE_RESOURCE_NAMES)) {
+                                play = true;
+                            } else {
+                                if (resourceRejected.compareAndSet(false, true))
+                                    HookEntry.report("skip home.mine.items: resource map changed");
+                                return;
+                            }
+                        } catch (android.content.res.Resources.NotFoundException e) {
+                            if (resourceRejected.compareAndSet(false, true))
+                                HookEntry.report("skip home.mine.items: resources unavailable");
+                            return;
+                        }
                         if (watched.containsKey(root)) return;
                         watched.put(root, Boolean.TRUE);
-                        Watcher watcher = new Watcher(root, hidden, logged);
+                        Watcher watcher = new Watcher(root, Rules.homeMineViews(hidden, play), logged);
                         root.addOnAttachStateChangeListener(watcher);
                         watcher.observe();
                         watcher.apply();
@@ -40,6 +58,15 @@ public final class HomeMineHooks {
         } catch (Throwable e) {
             HookEntry.report("skip home.mine.items: " + e.getClass().getSimpleName());
         }
+    }
+
+    private static boolean matches(View root, int[] ids, String[] names) {
+        try {
+            for (int i = 0; i < ids.length; i++) {
+                if (!names[i].equals(root.getResources().getResourceEntryName(ids[i]))) return false;
+            }
+            return true;
+        } catch (android.content.res.Resources.NotFoundException e) { return false; }
     }
 
     private static final class Watcher implements ViewTreeObserver.OnGlobalLayoutListener,

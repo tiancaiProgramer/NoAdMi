@@ -1,33 +1,49 @@
 {
   "module": "NoAdMi",
-  "version": "0.6.2-preview",
+  "version": "0.7.0-preview",
   "date": "2026-10-19",
   "build": "PASS",
-  "rule_boundary_tests": "PASS: 3185 assertions",
-  "apk_signature": "PASS: APK v2 and v3",
+  "rule_boundary_tests": "PASS: 3273 unit assertions",
+  "apk_signature": "PASS: APK v2 and v3; original certificate matched",
   "framework_packaging": "No Xposed framework class definitions included",
   "android_permissions": "None requested",
   "checks": {
     "navigation": "Native pager registry and indices preserved; hide-all fallback covered",
     "mine_entries": "All 256 toggle combinations covered by unit tests",
-    "actual_javascript": "44 real-script cases parsed; isolated layout expressions checked using stubs without executing app code",
+    "actual_javascript": "PASS: 110 assertions on extracted Play 3.59.1i built-in bundles; 21 output scripts passed Node syntax checks; app code not executed. Mine/Sport isolation, each available entry, overseas Competition rendering and unchanged unrelated bundles covered.",
     "page_isolation": "Sport and Mine patches remain isolated",
     "migration": "All legacy-master/migration/selection combinations checked; actual stored migration checked",
     "launcher": "AdaptiveIconDrawable, solid orange background and monochrome layer verified on Android 16; independent module-settings entry remains available with launcher alias disabled",
-    "device_checks": "0.6.2 settings UI checked: installed/tested labels, framework injection and prior selections retained. Target page checks come from iterative earlier builds; not rerun for other app versions.",
-    "version_policy": "No app version gate: package and main-process selection only; installed app switches stay available regardless of version. Method, return-type, resource-slot and script-fingerprint checks retained."
+    "device_checks": "versionCode 20 UI update installed with original signature. All 39 previously stored rule options retained. Hook regression evidence remains from versionCode 19; hooks were not changed by this UI update.",
+    "version_policy": "No app version gate. Package/main-process and per-rule method/resource/script shape checks retained. Both fitness packages can load ad and entry rules; region compatibility stays Play-only.",
+    "play_region_static": "Exact target DEX method declarations and migration callers inspected in Play Mi Home 11.7.704 and Mi Fitness 3.59.1i.",
+    "play_region_device": "Both compatibility switches enabled by user; logs show Mi Home split-package check and Mi Fitness mainland-startup overrides hit. Both apps opened their main pages. Global Fitness package injection confirmed. Country selection success and normal device list / refresh sync reported by user.",
+    "play_region_boundaries": "Default off, main processes only. Mi Fitness selection override limited to CN and migration override to nearest exact routing caller. No channel/region spoof, consent automation or account migration. Existing RegionHooks/RegionPolicy kept unchanged by this ad adaptation.",
+    "home_resource_map": "Both independent 13-item mainland and Play ID/name maps are guarded. All Play map entries checked against APK layouts and the installed package resources; domestic integer IDs are never directly reused on the Play page.",
+    "play_adaptation_shapes": "PASS: 36 reflection/resource checks on the phone-installed Play Mi Home 11.7.704 and Mi Fitness 3.59.1i. No app business methods invoked by the probe.",
+    "play_adaptation_device": "Logs hit Mi Home splash/banner preferences, banner-list, tabs (DeviceMain/Scene/Setting) and seven selected Mine items. Mi Fitness logs hit splash checks, health/device banners, Sport and Mine bundle patches. Overseas Competition card visible before the extra layout fix and absent afterward; App Settings and route library remain visible.",
+    "previous_playfix_device_checks": "versionCode 19 installed with original signature. All 39 previously stored options retained, including both mainland compatibility switches enabled. Module framework injection confirmed. Mainland ad checks from earlier builds remain historical.",
+    "tested_version_ui": "Catalog moved above framework/app cards, initially collapsed. Expanded catalog shows four versions. Installed Play Mi Home 11.7.704 and Play Fitness 3.59.1i marked tested; installed mainland 2.17.1 marked untested. Matching requires exact package, versionName and versionCode and does not gate rules. Catalog state uses separate UI preferences; per-app rule categories remain three."
   },
   "limitations": [
-    "Listed app versions are tested versions, not a runtime whitelist; other app versions have not been fully validated.",
+    "Tested versions are informational, not a runtime whitelist. Play-region service success is user-reported, not an exhaustive device or backend test.",
     "Dynamic script changes can cause guarded rules to skip.",
     "All toggle combinations were not separately verified visually on a phone.",
     "No full business-function regression was performed.",
     "No concrete baseline bottom Sport campaign was captured; no visual comparison claim for a specific campaign.",
-    "Third-party device plugins and other advertising placements are not exhaustively covered."
+    "Third-party device plugins and other advertising placements are not exhaustively covered.",
+    "Initial selection hook signature verified statically; no standalone log of that selection was captured. The logged mainland-startup hit confirms real CN detection on restart.",
+    "Play built-in Mine page has Prize instead of Assets; an absent Assets entry stays untouched. Native-hidden entries are not forced visible.",
+    "Device smoke checks used the existing selected switches; each option was not separately toggled off/on and visually regressed.",
+    "Previous user reports of device lists and sync remain historical; this build did not repeat a full login, privacy or backend/device regression."
   ],
-  "apk_sha256": "9ad66b54bd00eb745c28afc552e2782a6c8ef7c46592c755ffd56ce4358eb336",
+  "apk_sha256": "b5e7304e16a59acecb45586b1de562eaedaa58f0c6b1facbe5b5b78403e0345a",
   "tested_versions": {
     "com.mi.health": "3.59.1 (359001)",
-    "com.xiaomi.smarthome": "11.8.705 (110817051)"
-  }
+    "com.xiaomi.smarthome": "Mainland 11.8.705 (110817051); Play region compatibility 11.7.704 (11070704)",
+    "com.xiaomi.wearable": "Play region compatibility 3.59.1i (359001)"
+  },
+  "build_version_code": 20,
+  "artifact": "NoAdMi-0.7.0-preview.apk",
+  "signer_certificate_sha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642"
 }

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="17" android:versionName="0.6.2-preview">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="20" android:versionName="0.7.0-preview">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <queries>
         <package android:name="com.mi.health" />
+        <package android:name="com.xiaomi.wearable" />
         <package android:name="com.xiaomi.smarthome" />
     </queries>
     <application android:label="NoAdMi" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">

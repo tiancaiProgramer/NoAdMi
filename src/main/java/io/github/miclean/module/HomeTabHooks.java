@@ -5,8 +5,11 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 
 /** Hide native tab views while preserving all original pager and fragment indices. */
@@ -15,9 +18,29 @@ public final class HomeTabHooks {
 
     public static void install(ClassLoader loader, final Set<String> hidden) {
         try {
-            XposedHelpers.findAndHookMethod(
-                "com.xiaomi.smarthome.newui.buttomtab.TabPageIndicatorNew", loader,
-                "notifyDataSetChanged", new XC_MethodHook() {
+            Class<?> indicatorClass = XposedHelpers.findClass(
+                "com.xiaomi.smarthome.newui.buttomtab.TabPageIndicatorNew", loader);
+            Method refresh;
+            String descriptorField;
+            try {
+                refresh = indicatorClass.getDeclaredMethod("notifyDataSetChanged");
+                descriptorField = "tab";
+            } catch (NoSuchMethodException ignored) {
+                // Play 11.7.704 obfuscates the refresh method and TabView descriptor.
+                Class<?> tab = XposedHelpers.findClass("_m_j.s1e", loader);
+                Class<?> descriptor = XposedHelpers.findClass("_m_j.hh6", loader);
+                Class<?> tabId = XposedHelpers.findClass("com.xiaomi.smarthome.tab.TabId", loader);
+                if (!tabId.isEnum() || tab.getDeclaredField("o00O0O").getType() != descriptor
+                        || descriptor.getDeclaredField("OooO00o").getType() != tabId
+                        || tab.getDeclaredMethod("setTabInfo", descriptor).getReturnType() != void.class)
+                    throw new NoSuchMethodException("Play tab shape");
+                refresh = indicatorClass.getDeclaredMethod("OooO00o");
+                descriptorField = "o00O0O";
+            }
+            if (refresh.getReturnType() != void.class || Modifier.isStatic(refresh.getModifiers()))
+                throw new NoSuchMethodException("tab refresh shape");
+            final String field = descriptorField;
+            XposedBridge.hookMethod(refresh, new XC_MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
                     @Override protected void afterHookedMethod(MethodHookParam p) {
                         if (p.hasThrowable() || !(p.thisObject instanceof ViewGroup)) return;
@@ -25,7 +48,7 @@ public final class HomeTabHooks {
                             ViewGroup indicator = (ViewGroup) p.thisObject;
                             List<String> original = new ArrayList<>();
                             for (int i = 0; i < indicator.getChildCount(); i++) {
-                                Object descriptor = XposedHelpers.getObjectField(indicator.getChildAt(i), "tab");
+                                Object descriptor = XposedHelpers.getObjectField(indicator.getChildAt(i), field);
                                 original.add(id(descriptor));
                             }
                             if (original.isEmpty()) return;
@@ -47,7 +70,7 @@ public final class HomeTabHooks {
                         }
                     }
                 });
-            HookEntry.report("installed home.tabs.custom native-indices");
+            HookEntry.report("installed home.tabs.custom native-indices refresh=" + refresh.getName());
         } catch (Throwable e) {
             HookEntry.report("skip home.tabs.custom: " + e.getClass().getSimpleName());
         }

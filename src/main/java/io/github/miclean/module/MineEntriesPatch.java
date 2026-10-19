@@ -26,7 +26,7 @@ public final class MineEntriesPatch {
                 || !source.contains("e.MembershipCard=void 0")
                 || !source.contains("l.default.createElement(s.CNFeatureCards,null)")) return source;
         String changed = quickActions(source, hidden);
-        return features(changed, hidden);
+        return foreignFeatures(features(changed, hidden), hidden);
     }
 
     private static int[] bounds(String source, String export) {
@@ -101,5 +101,29 @@ public final class MineEntriesPatch {
         }
         String changed = module.substring(0, at) + layout + module.substring(at + LAYOUT.length());
         return source.substring(0, b[0]) + changed + source.substring(b[1]);
+    }
+
+    private static String foreignFeatures(String source, Set<String> hidden) {
+        if (!hidden.contains("competition")) return source;
+        int[] cardBounds = bounds(source, "e.ForeignFeatureCards=void 0");
+        int[] pageBounds = bounds(source, "e.RegionPageMap=e.MyProfileMapPage=void 0");
+        if (cardBounds == null || pageBounds == null) return source;
+        String card = source.substring(cardBounds[0], cardBounds[1]);
+        // Play keeps its foreign page layout even with a real CN region. This
+        // known card contains only Vitality Competition; keep its shared module
+        // and data methods intact, remove only the Mine-page render expressions.
+        if (!card.contains("e.ForeignFeatureCards=(0,E.withRenderFC)(function(){var t=(0,u.useState)(_.getCompetingRecordList)")
+                || !card.contains("s.default.trans(\"mine.pk.my.pk\")")
+                || !card.contains("L.vitalityCompetitionCardRoute:L.InviteMembersUrl")
+                || !card.contains("u.default.createElement(C,{fetcher:l})))},\"[ForeignFeatureCards]\")")) return source;
+        String page = source.substring(pageBounds[0], pageBounds[1]);
+        if (!page.contains("E.RegionEnum.FOREIGN,P") || !page.contains("E.RegionEnum.FOREIGN_CN,F")
+                || !page.contains("\"[MyProfileMapPage]\"")) return source;
+        String target = "l.default.createElement(s.ForeignFeatureCards,null)";
+        int count = 0, at = 0;
+        while ((at = page.indexOf(target, at)) >= 0) { count++; at += target.length(); }
+        if (count != 3) return source;
+        return source.substring(0, pageBounds[0]) + page.replace(target, "null")
+            + source.substring(pageBounds[1]);
     }
 }
