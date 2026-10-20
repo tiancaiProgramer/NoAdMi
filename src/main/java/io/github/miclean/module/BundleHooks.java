@@ -5,8 +5,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
 
 public final class BundleHooks {
     private BundleHooks() {}
@@ -20,9 +18,9 @@ public final class BundleHooks {
             "com.facebook.yrn.cxx.bridge.YRNCatalystInstanceImpl"};
         for (String cls : classes) {
             try {
-                XposedHelpers.findAndHookMethod(cls, loader, "loadScriptFromFile",
-                    String.class, String.class, boolean.class, new XC_MethodHook() {
-                        @Override protected void beforeHookedMethod(MethodHookParam p) {
+                Reflect.findAndHookMethod(cls, loader, "loadScriptFromFile",
+                    String.class, String.class, boolean.class, new MethodHook() {
+                        @Override protected void beforeHookedMethod(Param p) {
                             try {
                                 File input = new File((String) p.args[0]);
                                 if (!input.isFile() || input.length() > 12 * 1024 * 1024

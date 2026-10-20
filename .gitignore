@@ -9,3 +9,4 @@ local.properties
 *.keystore
 password.txt
 signing.env
+signing*.env

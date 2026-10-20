@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
 
 /** Only the native My page's verified menu rows; native-hidden rows remain hidden. */
 public final class HomeMineHooks {
@@ -24,9 +22,9 @@ public final class HomeMineHooks {
             final Map<View, Boolean> watched = new WeakHashMap<>();
             final AtomicBoolean logged = new AtomicBoolean();
             final AtomicBoolean resourceRejected = new AtomicBoolean();
-            XposedHelpers.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
-                loader, "onViewCreated", View.class, Bundle.class, new XC_MethodHook() {
-                    @Override protected void afterHookedMethod(MethodHookParam p) {
+            Reflect.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
+                loader, "onViewCreated", View.class, Bundle.class, new MethodHook() {
+                    @Override protected void afterHookedMethod(Param p) {
                         if (p.hasThrowable() || !(p.args[0] instanceof View)) return;
                         View root = (View) p.args[0];
                         // Resolve each distribution independently: integer IDs overlap.

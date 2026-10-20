@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a small API-82 module without Gradle or packaging the framework API."""
+"""Build a libxposed API 102 module; only the service/interface client is packaged."""
 import argparse
 import os
 from pathlib import Path
@@ -28,7 +28,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--sdk', default=os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT')))
     p.add_argument('--java-home', default=os.environ.get('JAVA_HOME'))
-    p.add_argument('--xposed-api', default=os.environ.get('XPOSED_API_JAR'))
+    p.add_argument('--libxposed-dir', required=True, help='Directory containing extracted api, service and interface AARs (102.0.0)')
     p.add_argument('--platform', default='android-35')
     p.add_argument('--build-tools', default='36.0.0')
     p.add_argument('--work-dir', default=str(ROOT / 'build'))
@@ -36,15 +36,20 @@ def main():
     p.add_argument('--keystore', help='Existing JKS or PKCS12 signing keystore')
     p.add_argument('--store-pass-file', help='Password file for --keystore; the password is never printed')
     p.add_argument('--key-alias', default='miclean-preview')
-    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.7.0-preview.apk'))
+    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.8.0-preview.apk'))
     a = p.parse_args()
     if bool(a.keystore) != bool(a.store_pass_file):
         p.error('--keystore and --store-pass-file must be supplied together.')
     if a.keystore and a.signing_dir:
         p.error('Use --keystore or --signing-dir, not both.')
-    if not all((a.sdk, a.java_home, a.xposed_api)):
-        p.error('Supply --sdk, --java-home, --xposed-api or their environment variables.')
-    sdk, jdk, api = Path(a.sdk).resolve(), Path(a.java_home).resolve(), Path(a.xposed_api).resolve()
+    if not all((a.sdk, a.java_home)):
+        p.error('Supply --sdk and --java-home or their environment variables.')
+    sdk, jdk = Path(a.sdk).resolve(), Path(a.java_home).resolve()
+    libraries = Path(a.libxposed_dir).resolve()
+    api = libraries / 'api/classes.jar'
+    runtime = [libraries / 'service/classes.jar', libraries / 'interface/classes.jar']
+    if not all(p.is_file() for p in [api, *runtime]):
+        raise FileNotFoundError('Missing official libxposed API/service/interface classes.jar')
     tools = sdk / 'build-tools' / a.build_tools
     android = sdk / 'platforms' / a.platform / 'android.jar'
     env = dict(os.environ, JAVA_HOME=str(jdk))
@@ -57,20 +62,26 @@ def main():
         path.mkdir()
     sources = sorted((ROOT / 'src/main/java').rglob('*.java'))
     run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-source', '8', '-target', '8',
-         '-classpath', os.pathsep.join(map(str, (android, api))), '-d', build / 'classes', *sources])
+         '-classpath', os.pathsep.join(map(str, (android, api, *runtime))), '-d', build / 'classes', *sources])
     test_sources = sorted((ROOT / 'tests').glob('*.java'))
-    run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-classpath', build / 'classes',
+    run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-classpath', os.pathsep.join(map(str, (build / 'classes', api, android))),
          '-d', build / 'tests', *test_sources])
     for test in test_sources:
-        run([tool(jdk / 'bin', 'java'), '-cp', os.pathsep.join(map(str, (build / 'classes', build / 'tests'))), test.stem])
+        import re
+        package = re.search(r'^package ([\w.]+);', test.read_text(), re.M)
+        test_class = (package.group(1) + '.' if package else '') + test.stem
+        run([tool(jdk / 'bin', 'java'), '-cp', os.pathsep.join(map(str, (build / 'classes', build / 'tests', api, android))), test_class])
     run([tool(tools, 'd8'), '--min-api', '26', '--lib', android, '--classpath', api,
-         '--output', build / 'dex', *sorted((build / 'classes').rglob('*.class'))], env)
+         '--output', build / 'dex', *sorted((build / 'classes').rglob('*.class')), *runtime], env)
     unsigned = build / 'unsigned.apk'
     run([tool(tools, 'aapt'), 'package', '-f', '-M', ROOT / 'src/main/AndroidManifest.xml',
          '-S', ROOT / 'src/main/res', '-A', ROOT / 'src/main/assets', '-I', android, '-F', unsigned])
     with zipfile.ZipFile(unsigned, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
         for dex in sorted((build / 'dex').glob('*.dex')):
             archive.write(dex, dex.name)
+        for resource in sorted((ROOT / 'src/main/resources').rglob('*')):
+            if resource.is_file():
+                archive.write(resource, resource.relative_to(ROOT / 'src/main/resources').as_posix())
     aligned = build / 'aligned.apk'
     run([tool(tools, 'zipalign'), '-f', '4', unsigned, aligned])
     if a.keystore:

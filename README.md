@@ -2,22 +2,22 @@
 
 <img src="assets/icon.png" width="96" alt="NoAdMi 图标">
 
-米家与小米运动健康的 LSPosed 广告精简、页面入口自定义模块，新增 Play 版中国大陆兼容实验开关。按应用分类，每个应用三个折叠分类，各项独立开关。
+米家与小米运动健康的 libxposed API 102 广告精简、页面入口自定义模块，新增 Play 版中国大陆兼容实验开关。按应用分类，每个应用三个折叠分类，各项独立开关。
 
 [下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [验证记录](verification.json)
 
 ## 已测试版本
 
-| 应用 | 包名 | 版本 | versionCode |
-|---|---|---|---|
-| 米家（国内版去广告） | `com.xiaomi.smarthome` | 11.8.705 | 110817051 |
-| 米家（Play 版） | `com.xiaomi.smarthome` | 11.7.704 | 11070704 |
-| 小米运动健康（国内版去广告） | `com.mi.health` | 3.59.1 | 359001 |
-| 运动健康（Play 版） | `com.xiaomi.wearable` | 3.59.1i | 359001 |
+| 测试批次（新到旧） | 应用 | 包名 | 版本 | versionCode |
+|---|---|---|---|---|
+| 0.8.0（再验证） | 米家国内版 | `com.xiaomi.smarthome` | 11.8.705 | 110817051 |
+| 0.8.0（再验证） | 运动健康国内版 | `com.mi.health` | 3.59.1 | 359001 |
+| 0.7.0 | 米家 Play 版 | `com.xiaomi.smarthome` | 11.7.704 | 11070704 |
+| 0.7.0 | 运动健康 Play 版 | `com.xiaomi.wearable` | 3.59.1i | 359001 |
 
 模块设置顶部的“测试版本说明”统一列出上述版本，默认折叠并记住展开状态。每个应用名称下显示已安装版本和“已测试 / 未测试”，未安装时显示“未安装”。版本匹配同时核对包名、版本号与 versionCode，标记仅用于说明验证范围。
 
-需要已安装兼容 LSPosed 的设备，共享设置要求 Xposed API 93 或以上。上表记录实机测试版本，不作为运行限制；模块会在米家和小米运动健康的主进程尝试加载规则。当前为预览版本，已在 Android 16 实机调试。
+需要支持 libxposed API 102 与 Remote Preferences 的框架；本次在 LSPosed 2.2.1（API 102）上测试。上表记录实机测试版本，不作为运行限制；模块会在米家和小米运动健康的主进程尝试加载规则。当前为预览版本，已在 Android 16 实机调试。
 
 ## 功能
 
@@ -36,12 +36,14 @@
 
 ## 安装与设置
 
+从 0.7.x 或更早版本升级时，请先完成下方“从 NSP 旧版迁移”，再覆盖安装，以保留原有开关。
+
 1. 从 [Releases](https://github.com/tiancaiProgramer/NoAdMi/releases) 下载并安装 APK。
-2. 在 LSPosed 中启用 NoAdMi，勾选米家、使用的运动健康版本及 NoAdMi 本身。Play 版运动健康的包名为 `com.xiaomi.wearable`，与国内版不同；升级模块后需补勾这个作用域。
+2. 在 LSPosed 中启用 NoAdMi，勾选米家及使用的运动健康版本；现代模块不需要勾选 NoAdMi 自身。Play 版运动健康的包名为 `com.xiaomi.wearable`，与国内版不同；升级模块后需补勾这个作用域。
 3. 打开模块，展开分类设置。修改规则后强行停止并重新打开对应目标应用。
 4. 关闭“隐藏”开关并重启对应应用，即可恢复原有显示。也可以在 LSPosed 中禁用模块。
 
-“框架已注入本模块”表示模块自身已收到框架注入，目标应用的实际命中可通过 LSPosed 日志或 `adb logcat -s MiClean` 核对。
+“框架服务已连接”表示模块已收到框架服务并完成远程设置初始化，目标应用的实际命中可通过 LSPosed 日志或 `adb logcat -s MiClean` 核对。
 
 关闭“显示桌面图标”后，可从 LSPosed 的模块设置重新打开 NoAdMi。该开关只调整桌面启动别名，不禁用设置页和 Hook；桌面可能稍后刷新。
 
@@ -57,35 +59,48 @@
 
 ## 升级与边界
 
-- 包名沿用 `io.github.miclean.module`，以保留旧版设置和作用域。使用相同签名覆盖安装即可升级。
+- 包名沿用 `io.github.miclean.module`，以保留作用域。旧版先准备设置迁移，再使用相同签名覆盖安装；不要卸载或清除数据。
 - 从旧版分类总开关迁移时，保留原本实际生效的隐藏状态，避免此前未生效的选项突然隐藏入口。
 - 米家底栏至少保留一个入口；全选隐藏时保留原底栏。关闭模块的“隐藏商城”后，米家原生设置仍可能使商城不显示。
 - 动态页面需要匹配结构指纹；App 内部脚本或方法变化可能导致部分规则跳过。未知组件原样放行，不承诺所有版本的全部选项均生效。
 - 仅处理列出的入口和广告位，不全局拦截网络请求或弹窗，不覆盖所有设备插件的广告。
 
+## 更新入口
+
+模块首页状态卡提供“检查更新”，打开 https://github.com/tiancaiProgramer/NoAdMi/releases，包含正式版与预览版。由用户查看版本并下载安装；模块不在后台下载，不自动安装，不要求网络权限。测试版本说明按最近验证批次优先，同批按应用版本从新到旧排列；本次 0.8.0 再验证的国内版在前，0.7.0 的 Play 记录在后。
+
+## 从 NSP 旧版迁移
+
+0.8.0 改用 libxposed 的框架 Remote Preferences，移除了 `xposedsharedprefs`、`MODE_WORLD_READABLE` 和旧 Xposed Hook 依赖。仅删除旧声明不能保证设置正常读取，因此本版同时更换设置传输与 Hook 入口。
+
+旧版 NSP 设置位于框架私有目录，现代 API 不提供直接读取旧文件的能力。请先用下列工具在已授权 Root 的手机上备份并准备迁移，再覆盖安装；如果已升级但旧目录尚在，也可以准备迁移后重开模块。不需要卸载或清除数据。
+
+```sh
+python3 tools/stage_legacy_settings.py --adb /path/to/adb --serial DEVICE_SERIAL --backup-dir /private/path/noadmi-backup
+```
+
+备份目录应在源码树外。工具只读取本模块旧设置，将副本放入模块私有目录；原始文件保留。打开新版后导入远程设置并保留折叠状态。目标进程在远程设置未初始化时跳过所有规则。已完成迁移的远程设置不会被旧本地副本自动覆盖；再次显式准备迁移则使用所准备的副本。
+
 ## 编译
 
-需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 36.0.0，以及 Xposed API 82 编译 jar。
+需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 36.0.0，以及 Maven Central 上 `io.github.libxposed` 的 `api`、`service`、`interface` 102.0.0 AAR。分别解压到一个依赖目录中的 `api/`、`service/`、`interface/`，其中均应有 `classes.jar`。
 
 ```sh
 python3 build.py \
   --sdk "$ANDROID_HOME" \
   --java-home "$JAVA_HOME" \
-  --xposed-api /path/to/api-82.jar \
+  --libxposed-dir /path/to/libxposed-102 \
   --work-dir build \
-  --output NoAdMi-0.7.0-preview.apk
+  --keystore /private/path/NoAdMi-original.p12 \
+  --store-pass-file /private/path/password.txt \
+  --key-alias miclean-preview \
+  --output NoAdMi-0.8.0-preview.apk
 ```
 
-构建脚本执行规则测试、编译、DEX 转换、对齐和签名校验。Xposed API 仅用于编译，APK 不包含框架类，也不请求 Android 权限。
-
-首次构建会在构建目录的 `.signing/` 中生成本地预览签名。该目录不应提交或分发；自行构建的签名与已发布 APK 不同，不能直接覆盖安装。
-
-Windows 构建会自动选择 `.exe` / `.bat` 工具。覆盖升级时，可使用 `--keystore /path/to/original.jks --store-pass-file /path/to/password.txt --key-alias miclean-preview` 引用原签名；也支持 PKCS12。密码从文件读取，不写入命令行或构建日志。签名、密码文件不属于源码与发布附件。
+API 仅用于编译，不打包框架实现。APK 包含官方 `service` / `interface` Binder 客户端；见 THIRD_PARTY_NOTICES.txt。原有外部 JKS / PKCS12 签名参数和 Windows 工具链支持保留。升级必须沿用原密钥，私钥和密码不得放入源码包或 GitHub。
 
 ## 验证范围
 
-当前构建通过 3273 项单元断言和 APK v2/v3 签名校验；另外通过 110 项真实 Play 脚本断言、21 份脚本语法检查及 36 项手机已安装应用的方法与资源结构检查。测试包括导航索引、应用与进程范围、资源位边界、八个入口的 256 种开关组合、页面隔离、海外布局和旧设置迁移。
+规则和迁移测试、APK 结构、签名、设备测试详见 verification.json。本次连接设备为国内版米家 11.8.705、运动健康 3.59.1，旧设置 39 项已逐项核对保留；Play 规则保留自 0.7.0，未在这台设备重新验证所有 Play 业务。
 
-运动健康的运动页、我的页、健康及设备页广告，以及米家部分广告和入口已进行实机检查。部分检查来自此前版本；没有逐一可视回归全部组合，也没有完成所有业务功能回归。具体范围与限制见 [verification.json](verification.json)。
-
-这是独立实验模块，与小米没有隶属或官方合作关系。选项目录参考旧版米家去广告模块；仓库与 APK 不包含原应用脚本、原应用 APK 或参考模块的二进制。
+这是独立实验模块，与小米没有隶属或官方合作关系。仓库不包含目标应用脚本、目标 APK、设备数据或签名私钥。

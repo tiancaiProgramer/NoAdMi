@@ -1,0 +1,7 @@
+This APK packages the official libxposed service and interface clients, version 102.0.0.
+Copyright their respective libxposed contributors.
+Licensed under the Apache License, Version 2.0.
+Source: https://github.com/libxposed/service and https://github.com/libxposed/interface
+Artifacts: https://repo.maven.apache.org/maven2/io/github/libxposed/
+The libxposed API is compile-only; the framework implementation is not bundled.
+See third-party/Apache-2.0.txt.

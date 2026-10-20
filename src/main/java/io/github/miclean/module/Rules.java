@@ -10,19 +10,40 @@ public final class Rules {
     public static final class TestedApp {
         public final String label, pkg, version;
         public final long code;
-        private TestedApp(String label, String pkg, String version, long code) {
+        public final int testedBatch;
+        public final String testedRelease;
+        private TestedApp(String label, String pkg, String version, long code, int testedBatch, String testedRelease) {
             this.label = label;
             this.pkg = pkg;
             this.version = version;
             this.code = code;
+            this.testedBatch = testedBatch;
+            this.testedRelease = testedRelease;
         }
     }
     public static final TestedApp[] TESTED_APPS = {
-        new TestedApp("米家（国内版）", HOME, "11.8.705", 110817051L),
-        new TestedApp("米家（Play 版）", HOME, "11.7.704", 11070704L),
-        new TestedApp("运动健康（国内版）", HEALTH, "3.59.1", 359001L),
-        new TestedApp("运动健康（Play 版）", HEALTH_PLAY, "3.59.1i", 359001L)
+        new TestedApp("米家（国内版）", HOME, "11.8.705", 110817051L, 21, "0.8.0"),
+        new TestedApp("米家（Play 版）", HOME, "11.7.704", 11070704L, 20, "0.7.0"),
+        new TestedApp("运动健康（国内版）", HEALTH, "3.59.1", 359001L, 21, "0.8.0"),
+        new TestedApp("运动健康（Play 版）", HEALTH_PLAY, "3.59.1i", 359001L, 20, "0.7.0")
     };
+    public static final String RELEASES_URL = "https://github.com/tiancaiProgramer/NoAdMi/releases";
+    public static java.util.List<TestedApp> testedAppsNewestFirst() {
+        java.util.List<TestedApp> result = new java.util.ArrayList<>(java.util.Arrays.asList(TESTED_APPS));
+        result.sort((a, b) -> {
+            int batchOrder = Integer.compare(b.testedBatch, a.testedBatch);
+            if (batchOrder != 0) return batchOrder;
+            String[] av = a.version.replaceAll("[^0-9.]", "").split("\\.");
+            String[] bv = b.version.replaceAll("[^0-9.]", "").split("\\.");
+            for (int i = 0; i < Math.max(av.length, bv.length); i++) {
+                int left = i < av.length ? Integer.parseInt(av[i]) : 0;
+                int right = i < bv.length ? Integer.parseInt(bv[i]) : 0;
+                if (left != right) return Integer.compare(right, left);
+            }
+            return Long.compare(b.code, a.code);
+        });
+        return result;
+    }
     public static boolean testedVersion(String pkg, String version, long code) {
         for (TestedApp app : TESTED_APPS) {
             if (app.pkg.equals(pkg) && app.version.equals(version) && app.code == code) return true;

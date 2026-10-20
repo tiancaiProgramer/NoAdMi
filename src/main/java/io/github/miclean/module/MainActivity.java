@@ -2,6 +2,8 @@ package io.github.miclean.module;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
@@ -30,21 +32,24 @@ public final class MainActivity extends Activity {
     private static final int MUTED = Color.rgb(102, 112, 106);
     private static final int ORANGE = Color.rgb(202, 88, 27);
 
-    // Replaced only when LSPosed has injected this module's own process.
-    public static int getFrameworkApiVersion() { return 0; }
-    @Override public void onCreate(Bundle state) { super.onCreate(state); render(); }
+    private final Runnable settingsListener = () -> runOnUiThread(() -> { if (!isFinishing()) render(); });
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        Settings.listen(settingsListener);
+        render();
+    }
+    @Override public void onDestroy() { Settings.unlisten(settingsListener); super.onDestroy(); }
     @Override public void onResume() {
         super.onResume();
-        if (frameworkReady != (getFrameworkApiVersion() >= 93)) render();
+        if (frameworkReady != (Settings.ready())) render();
         syncLauncherIconSwitch();
     }
 
-    @SuppressWarnings("deprecation") private void render() {
-        frameworkReady = getFrameworkApiVersion() >= 93;
+    private void render() {
+        frameworkReady = Settings.ready();
         refreshers.clear();
-        try {
-            prefs = getSharedPreferences(Rules.PREFS,
-                frameworkReady ? Context.MODE_WORLD_READABLE : Context.MODE_PRIVATE);
+        prefs = Settings.current(this);
+        if (frameworkReady) {
             SharedPreferences.Editor edit = prefs.edit();
             String[] old = {Rules.HEALTH_SWITCH, Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH,
                 Rules.HOME_PRODUCT_TAB_SWITCH, Rules.HEALTH_BANNER_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH,
@@ -64,9 +69,7 @@ public final class MainActivity extends Activity {
                     prefs.getBoolean(Rules.mineKey(id), false)));
             edit.putBoolean(Rules.HOME_INDEPENDENT_OPTIONS, true);
             edit.commit();
-        } catch (SecurityException e) {
-            prefs = getSharedPreferences(Rules.PREFS, Context.MODE_PRIVATE);
-            frameworkReady = false;
+            Settings.backup(this);
         }
         uiPrefs = getSharedPreferences("miclean_ui", Context.MODE_PRIVATE);
         getWindow().setStatusBarColor(Color.rgb(247, 246, 241));
@@ -88,14 +91,29 @@ public final class MainActivity extends Activity {
         label(content, "按需精简，保留常用。", 14, MUTED, false);
         testedVersionsCard();
         LinearLayout status = card();
-        label(status, frameworkReady ? "框架已注入本模块" : "尚未启用 Hook 框架", 17, INK, true);
+        label(status, frameworkReady ? "框架服务已连接" : "等待框架服务连接", 17, INK, true);
         label(status, frameworkReady ? "展开分类设置；保存后请强行停止并重新打开对应应用。"
-            : "请在 LSPosed 启用本模块并勾选米家、运动健康，再重新打开模块。", 13, MUTED, false);
+            : "请在支持 libxposed API 102 的框架中启用模块并勾选目标应用，再重新打开模块。", 13, MUTED, false);
+        if (Settings.status() != null) label(status, Settings.status(), 12, ORANGE, false);
         launcherIconControl(status);
+        updateControl(status);
         homeCard();
         healthCard();
         label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，不同版本效果以实际使用为准。", 12, MUTED, false);
         for (Runnable refresh : refreshers) refresh.run();
+    }
+
+    private void updateControl(LinearLayout parent) {
+        TextView update = label(parent, "检查更新  ↗", 15, ORANGE, true);
+        update.setPadding(0, dp(14), 0, dp(14));
+        update.setContentDescription("检查更新，打开 NoAdMi 官方 GitHub 发布页");
+        update.setOnClickListener(v -> {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Rules.RELEASES_URL))); }
+            catch (android.content.ActivityNotFoundException e) {
+                Toast.makeText(this, "未找到浏览器，请访问 github.com/tiancaiProgramer/NoAdMi/releases", Toast.LENGTH_LONG).show();
+            }
+        });
+        label(parent, "tiancaiProgramer/NoAdMi · 查看最新版本与更新说明", 12, MUTED, false);
     }
 
     private ComponentName launcherAlias() {
@@ -203,9 +221,9 @@ public final class MainActivity extends Activity {
         header.setFocusable(true);
         LinearLayout body = vertical();
         box.addView(body, new LinearLayout.LayoutParams(-1, -2));
-        label(body, "以下为已进行过验证的版本，具体功能效果以实际使用为准。", 12, MUTED, false);
-        for (Rules.TestedApp app : Rules.TESTED_APPS)
-            label(body, app.label + "\n" + app.version + "（" + app.code + "）", 13, MUTED, false);
+        label(body, "近期测试记录在前，同批按版本从新到旧排列；测试记录不限制规则加载。", 12, MUTED, false);
+        for (Rules.TestedApp app : Rules.testedAppsNewestFirst())
+            label(body, app.label + "\n" + app.version + "（" + app.code + "） · " + app.testedRelease + " 验证", 13, MUTED, false);
         Runnable refresh = () -> {
             boolean expanded = uiPrefs.getBoolean("tested_versions", false);
             header.setText((expanded ? "▾  " : "▸  ") + "测试版本说明");
@@ -270,6 +288,7 @@ public final class MainActivity extends Activity {
         refreshers.add(() -> toggle.setEnabled(frameworkReady && installed));
         toggle.setOnCheckedChangeListener((button, checked) -> {
             boolean saved = prefs.edit().putBoolean(key, checked).commit();
+            if (saved) Settings.backup(this);
             for (Runnable refresh : refreshers) refresh.run();
             Toast.makeText(this, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块", Toast.LENGTH_SHORT).show();
         });

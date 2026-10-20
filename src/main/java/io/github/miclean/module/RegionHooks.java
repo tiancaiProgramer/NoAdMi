@@ -4,9 +4,6 @@ import android.content.Context;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
 
 /** Optional client-side Play region compatibility; never changes the saved region. */
 final class RegionHooks {
@@ -14,16 +11,16 @@ final class RegionHooks {
 
     static void fitness(ClassLoader loader) {
         try {
-            Class<?> country = XposedHelpers.findClass("com.xiaomi.fitness.account.api.bean.CountryInfo", loader);
+            Class<?> country = Reflect.findClass("com.xiaomi.fitness.account.api.bean.CountryInfo", loader);
             final Method name = country.getDeclaredMethod("getName");
             if (name.getReturnType() != String.class) throw new NoSuchMethodException("country name");
-            Method gate = XposedHelpers.findClass(
+            Method gate = Reflect.findClass(
                 "com.xiaomi.fitness.login.region.RegionSelectListActivity", loader)
                 .getDeclaredMethod("shouldShowMainLandSwitchDialog", country);
             require(gate, boolean.class, false);
-            XposedBridge.hookMethod(gate, new XC_MethodHook() {
+            HookRuntime.hookMethod(gate, new MethodHook() {
                 private final AtomicBoolean logged = new AtomicBoolean();
-                @Override protected void beforeHookedMethod(MethodHookParam p) {
+                @Override protected void beforeHookedMethod(Param p) {
                     try {
                         if (p.args[0] == null || !RegionPolicy.mainland(name.invoke(p.args[0]))) return;
                         p.setResult(Boolean.FALSE);
@@ -35,15 +32,15 @@ final class RegionHooks {
         } catch (Throwable e) { skip("fitness.play.mainland-selection", e); }
 
         try {
-            Method startup = XposedHelpers.findClass(RegionPolicy.FITNESS_STARTUP, loader)
+            Method startup = Reflect.findClass(RegionPolicy.FITNESS_STARTUP, loader)
                 .getDeclaredMethod("invokeSuspend", Object.class);
             require(startup, Object.class, false);
-            Method gate = XposedHelpers.findClass(RegionPolicy.FITNESS_REGION_UTIL, loader)
+            Method gate = Reflect.findClass(RegionPolicy.FITNESS_REGION_UTIL, loader)
                 .getDeclaredMethod("isInnerCN");
             require(gate, boolean.class, true);
-            XposedBridge.hookMethod(gate, new XC_MethodHook() {
+            HookRuntime.hookMethod(gate, new MethodHook() {
                 private final AtomicBoolean logged = new AtomicBoolean();
-                @Override protected void afterHookedMethod(MethodHookParam p) {
+                @Override protected void afterHookedMethod(Param p) {
                     if (p.hasThrowable() || !Boolean.TRUE.equals(p.getResult())) return;
                     if (!RegionPolicy.migrationRegionCheck(Thread.currentThread().getStackTrace())) return;
                     p.setResult(Boolean.FALSE);
@@ -56,14 +53,14 @@ final class RegionHooks {
 
     static void home(ClassLoader loader) {
         try {
-            Class<?> utility = XposedHelpers.findClass("_m_j.wq5", loader);
+            Class<?> utility = Reflect.findClass("_m_j.wq5", loader);
             // The companion download URL builder is part of this method's shape.
             require(utility.getDeclaredMethod("OooOO0O", Context.class), String.class, true);
             Method prompt = utility.getDeclaredMethod("OoooOO0");
             require(prompt, boolean.class, true);
-            XposedBridge.hookMethod(prompt, new XC_MethodHook() {
+            HookRuntime.hookMethod(prompt, new MethodHook() {
                 private final AtomicBoolean logged = new AtomicBoolean();
-                @Override protected void beforeHookedMethod(MethodHookParam p) {
+                @Override protected void beforeHookedMethod(Param p) {
                     p.setResult(Boolean.FALSE);
                     hit(logged, "home.play.split-package-prompt");
                 }
@@ -72,23 +69,23 @@ final class RegionHooks {
         } catch (Throwable e) { skip("home.play.split-package-prompt", e); }
 
         try {
-            Class<?> job = XposedHelpers.findClass("com.xiaomi.smarthome.task.OooOO0", loader);
-            Class<?> activity = XposedHelpers.findClass("androidx.fragment.app.FragmentActivity", loader);
-            Class<?> continuation = XposedHelpers.findClass("kotlin.coroutines.Continuation", loader);
-            Class<?> resume = XposedHelpers.findClass(
+            Class<?> job = Reflect.findClass("com.xiaomi.smarthome.task.OooOO0", loader);
+            Class<?> activity = Reflect.findClass("androidx.fragment.app.FragmentActivity", loader);
+            Class<?> continuation = Reflect.findClass("kotlin.coroutines.Continuation", loader);
+            Class<?> resume = Reflect.findClass(
                 "com.xiaomi.smarthome.task.SplitePackageCheckJob$onStart$1", loader);
             // Check the dedicated coroutine's enclosing job field before hooking an
             // obfuscated class. Return the host's Unit so its task graph can continue.
             if (resume.getDeclaredField("this$0").getType() != job)
                 throw new NoSuchFieldException("split-package job");
-            Class<?> unit = XposedHelpers.findClass("_m_j.wne", loader);
-            final Object done = XposedHelpers.getStaticObjectField(unit, "OooO00o");
+            Class<?> unit = Reflect.findClass("_m_j.wne", loader);
+            final Object done = Reflect.getStaticObjectField(unit, "OooO00o");
             if (!unit.isInstance(done)) throw new IllegalStateException("Unit singleton");
             Method run = job.getDeclaredMethod("OooO0o0", activity, continuation);
             require(run, Object.class, false);
-            XposedBridge.hookMethod(run, new XC_MethodHook() {
+            HookRuntime.hookMethod(run, new MethodHook() {
                 private final AtomicBoolean logged = new AtomicBoolean();
-                @Override protected void beforeHookedMethod(MethodHookParam p) {
+                @Override protected void beforeHookedMethod(Param p) {
                     p.setResult(done);
                     hit(logged, "home.play.split-package-check");
                 }

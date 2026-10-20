@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="20" android:versionName="0.7.0-preview">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="21" android:versionName="0.8.0-preview">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <queries>
         <package android:name="com.mi.health" />
         <package android:name="com.xiaomi.wearable" />
         <package android:name="com.xiaomi.smarthome" />
     </queries>
-    <application android:label="NoAdMi" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
-        <meta-data android:name="xposedmodule" android:value="true" />
-        <meta-data android:name="xposeddescription" android:value="米家与小米运动健康 · 广告精简、底栏与我的入口自定义" />
-        <meta-data android:name="xposedminversion" android:value="93" />
-        <meta-data android:name="xposedsharedprefs" android:value="true" />
-        <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
+    <application android:name=".ModuleApp" android:description="@string/module_description" android:label="NoAdMi" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
+        <provider android:name="io.github.libxposed.service.XposedProvider"
+            android:authorities="io.github.miclean.module.XposedService" android:exported="true" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <category android:name="io.github.libxposed.manager.category.MODULE_SETTINGS" />
                 <category android:name="de.robv.android.xposed.category.MODULE_SETTINGS" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>

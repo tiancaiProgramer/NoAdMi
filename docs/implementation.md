@@ -38,3 +38,12 @@
 - Play 内置 Mine/Sport 脚本匹配原有结构指纹；新增真实脚本隔离与幂等性测试。已核对的 Play 内置 QuickActions 包含“奖品”而没有“我的资产”，资产开关无对应目标时原样保留。
 - Play 的 FOREIGN / FOREIGN_CN “我的”布局使用 `ForeignFeatureCards`。仅在唯一的 RegionPageMap 模块、三处精确创建表达式及 ForeignFeatureCards 的活力竞赛结构均匹配时，由“活力竞赛”开关移除该页面的创建表达式。共享卡片模块、详情页、数据接口和地区/渠道判断不变。
 - 36 项实机探针仅校验方法、字段及资源，不执行业务方法；真实 Hook 命中与界面检查单独记录。探针与真实脚本测试位于 `tests/android`、`tests/integration`，不打包入模块 APK，也不附带目标应用源码或脚本。
+
+### 现代框架与设置
+
+- 入口为 `HookEntry extends XposedModule`，通过 `META-INF/xposed/java_init.list`、`module.prop`、`scope.list` 注册。主进程与首包校验保持不变；现代框架不再通过自身 Hook 判断激活。
+- `HookRuntime` 将各页面规则的前后回调接入 API 102 Chain，修改参数使用 `proceed(args)`；提前返回不调用宿主；宿主异常保持原对象，后置回调失败不二次调用宿主。反射辅助类为本模块代码，不包装或调用旧 Xposed API。
+- 模块应用接收官方 XposedProvider 服务，使用 `XposedService.getRemotePreferences` 写设置；目标使用 `XposedModule.getRemotePreferences` 只读。远程设置首次导入完成标志存在之前，目标不加载任何规则。
+- 私有本地镜像用于备份；现有远程设置优先，明确准备的旧设置副本可覆盖旧键而不删除其他现代键。布尔 false 与缺失键区分，迁移不通过默认值判断用户选择。
+- 旧目录由用户明确运行迁移工具读取，无全局 Root 权限申请，无权限放宽。私有导入 XML 限长并只接受布尔设置，提交成功后删除副本。
+- 更新入口是外部浏览器 ACTION_VIEW，目标固定为本仓库 Releases；包含预览版本，不使用可能遗漏预览版的 `/latest` 跳转。

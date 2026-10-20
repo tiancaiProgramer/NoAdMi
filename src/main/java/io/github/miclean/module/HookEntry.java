@@ -2,41 +2,33 @@ package io.github.miclean.module;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
+import io.github.libxposed.api.XposedModule;
 import android.content.pm.PackageInfo;
 import android.util.Log;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
-import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XSharedPreferences;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
-public final class HookEntry implements IXposedHookLoadPackage {
+public final class HookEntry extends XposedModule {
     private static final String TAG = "MiClean";
+    private String processName;
     private final AtomicBoolean installed = new AtomicBoolean();
 
-    @Override public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam lp) {
-        if (Rules.MODULE.equals(lp.packageName)) {
-            // Only an injected module process may report an active framework.
-            XposedHelpers.findAndHookMethod("io.github.miclean.module.MainActivity", lp.classLoader,
-                "getFrameworkApiVersion", new XC_MethodHook() {
-                    @Override protected void beforeHookedMethod(MethodHookParam p) {
-                        p.setResult(XposedBridge.getXposedVersion());
-                    }
-                });
-            return;
-        }
-        // Primary processes only: leave BLE, device plugins and background sync alone.
-        if (!Rules.targetProcess(lp.packageName, lp.processName)) return;
-        XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
-            @Override protected void afterHookedMethod(MethodHookParam p) {
+    @Override public void onModuleLoaded(ModuleLoadedParam param) {
+        processName = param.getProcessName();
+        HookRuntime.initialize(this);
+    }
+
+    @Override public void onPackageReady(final PackageReadyParam param) {
+        final String pkg = param.getPackageName();
+        if (!param.isFirstPackage() || !Rules.targetProcess(pkg, processName)) return;
+        Reflect.findAndHookMethod(Application.class, "attach", Context.class, new MethodHook() {
+            @Override protected void afterHookedMethod(Param p) {
                 if (!installed.compareAndSet(false, true)) return;
                 try {
-                    install((Context) p.args[0], lp.packageName, lp.classLoader);
+                    install((Context) p.args[0], pkg, param.getClassLoader());
                 } catch (Throwable e) {
                     report("setup failed; original behavior retained: " + e.getClass().getSimpleName());
                 }
@@ -46,10 +38,9 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     private void install(Context context, String pkg, ClassLoader loader) throws Exception {
         PackageInfo info = context.getPackageManager().getPackageInfo(pkg, 0);
-        XSharedPreferences prefs = new XSharedPreferences(Rules.MODULE, Rules.PREFS);
-        prefs.reload();
-        if (!prefs.getFile().canRead()) {
-            report("settings unavailable; open module after enabling LSPosed, then restart target");
+        SharedPreferences prefs = getRemotePreferences(Rules.PREFS);
+        if (!prefs.getBoolean("modern_settings_ready_v1", false)) {
+            report("remote settings not initialized; open NoAdMi then restart target");
             return;
         }
         if (Rules.HEALTH_PLAY.equals(pkg) && prefs.getBoolean(Rules.HEALTH_REGION_SWITCH, false)) {
@@ -88,10 +79,10 @@ public final class HookEntry implements IXposedHookLoadPackage {
                 Method m = homeMethod(loader, new String[][]{{"_m_j.uf1", "OoooOOO"},
                     {"_m_j.l22", "OooOooo"}}, boolean.class, true,
                     Context.class, String.class, String.class, boolean.class);
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
+                HookRuntime.hookMethod(m, new MethodHook() {
                     private final AtomicBoolean splashLogged = new AtomicBoolean();
                     private final AtomicBoolean bannerLogged = new AtomicBoolean();
-                    @Override protected void beforeHookedMethod(MethodHookParam p) {
+                    @Override protected void beforeHookedMethod(Param p) {
                         if (splash && Rules.blockHomePreference(p.args[1])) {
                             p.setResult(Boolean.FALSE);
                             if (splashLogged.compareAndSet(false, true)) report("hit home.splash.preference");
@@ -131,13 +122,13 @@ public final class HookEntry implements IXposedHookLoadPackage {
     private static void constant(ClassLoader loader, String className, String methodName,
             Class<?> resultType, final Object result, Class<?>... parameters) {
         try {
-            Class<?> cls = XposedHelpers.findClass(className, loader);
+            Class<?> cls = Reflect.findClass(className, loader);
             Method m = cls.getDeclaredMethod(methodName, parameters);
             if (m.getReturnType() != resultType) throw new NoSuchMethodException("return type");
             final String id = className + "." + methodName;
-            XposedBridge.hookMethod(m, new XC_MethodHook() {
+            HookRuntime.hookMethod(m, new MethodHook() {
                 private final AtomicBoolean logged = new AtomicBoolean();
-                @Override protected void beforeHookedMethod(MethodHookParam p) {
+                @Override protected void beforeHookedMethod(Param p) {
                     p.setResult(result);
                     if (logged.compareAndSet(false, true)) report("hit " + id);
                 }
@@ -150,18 +141,18 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     private static void healthDeviceBanners(ClassLoader loader) {
         try {
-            Class<?> request = XposedHelpers.findClass("com.fitness.banner.export.BannerRequestParamV2", loader);
-            XposedHelpers.findAndHookMethod(
+            Class<?> request = Reflect.findClass("com.fitness.banner.export.BannerRequestParamV2", loader);
+            Reflect.findAndHookMethod(
                 "com.xiaomi.fitness.device.manager.ui.tab.DeviceTabV4ViewModel", loader,
-                "fillBannerList", java.util.List.class, request, boolean.class, new XC_MethodHook() {
+                "fillBannerList", java.util.List.class, request, boolean.class, new MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
-                    @Override protected void beforeHookedMethod(MethodHookParam p) {
+                    @Override protected void beforeHookedMethod(Param p) {
                         try {
-                            Object ids = XposedHelpers.callMethod(p.args[1], "getResourceIdList");
+                            Object ids = Reflect.callMethod(p.args[1], "getResourceIdList");
                             if (!(ids instanceof java.util.List)
                                     || !Rules.deviceBannerSlots((java.util.List<?>) ids)) return;
                             ((java.util.List<?>) p.args[0]).clear();
-                            Object visible = XposedHelpers.callMethod(p.thisObject, "getBannerItems");
+                            Object visible = Reflect.callMethod(p.thisObject, "getBannerItems");
                             ((java.util.List<?>) visible).clear();
                             // Without the ad callback, the dedicated banner row is never inserted.
                             p.setResult(null);
@@ -179,12 +170,12 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     private static void healthHomeBanner(ClassLoader loader) {
         try {
-            final Class<?> liveData = XposedHelpers.findClass("androidx.lifecycle.MutableLiveData", loader);
+            final Class<?> liveData = Reflect.findClass("androidx.lifecycle.MutableLiveData", loader);
             final java.lang.reflect.Constructor<?> constructor = liveData.getConstructor(Object.class);
-            XposedHelpers.findAndHookMethod("com.xiaomi.fitness.homepage.HealthViewModel", loader,
-                "queryOperationalBannerList", new XC_MethodHook() {
+            Reflect.findAndHookMethod("com.xiaomi.fitness.homepage.HealthViewModel", loader,
+                "queryOperationalBannerList", new MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
-                    @Override protected void beforeHookedMethod(MethodHookParam p) {
+                    @Override protected void beforeHookedMethod(Param p) {
                         try {
                             // The page receives the ordinary empty-list state; no ad request starts.
                             Object empty = constructor.newInstance(Collections.emptyList());
@@ -207,10 +198,10 @@ public final class HookEntry implements IXposedHookLoadPackage {
                 {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo000"},
                 {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo0"}},
                 void.class, false, android.view.View.class, ArrayList.class, boolean.class);
-            XposedBridge.hookMethod(method,
-                new XC_MethodHook() {
+            HookRuntime.hookMethod(method,
+                new MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
-                    @Override protected void beforeHookedMethod(MethodHookParam p) {
+                    @Override protected void beforeHookedMethod(Param p) {
                         // Existing empty-data branch collapses the whole ad container.
                         p.args[1] = new ArrayList<Object>();
                         p.args[2] = Boolean.TRUE;
@@ -226,7 +217,7 @@ public final class HookEntry implements IXposedHookLoadPackage {
     private static Method homeMethod(ClassLoader loader, String[][] candidates,
             Class<?> result, boolean isStatic, Class<?>... parameters) throws NoSuchMethodException {
         for (String[] candidate : candidates) {
-            Class<?> cls = XposedHelpers.findClassIfExists(candidate[0], loader);
+            Class<?> cls = Reflect.findClassIfExists(candidate[0], loader);
             if (cls == null) continue;
             try {
                 Method method = cls.getDeclaredMethod(candidate[1], parameters);
@@ -240,6 +231,6 @@ public final class HookEntry implements IXposedHookLoadPackage {
 
     static void report(String text) {
         Log.i(TAG, text);
-        XposedBridge.log("[" + TAG + "] " + text);
+        HookRuntime.log("[" + TAG + "] " + text);
     }
 }
