@@ -1,43 +1,86 @@
 {
   "module": "NoAdMi",
-  "version": "0.8.0-preview",
-  "versionCode": 21,
-  "date": "2026-10-20",
-  "based_on": "GitHub v0.7.0-preview (versionCode 20)",
+  "version": "0.9.6-preview",
+  "versionCode": 28,
+  "date": "2026-10-22",
+  "based_on": "0.9.5-preview (27)",
   "build": "PASS",
-  "unit_assertions": 3397,
-  "apk_signature": "PASS: v2/v3, original signer retained",
+  "unit_assertions": 4693,
+  "device_ui_checks": 12,
   "certificate_sha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
-  "apk_sha256": "5e6fe58ad89a68a7cc0b0ec6965ff5704c155508bb5fd9b9f56ad1bf67cb29c8",
-  "checks": {
-    "api": "Pure libxposed API 102 entry, modern metadata and scopes. No legacy Xposed runtime/API dependencies; no bundled libxposed framework API classes. Official service/interface Binder clients packaged.",
-    "nsp_removal": "No xposedsharedprefs or xposedminversion legacy metadata, no MODE_WORLD_READABLE, no XSharedPreferences, no assets/xposed_init. Existing old NSP files remain as backups and are not used by the modern runtime.",
-    "preferences": "Framework Remote Preferences initialized through real LSPosed 2.2.1 (API 102) service. 39/39 original rule values and 8/8 original fold states retained; migration temporary files automatically removed. Provided root staging tool tested on connected device.",
-    "hook_runtime": "Unit checks cover argument updates, skip including null/void, host exception identity, after-result override, before/after callback failure without duplicate host invocation.",
-    "rules": "Connected device logs confirm Mi Home splash and tabs; Mi Fitness splash, health banner and Sport/Mine script rules. Full combinations and Play-device business flows not rerun.",
-    "update": "PASS: manually clicked real update entry on unlocked device; browser page title was Releases · tiancaiProgramer/NoAdMi and activity intent confirmed https://github.com/tiancaiProgramer/NoAdMi/releases. No download or installation triggered.",
-    "tested_order": "PASS: expanded real tested-version section; 0.8.0 mainland entries shown before 0.7.0 Play entries, with numeric version descending inside each batch.",
-    "ui": "PASS: unlocked-device UI inspected, framework service connected, option counts retained, update link and tested-order confirmed. No foreground instrumentation pass claim; actual clicks and screen/accessibility inspection completed.",
-    "permissions": "No Android permissions requested; no in-app background networking or automatic installer.",
-    "manager_warning": "PASS: LSPosed Manager module-list screenshot shows NoAdMi 0.8.0-preview (21) labeled API 102 with no deprecated-feature warning.",
-    "visual_verification_date": "2026-10-20"
-  },
+  "apk_signature": "PASS: original signer; v2/v3",
+  "apk_sha256": "4508ede426e83a324ae4ba4b4dd485eda64acbc454915d84a273d3a7dc47764f",
+  "publication": "GitHub release: https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.9.6-preview",
   "tested_framework": "LSPosed 2.2.1 (7912), API 102",
-  "tested_versions": {
-    "0.8.0": {
-      "com.xiaomi.smarthome": "11.8.705 (110817051)",
-      "com.mi.health": "3.59.1 (359001)"
-    },
-    "0.7.0_previous_checks": {
-      "com.xiaomi.smarthome": "Play 11.7.704 (11070704)",
-      "com.xiaomi.wearable": "3.59.1i (359001)"
+  "tested_device": {
+    "model": "Xiaomi MIX Fold 3",
+    "os": "OS3.0.304.0.WMVCNXM",
+    "android": 16,
+    "root": "KernelSU v3.3.0",
+    "native_apps": {
+      "com.xiaomi.account": "R-25.10.23.03 (325102303)",
+      "com.android.settings": "16 (36)",
+      "com.miui.weather2": "17.0.3.34-HD (170003034)",
+      "com.miui.cleanmaster": "1024.0.260205.release (101024)",
+      "com.xiaomi.market": "5.18.0 (5003340)",
+      "com.android.browser": "20.2.101027 (200201000)",
+      "com.android.providers.downloads.ui": "125.12.24.800004 (1251224004)",
+      "com.android.calendar": "17.10.8.2 (171008020)"
     }
   },
+  "checks": {
+    "immediate_loading": "PASS: expanding official section immediately enters busy state with top waiting message and indeterminate spinner, before disabled action buttons.",
+    "progress": "Real grouped reads report completed item count and current application entry. Accessible status uses polite live region.",
+    "completion": "PASS: actual background reads completed; spinner became GONE, refresh/bulk buttons recovered and completion text displayed.",
+    "scope": "Only loading UI changed; existing reads, writes, schema matching, account bridge and error handling retained. No new permissions or scopes.",
+    "preferences": {
+      "miclean_ui": 16,
+      "noadmi_settings": 48,
+      "installed_apk_sha256": "4508ede426e83a324ae4ba4b4dd485eda64acbc454915d84a273d3a7dc47764f"
+    },
+    "folds": "PASS: original parent/official fold states restored by instrumentation; 16 UI booleans and 48 module booleans preserved exactly.",
+    "installation": "PASS: original signed update installed; device/local APK SHA-256 match.",
+    "privacy": "Source archive allowlist excludes signing keys/passwords, device captures/private snapshots and target APKs/decompiled sources."
+  },
   "limitations": [
-    "Full device/business regression and visual verification of all option combinations were not performed.",
-    "Play rules preserved from 0.7.0 but not freshly tested on a Play device after the API migration.",
-    "Upgrading other legacy installations requires explicitly staging old settings first; do not uninstall or clear app data.",
-    "Target apps must restart after settings change; no hot reload."
+    "Loading behavior tested against real supported installed application reads on connected MIX Fold 3. No simulated indefinitely blocked root or account server request; existing operation timeouts retained.",
+    "No repeated full host-app business regression for this loading UI change.",
+    "No installed games in 0.9.0 system Hook test: added-game launch, performance and in-game sidebar business untested.",
+    "Account background bridge requires Android 14+ and recognized native schema. Other cases expose the official settings link; no child-account or offline-server integration tests.",
+    "Compact spacing visually checked on MIX Fold 3 outer display; other phones/tablet/expanded-fold layouts not independently tested.",
+    "Mi Home and Mi Fitness existing rules retained; no repeated full business regression in 0.9.x."
   ],
-  "publication": "Prepared for public v0.8.0-preview release; publication receipt is retained locally."
+  "release_changes_since": "0.8.0-preview (21)",
+  "release_validation": {
+    "system_hooks_090": {
+      "network": "PASS: first-two, inverse last-two, and all-four selections verified visually. Traffic usage, package setup, firewall and traffic ranking retained. All four hidden in final APK. Disabling all four and restarting restores all four original entries.",
+      "game": "PASS: final APK visually hides rankings, recommendation/big-card content and empty-game-list game-center promotion; new-user popup condition hit. Add game/history/settings retained. Add-game selection list opened without adding anything. Disabling both rules and restarting restores original promotional page.",
+      "static_targets": "PASS: four exact DEX methods and native destinations verified.",
+      "javascript": "PASS: syntax and 17 structure/async/idempotence checks."
+    },
+    "official_account_bridge_093": {
+      "scope": "PASS: Xiaomi Account com.xiaomi.account added to module scope list and enabled using LSPosed UI; original four selections on this phone retained. Hook runs only in genuine main process.",
+      "native_bridge": "PASS: installed after native Application.onCreate. Signed module query receives writable=true from account process. Original private worker method returns server result code zero, expected state, then native Global state matches.",
+      "server_write": "PASS: direct signed module test of OFF received confirmed=true; actual module UI ON persisted, then one-click batch OFF restored it. Account credentials were not transferred to module.",
+      "foreground": {
+        "samples": 32,
+        "focus": [
+          "io.github.miclean.module/io.github.miclean.module.MainActivity"
+        ],
+        "account_on_server_confirmed": true,
+        "account_off_via_bulk": true
+      },
+      "fallback_ui": "PASS: same-signed instrumentation of NoAdMi only applies unavailable-bridge state; asserts account Switch GONE and official settings link clickable. Restoring live bridge state shows real Switch and nonclickable status label. No Xiaomi Account instrumentation used.",
+      "sender_security": "PASS: custom permission protectionLevel signature and permission owner checked; host compares framework-reported sender UID and package with installed NoAdMi. Nonce/operation/type/count checked. Ordinary adb shell write broadcast returned result zero without acknowledgement or mutation; pure tests cover UID/package, op, nonce and main-process boundaries."
+    },
+    "about_group_094": {
+      "about_group": "PASS: last top-level card is About. Update link, launcher switch and tested-versions header share its body. Collapsed About hides all three controls.",
+      "nested_fold": "PASS: tested versions is a second-level fold; collapsing About hides it, reopening About retains its expanded state. Both initial fold states restored after test.",
+      "update_url": "PASS: actual update click intercepted by same-signed instrumentation of NoAdMi, target remains https://github.com/tiancaiProgramer/NoAdMi/releases; browser was not opened by test."
+    },
+    "compact_spacing_095": {
+      "spacing": "PASS: MainActivity and NativeAdsPanel share 0.75 multiplier on dp-based vertical gaps, padding and card separation; no physical PPI or fixed-pixel row height. Top safety padding and horizontal padding retained.",
+      "readability": "Font sizes remain sp; wrap_content retained. Category headers, toggles and update row minimum height 48dp, allowing taller content when wrapping."
+    }
+  }
 }

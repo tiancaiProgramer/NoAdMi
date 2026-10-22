@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="21" android:versionName="0.8.0-preview">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="28" android:versionName="0.9.6-preview">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <permission android:name="io.github.miclean.module.permission.ACCOUNT_AD_CONTROL" android:protectionLevel="signature" />
+    <uses-permission android:name="io.github.miclean.module.permission.ACCOUNT_AD_CONTROL" />
     <queries>
         <package android:name="com.mi.health" />
         <package android:name="com.xiaomi.wearable" />
         <package android:name="com.xiaomi.smarthome" />
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.miui.securityadd" />
+        <package android:name="com.android.settings" />
+        <package android:name="com.xiaomi.account" />
+        <package android:name="com.miui.weather2" />
+        <package android:name="com.xiaomi.market" />
+        <package android:name="com.android.browser" />
+        <package android:name="com.miui.cleanmaster" />
+        <package android:name="com.android.fileexplorer" />
+        <package android:name="com.android.providers.downloads.ui" />
+        <package android:name="com.android.calendar" />
     </queries>
     <application android:name=".ModuleApp" android:description="@string/module_description" android:label="NoAdMi" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
         <provider android:name="io.github.libxposed.service.XposedProvider"

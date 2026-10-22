@@ -94,11 +94,13 @@ public final class ModernRuntimeTest {
         } catch (IllegalStateException e) { check(e == original); }
         check(chain.calls == 1);
         List<Rules.TestedApp> sorted = Rules.testedAppsNewestFirst();
-        check(sorted.size() == 4);
-        check(sorted.get(0).label.contains("国内"));
-        check(sorted.get(1).label.contains("国内"));
-        check(sorted.get(2).testedBatch < sorted.get(1).testedBatch);
-        check(Rules.TESTED_APPS[0].version.equals("11.8.705"));
+        check(sorted.size() == 14);
+        check(sorted.get(0).testedRelease.equals("0.9.3"));
+        check(sorted.get(10).label.contains("国内"));
+        for (int i = 1; i < sorted.size(); i++) check(sorted.get(i - 1).testedBatch >= sorted.get(i).testedBatch);
+        check(Rules.testedVersion(Rules.HOME, "11.8.705", 110817051L));
+        check(Rules.testedVersion(Rules.SECURITY_ADD, "9.12.05-260130.0.1", 91205L));
+        check(!Rules.testedVersion(Rules.SECURITY_ADD, "9.12.05-260130.0.1", 91206L));
         check(Rules.RELEASES_URL.equals("https://github.com/tiancaiProgramer/NoAdMi/releases"));
         check(!Rules.RELEASES_URL.contains("/latest")); // Includes preview releases as well as stable.
         System.out.println("PASS: " + assertions + " modern hook chain, skip/throw behavior, ordering and update URL assertions");

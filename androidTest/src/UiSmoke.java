@@ -70,8 +70,22 @@ public final class UiSmoke extends Instrumentation {
             runOnMainSync(() -> {
                 try {
                     View root=activity.getWindow().getDecorView();
+                    TextView about=find(root,"关于");
+                    check(about!=null && about.isClickable(),"About fold missing");
+                    String aboutPrior=about.getText().toString();
+                    ViewGroup aboutCard=(ViewGroup)about.getParent();
+                    ViewGroup list=(ViewGroup)aboutCard.getParent();
+                    check(list.indexOfChild(aboutCard)==list.getChildCount()-1,"About is not last");
+                    if(aboutPrior.startsWith("▾"))about.performClick();
                     TextView update=find(root,"检查更新");
-                    check(update!=null && update.isClickable(),"Update button absent");
+                    TextView launcher=find(root,"显示桌面图标");
+                    TextView tested=find(root,"测试版本说明");
+                    check(update!=null && launcher!=null && tested!=null,"About controls missing");
+                    check(update.getParent()==launcher.getParent() && update.getParent()==tested.getParent(),"About controls not grouped");
+                    check(!update.isShown()&&!launcher.isShown()&&!tested.isShown(),"Collapsed About leaks controls");
+                    about.performClick();
+                    check(update.isShown() && launcher.isShown() && tested.isShown(),"About failed to expand");
+                    check(update.isClickable(),"Update button not clickable");
                     update.performClick();
                     check("https://github.com/tiancaiProgramer/NoAdMi/releases".equals(updateUrl),"Wrong repository URL");
                     TextView header=find(root,"测试版本说明");
@@ -88,14 +102,19 @@ public final class UiSmoke extends Instrumentation {
                         if(s.startsWith("运动健康（国内"))healthCn=i;
                     }
                     check(homeCn>=0 && healthCn>homeCn && homePlay>healthCn && healthPlay>homePlay,"Newest tested records are not first");
+                    about.performClick();
+                    check(!header.isShown(),"Nested tested fold escaped collapsed About");
+                    about.performClick();
+                    check(header.getText().toString().startsWith("▾"),"Parent fold lost nested fold state");
                     if(prior.startsWith("▸"))header.performClick();
-                    check(header.getText().toString().equals(prior),"Fold state did not restore");
-                    check(find(root,"显示桌面图标")!=null,"Launcher option missing");
+                    check(header.getText().toString().equals(prior),"Tested fold state did not restore");
+                    if(aboutPrior.startsWith("▸"))about.performClick();
+                    check(about.getText().toString().equals(aboutPrior),"About fold state did not restore");
                 } catch(Throwable t) { issue[0]=t; }
             });
             removeMonitor(monitor);
             if(issue[0]!=null)throw issue[0];
-            result.putString("stream","PASS: "+checks+" device UI checks; Binder connected; update button opens expected releases URL; 0.8.0 mainland verification records precede 0.7.0 Play records; fold state restored.\n");
+            result.putString("stream","PASS: "+checks+" device UI checks; Binder connected; About is last, groups update/launcher/nested tested fold; hidden controls stay within parent; update URL and newest-first order retained; fold states restored.\n");
             finish(Activity.RESULT_OK,result);
         } catch(Throwable error) {
             result.putString("stream","FAIL: "+error.toString()+"\n");

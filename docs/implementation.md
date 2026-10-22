@@ -1,5 +1,52 @@
 ## 实现边界
 
+### 官方设置加载提示（0.9.6）
+
+- 状态行置于官方面板最上方，展开触发刷新时同步显示等待提示和 indeterminate ProgressBar；后台读取按应用组更新完成数量与当前项名称。
+- 保存和批量操作共用 busy 进度提示；结束后隐藏进度圈，恢复可用操作。状态文本使用 polite accessibility live region，读取失败保留逐项错误。
+
+### 紧凑纵向间距（0.9.5）
+
+- UiSpacing 对既有 dp 纵向间距统一乘以 0.75，再按当前 density 换算像素；不使用物理 PPI 或固定像素行高。主设置与官方开关面板共用该比例。
+- 页面顶部安全留白、横向尺寸与 sp 字号保留，内容仍用 wrap_content 自适应多行；分类、开关和更新行 minimumHeight 为 48dp，字体变大时可自然增高。
+
+### 关于分组（0.9.4）
+
+- “关于”作为页面末尾的独立折叠分组，包含检查更新、显示桌面图标和二级测试版本折叠。新增 UI 状态键 `about` 默认 false，测试版本继续使用 `tested_versions`，不迁移或覆盖原有设置。
+- 更新链接、桌面启动别名与测试版本排序逻辑不变；嵌套折叠的可见性受“关于”父容器控制，父容器收起不重置子折叠状态。
+
+### 小米账号自身进程后台控制（0.9.3）
+
+- `com.xiaomi.account` 主进程新增作用域，在其 Application.onCreate 完成后注册控制接收器。目标进程使用原有真实 Context、身份与官方初始化，不修改操作包名、UID、账号凭证或安全校验。
+- 控制接收器要求模块拥有的 signature 级权限；Android 14+ 通过广播共享身份取得系统提供的发送者 UID/包名，核对必须是本机 NoAdMi。仅接受带 32 位随机请求标识的 ping/write，写值必须为 Boolean；响应只含广告状态与成功标志。
+- 固定核对账号 `SystemAdFragment$c` 后台方法、构造器与 `t4.r` 结果字段。在线程池调用原应用后台 worker，保留儿童账号检查、账号登录、服务请求、原生重试及成功后的状态缓存更新。官方结果码为 0、返回值匹配且状态回读一致才显示成功；不调用需要 Activity 的 post-execute 回调，不导出 token 或账号标识。
+- 客户端只在未连接时通过 Root 启动固定的原生认证后台服务，随后重新探测桥接；不会为了后台操作启动 Activity，不重试可能已提交的写请求。
+- 未勾选作用域、Android 14 以下、结构变化或操作失败时，系统工具广告的 Switch 隐藏，显示唯一官方设置入口。用户主动点击时才由 Root 启动固定 SystemAdActivity；失败项不自动跳转。其他十项保持后台操作。
+
+### 无跳转的后台开关（0.9.2）
+
+- 删除通用 SystemShortcuts 与全部旧页面入口。0.9.3 仅为账号后台不可用的情况保留手动页面入口，没有 UIAutomator 或模拟点击实现。
+- 其他十项通过原有配置存储后台修改；账号操作不能从通用 Root worker 写入，只能通过上述受保护的真实账号进程接口完成。
+
+### 官方广告直接控制与保存提示（0.9.1）
+
+- `NativeAdRules` 固定定义 11 个广告设置，不接受外部包名、路径、配置键或任意命令。Root 辅助进程使用 `su -M` 进入全局挂载视图，避免继承模块应用自己的目录隔离视图；不改变系统全局隔离或 SELinux 配置。只支持机主用户空间，辅助进程结束后退出。
+- 目标配置先核对原生 XML 中对应偏好项，检查应用目录权限；失败时不把默认值当成真实状态。保存前停止目标应用，随后切换至目标 UID，通过 SharedPreferences 提交指定布尔键并回读；其他设置保留。天气遵循应用的 FBE 封装，使用设备保护存储中的 `com.miui.weather2.information`；其他普通偏好沿用各应用自身文件。
+- 浏览器使用目标包自身 MMKV 实现打开 `kv_prefs`（多进程模式 4），只写两个指定广告/内容推荐键。下载管理“资源推荐”按官方行为同时设置 `info_flow_show` 与 `Banner_show`。
+- 系统个性化广告使用 Global `personalized_ad_enabled` 的最低位，保留其他位；状态变化后记录原生时间键。小米账号广告的缓存键为 `passport_ad_status`，后台写入及回读详见上述 0.9.3 接口。
+- 一键关闭先重新读取，跳过已关闭项目；各项独立反馈失败，界面按钮在操作期间禁用。文件管理扩展服务包含云盘操作，排除批量控制。0.9.2 已移除原生快捷入口。
+- `SaveNoticeGate` 使用单调时钟，仅限制成功 Toast：距上次成功提示不足 3000 毫秒时不重复提示。每次偏好写入立即执行，失败提示不受限制。
+
+### 系统应用广告（0.9.0）
+
+- `com.miui.securitycenter` 与 `com.miui.securityadd` 仅主进程加入目标集合，设置、天气、系统框架不加入 Hook 作用域。
+- 网络助手仅在 `NetworkAssistantActivity.onCreate(Bundle)` 后观察该 Activity 的视图。匹配三个明确 Toolbar/Banner 控件类和 `id/name`，再精确匹配四个已核对的标题。选中的行设为 GONE；不删除列表元素、不重排数据、不改变网络策略或套餐。观察器随窗口分离解绑；控件被复用为其他标题时恢复本规则记录的可见状态。
+- 游戏盒子的 `GameBoosterRichWebActivity$13.getConfiguration()` 先核对 `IPageProvider` 及字符串返回值，原 JSON 必须具有 `is_international` 布尔值和 language/device/gpu_enable。仅覆盖该网页使用的布局参数，保留其他字段，不全局修改 Build.IS_INTERNATIONAL_BUILD。当前公开主页用此参数决定热玩排行、推荐列表和大卡片是否渲染。
+- 空游戏列表推广在专属 WebViewClient.onPageFinished 后注入观察器。仅对 HTTPS 主机 gamespace.sec.miui.com 的根路径生效；同时要求 `.text-bg` 下唯一图片和兄弟 `.get-width` / `.mask` 结构，才隐藏其所属空状态推广组件。不改 localStorage、不拦截网络、不对其他网页或全部 WebView 执行模糊文案匹配。
+- 迅游新人推广仅令 `XunYouGuideDialogUtils.isShowNewUserDialog()` 返回 false，不吞掉通用隐私对话框或手动购买流程。
+- 0.9.0 的官方页面快捷入口已于 0.9.2 删除，当前改用上述后台控制表。
+- 参考公开 HyperOS 去广告教程确定检查范围，所有 Hook 依据本机 APK 和游戏盒子官方网页独立核对。未复制第三方模块实现。
+
 ### 米家
 
 - 开屏和个人中心广告：仅针对 `_m_j.uf1.OoooOOO(Context,String,String,boolean)` 的两个专用文件名 `switch_manger_open_screen_cache_data`、`switch_manger_banner_cache_data` 返回 false；其他设置不改。`SettingMainPageV2.Oooo000(View,ArrayList,boolean)` 同时使用空列表分支收起横幅容器。

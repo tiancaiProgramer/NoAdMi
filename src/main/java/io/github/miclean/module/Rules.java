@@ -7,6 +7,19 @@ public final class Rules {
     public static final String HEALTH = "com.mi.health";
     public static final String HEALTH_PLAY = "com.xiaomi.wearable";
     public static final String HOME = "com.xiaomi.smarthome";
+    public static final String SECURITY_CENTER = "com.miui.securitycenter";
+    public static final String ACCOUNT = "com.xiaomi.account";
+    public static final String SECURITY_ADD = "com.miui.securityadd";
+    public static final String[] NETWORK_KEYS = {"system_network_traffic_recharge", "system_network_phone_recharge",
+        "system_network_daily_offer", "system_network_sim_offer"};
+    public static final String[] NETWORK_TITLES = {"流量充值", "话费充值", "1元/天任性用", "0元领通用大流量卡"};
+    public static final String GAME_RECOMMEND_SWITCH = "system_game_recommend";
+    public static final String GAME_POPUP_SWITCH = "system_game_xunyou_popup";
+    public static int networkItem(String title) {
+        if (title == null) return -1;
+        for (int i = 0; i < NETWORK_TITLES.length; i++) if (NETWORK_TITLES[i].equals(title)) return i;
+        return -1;
+    }
     public static final class TestedApp {
         public final String label, pkg, version;
         public final long code;
@@ -22,6 +35,17 @@ public final class Rules {
         }
     }
     public static final TestedApp[] TESTED_APPS = {
+        new TestedApp("小米账号（后台广告开关）", "com.xiaomi.account", "R-25.10.23.03", 325102303L, 25, "0.9.3"),
+        new TestedApp("系统设置（个性化广告）", "com.android.settings", "16", 36L, 24, "0.9.2"),
+        new TestedApp("天气（官方开关）", "com.miui.weather2", "17.0.3.34-HD", 170003034L, 24, "0.9.2"),
+        new TestedApp("垃圾清理（推荐内容）", "com.miui.cleanmaster", "1024.0.260205.release", 101024L, 24, "0.9.2"),
+        new TestedApp("应用商店（个性化服务）", "com.xiaomi.market", "5.18.0", 5003340L, 24, "0.9.2"),
+        new TestedApp("浏览器（广告与内容推荐）", "com.android.browser", "20.2.101027", 200201000L, 24, "0.9.2"),
+        new TestedApp("下载管理（推荐开关）", "com.android.providers.downloads.ui", "125.12.24.800004", 1251224004L, 24, "0.9.2"),
+        new TestedApp("日历（内容推广）", "com.android.calendar", "17.10.8.2", 171008020L, 24, "0.9.2"),
+        new TestedApp("安全服务 / 网络助手", SECURITY_CENTER, "12.6.8-260609.0.1", 40001268L, 22, "0.9.0"),
+        new TestedApp("系统服务组件 / 游戏助手", SECURITY_ADD, "9.12.05-260130.0.1", 91205L, 22, "0.9.0"),
+
         new TestedApp("米家（国内版）", HOME, "11.8.705", 110817051L, 21, "0.8.0"),
         new TestedApp("米家（Play 版）", HOME, "11.7.704", 11070704L, 20, "0.7.0"),
         new TestedApp("运动健康（国内版）", HEALTH, "3.59.1", 359001L, 21, "0.8.0"),
@@ -133,7 +157,8 @@ public final class Rules {
     }
 
     public static boolean target(String pkg) {
-        return HEALTH.equals(pkg) || HEALTH_PLAY.equals(pkg) || HOME.equals(pkg);
+        return HEALTH.equals(pkg) || HEALTH_PLAY.equals(pkg) || HOME.equals(pkg)
+            || SECURITY_CENTER.equals(pkg) || SECURITY_ADD.equals(pkg) || ACCOUNT.equals(pkg);
     }
 
     public static boolean blockHomePreference(Object fileName) {

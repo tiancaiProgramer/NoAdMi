@@ -38,11 +38,24 @@ public final class HookEntry extends XposedModule {
 
     private void install(Context context, String pkg, ClassLoader loader) throws Exception {
         PackageInfo info = context.getPackageManager().getPackageInfo(pkg, 0);
+        if (Rules.ACCOUNT.equals(pkg)) {
+            Class<?> applicationClass=Reflect.findClass(context.getApplicationInfo().className,loader);
+            Method onCreate=applicationClass.getMethod("onCreate");
+            HookRuntime.hookMethod(onCreate,new MethodHook(){
+                @Override protected void afterHookedMethod(Param p){
+                    try{AccountAdHost.install((Application)p.thisObject,loader);}
+                    catch(Throwable error){report("skip account.ad.background: "+error.getClass().getSimpleName());}
+                }
+            });
+            return;
+        }
         SharedPreferences prefs = getRemotePreferences(Rules.PREFS);
         if (!prefs.getBoolean("modern_settings_ready_v1", false)) {
             report("remote settings not initialized; open NoAdMi then restart target");
             return;
         }
+        if (Rules.SECURITY_CENTER.equals(pkg)) SystemAdHooks.network(loader, prefs);
+        if (Rules.SECURITY_ADD.equals(pkg)) SystemAdHooks.game(loader, prefs);
         if (Rules.HEALTH_PLAY.equals(pkg) && prefs.getBoolean(Rules.HEALTH_REGION_SWITCH, false)) {
             RegionHooks.fitness(loader);
         }

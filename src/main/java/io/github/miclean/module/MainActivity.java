@@ -26,7 +26,9 @@ public final class MainActivity extends Activity {
     private boolean frameworkReady;
     private Switch launcherIconSwitch;
     private boolean updatingLauncherIcon;
+    private final SaveNoticeGate saveNotice = new SaveNoticeGate();
     private LinearLayout content;
+    private NativeAdsPanel nativeAds;
     private final List<Runnable> refreshers = new ArrayList<>();
     private static final int INK = Color.rgb(36, 44, 40);
     private static final int MUTED = Color.rgb(102, 112, 106);
@@ -43,6 +45,7 @@ public final class MainActivity extends Activity {
         super.onResume();
         if (frameworkReady != (Settings.ready())) render();
         syncLauncherIconSwitch();
+        if (nativeAds != null) nativeAds.refreshIfVisible();
     }
 
     private void render() {
@@ -80,7 +83,7 @@ public final class MainActivity extends Activity {
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(Color.rgb(247, 246, 241));
         content = vertical();
-        content.setPadding(dp(24), dp(24), dp(24), dp(28));
+        content.setPadding(dp(24), dp(24), dp(24), gap(28));
         scroll.addView(content);
         setContentView(scroll);
         String moduleVersion;
@@ -89,23 +92,24 @@ public final class MainActivity extends Activity {
         label(content, "NOADMI  /  " + moduleVersion, 12, ORANGE, true);
         label(content, "NoAdMi", 30, INK, true);
         label(content, "按需精简，保留常用。", 14, MUTED, false);
-        testedVersionsCard();
         LinearLayout status = card();
         label(status, frameworkReady ? "框架服务已连接" : "等待框架服务连接", 17, INK, true);
         label(status, frameworkReady ? "展开分类设置；保存后请强行停止并重新打开对应应用。"
             : "请在支持 libxposed API 102 的框架中启用模块并勾选目标应用，再重新打开模块。", 13, MUTED, false);
         if (Settings.status() != null) label(status, Settings.status(), 12, ORANGE, false);
-        launcherIconControl(status);
-        updateControl(status);
         homeCard();
         healthCard();
+        systemCard();
         label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，不同版本效果以实际使用为准。", 12, MUTED, false);
+        aboutCard();
         for (Runnable refresh : refreshers) refresh.run();
+        if (nativeAds != null) nativeAds.refreshIfVisible();
     }
 
     private void updateControl(LinearLayout parent) {
         TextView update = label(parent, "检查更新  ↗", 15, ORANGE, true);
-        update.setPadding(0, dp(14), 0, dp(14));
+        update.setPadding(0, gap(14), 0, gap(14));
+        update.setMinHeight(dp(48));
         update.setContentDescription("检查更新，打开 NoAdMi 官方 GitHub 发布页");
         update.setOnClickListener(v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Rules.RELEASES_URL))); }
@@ -138,8 +142,8 @@ public final class MainActivity extends Activity {
         launcherIconSwitch.setText("显示桌面图标");
         launcherIconSwitch.setTextSize(14);
         launcherIconSwitch.setTextColor(INK);
-        launcherIconSwitch.setPadding(0, dp(12), 0, dp(12));
-        launcherIconSwitch.setMinHeight(dp(50));
+        launcherIconSwitch.setPadding(0, gap(12), 0, gap(12));
+        launcherIconSwitch.setMinHeight(dp(48));
         syncLauncherIconSwitch();
         launcherIconSwitch.setOnCheckedChangeListener((button, visible) -> {
             if (updatingLauncherIcon) return;
@@ -158,8 +162,7 @@ public final class MainActivity extends Activity {
     }
 
     private void homeCard() {
-        LinearLayout box = card();
-        label(box, "米家", 21, INK, true);
+        LinearLayout box = appGroup("app_home", "米家");
         boolean installed = installedAppInfo(box, Rules.HOME, "");
         LinearLayout ads = section(box, "home_ads", "通用与横幅", "地区兼容、开屏、个人中心", new String[]{Rules.HOME_REGION_SWITCH, Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH}, new boolean[]{false, true, true}, installed);
         addToggle(ads, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false, installed);
@@ -183,8 +186,7 @@ public final class MainActivity extends Activity {
     }
 
     private void healthCard() {
-        LinearLayout box = card();
-        label(box, "小米运动健康", 21, INK, true);
+        LinearLayout box = appGroup("app_health", "小米运动健康");
         boolean installed = installedAppInfo(box, Rules.HEALTH, "国内版：");
         boolean playInstalled = installedAppInfo(box, Rules.HEALTH_PLAY, "Play 版：");
         boolean rulesInstalled = installed || playInstalled;
@@ -214,10 +216,17 @@ public final class MainActivity extends Activity {
             "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, rulesInstalled);
     }
 
-    private void testedVersionsCard() {
-        LinearLayout box = card();
+    private void aboutCard() {
+        LinearLayout box = appGroup("about", "关于");
+        updateControl(box);
+        launcherIconControl(box);
+        testedVersionsSection(box);
+    }
+
+    private void testedVersionsSection(LinearLayout box) {
         TextView header = label(box, "", 17, INK, true);
-        header.setPadding(0, dp(12), 0, dp(12));
+        header.setPadding(0, gap(12), 0, gap(12));
+        header.setMinHeight(dp(48));
         header.setFocusable(true);
         LinearLayout body = vertical();
         box.addView(body, new LinearLayout.LayoutParams(-1, -2));
@@ -237,6 +246,47 @@ public final class MainActivity extends Activity {
         refreshers.add(refresh);
     }
 
+    private LinearLayout appGroup(String id, String title) {
+        LinearLayout box = card();
+        TextView header = label(box, "", 21, INK, true);
+        header.setPadding(0, gap(12), 0, gap(12));
+        header.setMinHeight(dp(48));
+        header.setFocusable(true);
+        LinearLayout body = vertical();
+        box.addView(body, new LinearLayout.LayoutParams(-1, -2));
+        Runnable refresh = () -> {
+            boolean expanded = uiPrefs.getBoolean(id, false);
+            header.setText((expanded ? "▾  " : "▸  ") + title);
+            header.setContentDescription(title + (expanded ? "，点击收起" : "，点击展开"));
+            body.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        };
+        header.setOnClickListener(v -> {
+            uiPrefs.edit().putBoolean(id, !uiPrefs.getBoolean(id, false)).apply();
+            refresh.run();
+            if ("app_system".equals(id) && nativeAds != null) nativeAds.refreshIfVisible();
+        });
+        refreshers.add(refresh);
+        return body;
+    }
+
+    private void systemCard() {
+        LinearLayout box = appGroup("app_system", "系统应用广告");
+        label(box, "官方广告开关可直接操作或一键关闭；无开关的推荐区块可单独 Hook。机型、地区和应用版本可能影响可见内容。", 12, MUTED, false);
+        LinearLayout official = section(box, "system_official", "官方广告开关", "操作原应用的真实开关；读取、保存失败时显示原因。",
+            new String[0], new boolean[0], true);
+        nativeAds = new NativeAdsPanel(this, official, this::savedNotice);
+        boolean networkInstalled = installedAppInfo(box, Rules.SECURITY_CENTER, "网络助手：");
+        LinearLayout network = section(box, "system_network", "网络助手", "需在 LSPosed 勾选“手机管家 / 安全服务”（com.miui.securitycenter）。保留流量统计、联网管理和流量排行；充值入口包含可用服务，请按需隐藏。",
+            Rules.NETWORK_KEYS, new boolean[Rules.NETWORK_KEYS.length], networkInstalled);
+        for (int i = 0; i < Rules.NETWORK_KEYS.length; i++)
+            addToggle(network, "隐藏“" + Rules.NETWORK_TITLES[i] + "”", Rules.NETWORK_KEYS[i], false, networkInstalled);
+        boolean gameInstalled = installedAppInfo(box, Rules.SECURITY_ADD, "游戏助手：");
+        LinearLayout game = section(box, "system_game", "游戏助手", "需在 LSPosed 勾选“系统服务组件”。推荐隐藏会一并收起热玩排行、游戏盒子等推广入口；保留已添加游戏与设置。",
+            new String[]{Rules.GAME_RECOMMEND_SWITCH, Rules.GAME_POPUP_SWITCH}, new boolean[2], gameInstalled);
+        addToggle(game, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, gameInstalled);
+        addToggle(game, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, gameInstalled);
+    }
+
     private boolean installedAppInfo(LinearLayout parent, String pkg, String prefix) {
         boolean installed = false;
         String text;
@@ -254,7 +304,8 @@ public final class MainActivity extends Activity {
     private LinearLayout section(LinearLayout parent, String id, String title, String detail,
             String[] keys, boolean[] defaults, boolean installed) {
         TextView header = label(parent, "", 16, INK, true);
-        header.setPadding(0, dp(15), 0, dp(15));
+        header.setPadding(0, gap(15), 0, gap(15));
+        header.setMinHeight(dp(48));
         header.setFocusable(true);
         LinearLayout body = vertical();
         parent.addView(body, new LinearLayout.LayoutParams(-1, -2));
@@ -262,7 +313,7 @@ public final class MainActivity extends Activity {
             boolean expanded = uiPrefs.getBoolean(id, false);
             int count = 0;
             for (int i = 0; i < keys.length; i++) if (prefs.getBoolean(keys[i], defaults[i])) count++;
-            String summary = "已开启 " + count + "/" + keys.length;
+            String summary = keys.length == 0 ? "后台控制" : "已开启 " + count + "/" + keys.length;
             header.setText((expanded ? "▾  " : "▸  ") + title + "  ·  " + summary);
             header.setContentDescription(title + "，" + summary + (expanded ? "，点击收起" : "，点击展开"));
             body.setVisibility(expanded ? View.VISIBLE : View.GONE);
@@ -270,6 +321,7 @@ public final class MainActivity extends Activity {
         header.setOnClickListener(v -> {
             uiPrefs.edit().putBoolean(id, !uiPrefs.getBoolean(id, false)).apply();
             refresh.run();
+            if ("system_official".equals(id) && nativeAds != null) nativeAds.refreshIfVisible();
         });
         refreshers.add(refresh);
         label(body, detail, 12, ORANGE, false);
@@ -282,18 +334,23 @@ public final class MainActivity extends Activity {
         toggle.setText(text);
         toggle.setTextSize(14);
         toggle.setTextColor(INK);
-        toggle.setPadding(0, dp(12), 0, dp(12));
-        toggle.setMinHeight(dp(50));
+        toggle.setPadding(0, gap(12), 0, gap(12));
+        toggle.setMinHeight(dp(48));
         toggle.setChecked(prefs.getBoolean(key, defaultValue));
         refreshers.add(() -> toggle.setEnabled(frameworkReady && installed));
         toggle.setOnCheckedChangeListener((button, checked) -> {
             boolean saved = prefs.edit().putBoolean(key, checked).commit();
             if (saved) Settings.backup(this);
             for (Runnable refresh : refreshers) refresh.run();
-            Toast.makeText(this, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块", Toast.LENGTH_SHORT).show();
+            savedNotice(saved, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块");
         });
         parent.addView(toggle, new LinearLayout.LayoutParams(-1, -2));
         return toggle;
+    }
+
+    private void savedNotice(boolean success, String message) {
+        if (!success || saveNotice.allow(android.os.SystemClock.elapsedRealtime()))
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private LinearLayout vertical() {
@@ -303,13 +360,13 @@ public final class MainActivity extends Activity {
     }
     private LinearLayout card() {
         LinearLayout box = vertical();
-        box.setPadding(dp(20), dp(14), dp(20), dp(14));
+        box.setPadding(dp(20), gap(14), dp(20), gap(14));
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(Color.WHITE);
         bg.setCornerRadius(dp(18));
         box.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.topMargin = dp(16);
+        lp.topMargin = gap(16);
         content.addView(box, lp);
         return box;
     }
@@ -318,11 +375,12 @@ public final class MainActivity extends Activity {
         view.setText(text);
         view.setTextSize(size);
         view.setTextColor(color);
-        view.setLineSpacing(dp(4), 1);
-        view.setPadding(0, dp(5), 0, dp(5));
+        view.setLineSpacing(gap(4), 1);
+        view.setPadding(0, gap(5), 0, gap(5));
         if (bold) view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         parent.addView(view, new LinearLayout.LayoutParams(-1, -2));
         return view;
     }
+    private int gap(int value) { return UiSpacing.vertical(this, value); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 }
