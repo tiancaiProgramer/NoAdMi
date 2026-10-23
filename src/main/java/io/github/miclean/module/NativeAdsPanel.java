@@ -70,7 +70,7 @@ final class NativeAdsPanel {
         }
         refresh.setOnClickListener(v -> refresh());
         close.setOnClickListener(v -> closeAll());
-        text("文件管理扩展服务包含云盘等普通功能，手机管家本机未提供独立广告开关；两者不纳入一键关闭。",12);
+        text("文件管理扩展服务包含云盘等普通功能，不纳入批量关闭；手机管家目前没有已适配的独立官方广告开关。",12);
     }
     void refreshIfVisible() { if (root.isShown()) refresh(); }
     void refresh() {

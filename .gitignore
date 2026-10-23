@@ -10,3 +10,12 @@ local.properties
 password.txt
 signing.env
 signing*.env
+.private/
+private-signing/
+NoAdMi-private-signing*/
+*password*.txt
+*.db
+*.db-wal
+*.db-shm
+local-tests/
+artifacts/

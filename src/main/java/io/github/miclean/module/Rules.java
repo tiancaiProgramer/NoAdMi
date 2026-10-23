@@ -8,6 +8,8 @@ public final class Rules {
     public static final String HEALTH_PLAY = "com.xiaomi.wearable";
     public static final String HOME = "com.xiaomi.smarthome";
     public static final String SECURITY_CENTER = "com.miui.securitycenter";
+    public static final String BROWSER = "com.android.browser";
+    public static final String MARKET = "com.xiaomi.market";
     public static final String ACCOUNT = "com.xiaomi.account";
     public static final String SECURITY_ADD = "com.miui.securityadd";
     public static final String[] NETWORK_KEYS = {"system_network_traffic_recharge", "system_network_phone_recharge",
@@ -39,8 +41,8 @@ public final class Rules {
         new TestedApp("系统设置（个性化广告）", "com.android.settings", "16", 36L, 24, "0.9.2"),
         new TestedApp("天气（官方开关）", "com.miui.weather2", "17.0.3.34-HD", 170003034L, 24, "0.9.2"),
         new TestedApp("垃圾清理（推荐内容）", "com.miui.cleanmaster", "1024.0.260205.release", 101024L, 24, "0.9.2"),
-        new TestedApp("应用商店（个性化服务）", "com.xiaomi.market", "5.18.0", 5003340L, 24, "0.9.2"),
-        new TestedApp("浏览器（广告与内容推荐）", "com.android.browser", "20.2.101027", 200201000L, 24, "0.9.2"),
+        new TestedApp("应用商店（首页与详情页推荐）", "com.xiaomi.market", "5.18.0", 5003340L, 37, "0.11.2"),
+        new TestedApp("浏览器（开屏与信息流接口）", "com.android.browser", "20.2.101027", 200201000L, 31, "0.11.0"),
         new TestedApp("下载管理（推荐开关）", "com.android.providers.downloads.ui", "125.12.24.800004", 1251224004L, 24, "0.9.2"),
         new TestedApp("日历（内容推广）", "com.android.calendar", "17.10.8.2", 171008020L, 24, "0.9.2"),
         new TestedApp("安全服务 / 网络助手", SECURITY_CENTER, "12.6.8-260609.0.1", 40001268L, 22, "0.9.0"),
@@ -158,7 +160,8 @@ public final class Rules {
 
     public static boolean target(String pkg) {
         return HEALTH.equals(pkg) || HEALTH_PLAY.equals(pkg) || HOME.equals(pkg)
-            || SECURITY_CENTER.equals(pkg) || SECURITY_ADD.equals(pkg) || ACCOUNT.equals(pkg);
+            || SECURITY_CENTER.equals(pkg) || SECURITY_ADD.equals(pkg) || ACCOUNT.equals(pkg)
+            || BROWSER.equals(pkg) || MARKET.equals(pkg);
     }
 
     public static boolean blockHomePreference(Object fileName) {

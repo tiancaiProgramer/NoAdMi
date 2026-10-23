@@ -95,7 +95,7 @@ public final class ModernRuntimeTest {
         check(chain.calls == 1);
         List<Rules.TestedApp> sorted = Rules.testedAppsNewestFirst();
         check(sorted.size() == 14);
-        check(sorted.get(0).testedRelease.equals("0.9.3"));
+        check(sorted.get(0).testedRelease.equals("0.11.2"));
         check(sorted.get(10).label.contains("国内"));
         for (int i = 1; i < sorted.size(); i++) check(sorted.get(i - 1).testedBatch >= sorted.get(i).testedBatch);
         check(Rules.testedVersion(Rules.HOME, "11.8.705", 110817051L));

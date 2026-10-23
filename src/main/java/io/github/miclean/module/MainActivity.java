@@ -23,6 +23,16 @@ import java.util.List;
 
 public final class MainActivity extends Activity {
     private SharedPreferences prefs, uiPrefs;
+    private boolean updatingRuleToggles;
+    private final List<RuleToggle> ruleToggles=new ArrayList<>();
+    private static final class RuleToggle {
+        final Switch view;final String key;final boolean installed,defaultValue;
+        RuleToggle(Switch view,String key,boolean installed,boolean defaultValue){this.view=view;this.key=key;this.installed=installed;this.defaultValue=defaultValue;}
+    }
+    private static final class SectionTitle {
+        final String text;
+        SectionTitle(String text) { this.text = text; }
+    }
     private boolean frameworkReady;
     private Switch launcherIconSwitch;
     private boolean updatingLauncherIcon;
@@ -51,9 +61,11 @@ public final class MainActivity extends Activity {
     private void render() {
         frameworkReady = Settings.ready();
         refreshers.clear();
+        ruleToggles.clear();
         prefs = Settings.current(this);
         if (frameworkReady) {
             SharedPreferences.Editor edit = prefs.edit();
+            if(!prefs.contains(PromotionRules.MARKET_RECOMMEND))edit.putBoolean(PromotionRules.MARKET_RECOMMEND,PromotionSettings.recommendations(prefs));
             String[] old = {Rules.HEALTH_SWITCH, Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH,
                 Rules.HOME_PRODUCT_TAB_SWITCH, Rules.HEALTH_BANNER_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH,
                 Rules.HEALTH_DEVICE_BANNER_SWITCH, Rules.HEALTH_MEMBER_SWITCH,
@@ -96,9 +108,12 @@ public final class MainActivity extends Activity {
         label(status, frameworkReady ? "框架服务已连接" : "等待框架服务连接", 17, INK, true);
         label(status, frameworkReady ? "展开分类设置；保存后请强行停止并重新打开对应应用。"
             : "请在支持 libxposed API 102 的框架中启用模块并勾选目标应用，再重新打开模块。", 13, MUTED, false);
+        label(status, "数量按可用子开关统计，每个开关计 1 项；未安装应用的项目不计入总数。启用数量表示配置状态，不是已屏蔽的广告条数。", 12, MUTED, false);
         if (Settings.status() != null) label(status, Settings.status(), 12, ORANGE, false);
         homeCard();
         healthCard();
+        browserCard();
+        marketCard();
         systemCard();
         label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，不同版本效果以实际使用为准。", 12, MUTED, false);
         aboutCard();
@@ -164,6 +179,7 @@ public final class MainActivity extends Activity {
     private void homeCard() {
         LinearLayout box = appGroup("app_home", "米家");
         boolean installed = installedAppInfo(box, Rules.HOME, "");
+        bulkAdControl(box,"米家");
         LinearLayout ads = section(box, "home_ads", "通用与横幅", "地区兼容、开屏、个人中心", new String[]{Rules.HOME_REGION_SWITCH, Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH}, new boolean[]{false, true, true}, installed);
         addToggle(ads, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false, installed);
         label(ads, "Play 版：跳过下载大陆版的提示，仍按你选择的地区使用。登录与设备服务需实际验证。", 12, MUTED, false);
@@ -190,6 +206,7 @@ public final class MainActivity extends Activity {
         boolean installed = installedAppInfo(box, Rules.HEALTH, "国内版：");
         boolean playInstalled = installedAppInfo(box, Rules.HEALTH_PLAY, "Play 版：");
         boolean rulesInstalled = installed || playInstalled;
+        bulkAdControl(box,"小米运动健康");
         label(box, "去广告与入口选项同时作用于已安装的国内版和 Play 版，仅隐藏应用已有内容。", 12, MUTED, false);
         LinearLayout general = section(box, "health_general", "通用与横幅", "地区兼容、开屏、健康与设备横幅", new String[]{Rules.HEALTH_REGION_SWITCH, Rules.HEALTH_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH, Rules.HEALTH_DEVICE_BANNER_SWITCH}, new boolean[]{false, true, true, true}, rulesInstalled);
         addToggle(general, "Play 版中国大陆兼容（实验）", Rules.HEALTH_REGION_SWITCH, false, playInstalled);
@@ -214,6 +231,29 @@ public final class MainActivity extends Activity {
         label(mine, "以下为功能入口，可分别隐藏；关闭隐藏后恢复原有显示。", 12, MUTED, false);
         for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) addToggle(mine,
             "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, rulesInstalled);
+    }
+
+    private void browserCard() {
+        LinearLayout box=appGroup("app_browser","小米浏览器");
+        boolean installed=installedAppInfo(box,Rules.BROWSER,"");
+        bulkAdControl(box,"小米浏览器");
+        label(box,"需在 LSPosed 勾选“浏览器”。下方为独立 Hook 开关，保存后强行停止并重开浏览器。",12,MUTED,false);
+        LinearLayout ads=section(box,"browser_ads","开屏与信息流","仅处理浏览器自身推广，不作为网页广告过滤器。",
+            new String[]{PromotionRules.BROWSER_SPLASH,PromotionRules.BROWSER_FEED},new boolean[2],installed);
+        addToggle(ads,"隐藏主动与第三方唤起开屏广告",PromotionRules.BROWSER_SPLASH,false,installed);
+        addToggle(ads,"过滤信息流接口中的广告卡片",PromotionRules.BROWSER_FEED,false,installed);
+        label(ads,"只过滤带广告标记的浏览器信息流列表，保留普通内容；不保证覆盖缓存、全部视频广告或网页内广告。",12,MUTED,false);
+    }
+
+    private void marketCard() {
+        LinearLayout box=appGroup("app_market","应用商店");
+        boolean installed=installedAppInfo(box,Rules.MARKET,"");
+        bulkAdControl(box,"应用商店");
+        label(box,"需在 LSPosed 勾选“应用商店”。独立控制原生推广区块，保存后强行停止并重开应用商店。",12,MUTED,false);
+        addToggle(box,"隐藏开屏广告",PromotionRules.MARKET_SPLASH,false,installed);
+        addToggle(box,"应用内推荐",PromotionRules.MARKET_RECOMMEND,false,installed);
+        label(box,"开启“应用内推荐”后，统一隐藏已适配的首页横幅、首次／回流推荐、下载／更新推荐、详情小卡，以及用户还喜欢、热门／同类、更多推荐。",12,MUTED,false);
+
     }
 
     private void aboutCard() {
@@ -271,6 +311,7 @@ public final class MainActivity extends Activity {
 
     private void systemCard() {
         LinearLayout box = appGroup("app_system", "系统应用广告");
+        bulkAdControl(box,"系统应用广告");
         label(box, "官方广告开关可直接操作或一键关闭；无开关的推荐区块可单独 Hook。机型、地区和应用版本可能影响可见内容。", 12, MUTED, false);
         LinearLayout official = section(box, "system_official", "官方广告开关", "操作原应用的真实开关；读取、保存失败时显示原因。",
             new String[0], new boolean[0], true);
@@ -308,12 +349,14 @@ public final class MainActivity extends Activity {
         header.setMinHeight(dp(48));
         header.setFocusable(true);
         LinearLayout body = vertical();
+        body.setTag(new SectionTitle(title));
         parent.addView(body, new LinearLayout.LayoutParams(-1, -2));
         Runnable refresh = () -> {
             boolean expanded = uiPrefs.getBoolean(id, false);
-            int count = 0;
-            for (int i = 0; i < keys.length; i++) if (prefs.getBoolean(keys[i], defaults[i])) count++;
-            String summary = keys.length == 0 ? "后台控制" : "已开启 " + count + "/" + keys.length;
+            SettingCounts counts = new SettingCounts();
+            for (RuleToggle row : ruleToggles) if (within(row.view, body))
+                counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
+            String summary = keys.length == 0 ? "后台控制 · " + NativeAdRules.ENTRIES.length + " 项官方设置" : counts.settingsSummary();
             header.setText((expanded ? "▾  " : "▸  ") + title + "  ·  " + summary);
             header.setContentDescription(title + "，" + summary + (expanded ? "，点击收起" : "，点击展开"));
             body.setVisibility(expanded ? View.VISIBLE : View.GONE);
@@ -328,6 +371,62 @@ public final class MainActivity extends Activity {
         return body;
     }
 
+    private static boolean within(View child,View parent){
+        for(android.view.ViewParent p=child.getParent();p instanceof View;p=p.getParent())if(p==parent)return true;
+        return false;
+    }
+
+    private List<RuleToggle> bulkMembers(View parent) {
+        List<RuleToggle> result = new ArrayList<>();
+        for (RuleToggle row : ruleToggles)
+            if (within(row.view, parent) && BulkEnablePolicy.eligible(row.key)) result.add(row);
+        return result;
+    }
+
+    private String bulkScopeLabel(RuleToggle row) {
+        android.view.ViewParent parent = row.view.getParent();
+        Object section = parent instanceof View ? ((View) parent).getTag() : null;
+        return (section instanceof SectionTitle ? ((SectionTitle) section).text + " · " : "") + row.view.getText();
+    }
+
+    private void bulkAdControl(LinearLayout parent,String title){
+        Switch toggle=new Switch(this);toggle.setText("一键关闭广告");toggle.setContentDescription(title+"一键关闭广告");
+        toggle.setTextSize(14);toggle.setTextColor(INK);toggle.setPadding(0,gap(12),0,gap(12));toggle.setMinHeight(dp(48));
+        parent.addView(toggle,new LinearLayout.LayoutParams(-1,-2));
+        TextView summary=label(parent,"",12,MUTED,false);
+        summary.setTag(title+"广告隐藏状态");
+        TextView scope=label(parent,"",12,MUTED,false);
+        scope.setTag(title+"联动项目");
+        label(parent,"打开总开关：启用以下全部广告隐藏；关闭总开关：停用以下广告隐藏。部分开启时，打开总开关会补全剩余项。",12,MUTED,false);
+        if("米家".equals(title))label(parent,"不联动：地区兼容、底栏及“我的”功能入口。",12,MUTED,false);
+        if("小米运动健康".equals(title))label(parent,"不联动：地区兼容、运动团及“我的”八个功能入口。",12,MUTED,false);
+        if("系统应用广告".equals(title))label(parent,"不联动：流量充值、话费充值。下方 "+NativeAdRules.ENTRIES.length+" 项官方广告设置使用独立的“一键关闭已支持广告开关”按钮。",12,MUTED,false);
+        final boolean[] updating={false};
+        refreshers.add(()->{
+            SettingCounts counts=new SettingCounts();
+            StringBuilder included=new StringBuilder(),unavailable=new StringBuilder();
+            for(RuleToggle row:bulkMembers(parent)){
+                counts.include(row.installed,prefs.getBoolean(row.key,row.defaultValue));
+                StringBuilder list=row.installed?included:unavailable;
+                list.append("\n• ").append(bulkScopeLabel(row));
+            }
+            updating[0]=true;try{toggle.setChecked(counts.allEnabled());}finally{updating[0]=false;}
+            toggle.setEnabled(frameworkReady&&counts.available>0);
+            summary.setText(counts.advertisingSummary());
+            if(android.os.Build.VERSION.SDK_INT>=30)toggle.setStateDescription(counts.advertisingSummary());
+            scope.setText("联动项目（"+counts.available+" 项）："+(counts.available==0?"无":included.toString())
+                +(counts.unavailable==0?"":"\n未安装，不参与联动（"+counts.unavailable+" 项）："+unavailable));
+        });
+        toggle.setOnCheckedChangeListener((button,checked)->{
+            if(updating[0])return;
+            SharedPreferences.Editor edit=prefs.edit();
+            for(RuleToggle row:bulkMembers(parent))if(row.installed)edit.putBoolean(row.key,checked);
+            boolean saved=edit.commit();if(saved)Settings.backup(this);
+            for(Runnable refresh:refreshers)refresh.run();
+            savedNotice(saved,saved?"已保存，请强行停止并重新打开对应应用":"保存失败，请重新打开模块");
+        });
+    }
+
     private Switch addToggle(LinearLayout parent, String text, String key, boolean defaultValue,
             boolean installed) {
         Switch toggle = new Switch(this);
@@ -337,8 +436,15 @@ public final class MainActivity extends Activity {
         toggle.setPadding(0, gap(12), 0, gap(12));
         toggle.setMinHeight(dp(48));
         toggle.setChecked(prefs.getBoolean(key, defaultValue));
-        refreshers.add(() -> toggle.setEnabled(frameworkReady && installed));
+        ruleToggles.add(new RuleToggle(toggle,key,installed,defaultValue));
+        toggle.setTag(key);
+        refreshers.add(() -> {
+            toggle.setEnabled(frameworkReady && installed);
+            updatingRuleToggles=true;
+            try{toggle.setChecked(prefs.getBoolean(key,defaultValue));}finally{updatingRuleToggles=false;}
+        });
         toggle.setOnCheckedChangeListener((button, checked) -> {
+            if(updatingRuleToggles)return;
             boolean saved = prefs.edit().putBoolean(key, checked).commit();
             if (saved) Settings.backup(this);
             for (Runnable refresh : refreshers) refresh.run();

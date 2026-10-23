@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build a libxposed API 102 module; only the service/interface client is packaged."""
+import sys
 import argparse
 import os
 from pathlib import Path
@@ -12,6 +13,11 @@ ROOT = Path(__file__).resolve().parent
 
 
 def run(argv, env=None):
+    if os.name == 'nt' and Path(argv[0]).name.lower() == 'd8.bat':
+        # Direct Java invocation avoids cmd.exe's 8191-character batch limit.
+        java = tool(Path((env or os.environ)['JAVA_HOME']) / 'bin', 'java')
+        argv = [java, '-Xmx1024m', '-cp', Path(argv[0]).parent / 'lib/d8.jar',
+                'com.android.tools.r8.D8', *argv[1:]]
     subprocess.run([str(x) for x in argv], check=True, env=env)
 
 
@@ -36,7 +42,7 @@ def main():
     p.add_argument('--keystore', help='Existing JKS or PKCS12 signing keystore')
     p.add_argument('--store-pass-file', help='Password file for --keystore; the password is never printed')
     p.add_argument('--key-alias', default='miclean-preview')
-    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.9.6-preview.apk'))
+    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.11.3-preview.apk'))
     a = p.parse_args()
     if bool(a.keystore) != bool(a.store_pass_file):
         p.error('--keystore and --store-pass-file must be supplied together.')
@@ -60,6 +66,7 @@ def main():
         if path.exists():
             shutil.rmtree(path)
         path.mkdir()
+    run([sys.executable, ROOT / 'tools/embed_market_detail.py'])
     sources = sorted((ROOT / 'src/main/java').rglob('*.java'))
     run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-source', '8', '-target', '8',
          '-classpath', os.pathsep.join(map(str, (android, api, *runtime))), '-d', build / 'classes', *sources])
@@ -68,7 +75,7 @@ def main():
          '-d', build / 'tests', *test_sources])
     for test in test_sources:
         import re
-        package = re.search(r'^package ([\w.]+);', test.read_text(), re.M)
+        package = re.search(r'^package ([\w.]+);', test.read_text(encoding='utf-8'), re.M)
         test_class = (package.group(1) + '.' if package else '') + test.stem
         run([tool(jdk / 'bin', 'java'), '-cp', os.pathsep.join(map(str, (build / 'classes', build / 'tests', api, android))), test_class])
     run([tool(tools, 'd8'), '--min-api', '26', '--lib', android, '--classpath', api,

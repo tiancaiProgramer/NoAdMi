@@ -54,6 +54,7 @@ public final class HookEntry extends XposedModule {
             report("remote settings not initialized; open NoAdMi then restart target");
             return;
         }
+        if (Rules.BROWSER.equals(pkg) || Rules.MARKET.equals(pkg)) PromotionHooks.install(pkg, loader, prefs);
         if (Rules.SECURITY_CENTER.equals(pkg)) SystemAdHooks.network(loader, prefs);
         if (Rules.SECURITY_ADD.equals(pkg)) SystemAdHooks.game(loader, prefs);
         if (Rules.HEALTH_PLAY.equals(pkg) && prefs.getBoolean(Rules.HEALTH_REGION_SWITCH, false)) {

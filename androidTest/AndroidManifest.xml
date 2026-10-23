@@ -3,5 +3,7 @@
  <instrumentation android:name=".UiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi UI smoke" />
  <instrumentation android:name=".AccountAdSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi account bridge test" />
  <instrumentation android:name=".LoadingUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi loading UI test" />
+ <instrumentation android:name=".PromotionUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi browser market controls test" />
+ <instrumentation android:name=".BulkUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi bulk controls test" />
  <application android:hasCode="true" android:label="NoAdMi local tests" />
 </manifest>

@@ -5,3 +5,8 @@ Source: https://github.com/libxposed/service and https://github.com/libxposed/in
 Artifacts: https://repo.maven.apache.org/maven2/io/github/libxposed/
 The libxposed API is compile-only; the framework implementation is not bundled.
 See third-party/Apache-2.0.txt.
+
+Reference research for Browser/GetApps advertising (0.11.0; rechecked 0.11.2 on 2026-10-23):
+HyperCeiler, ReChronoRain/HyperCeiler, commit 5af3daeff128130afe10c1aa1d1534d425ec2f71.
+https://github.com/ReChronoRain/HyperCeiler/blob/5af3daeff128130afe10c1aa1d1534d425ec2f71/library/libhook/src/main/java/com/sevtinge/hyperceiler/libhook/rules/getapps/DisableAds.java
+Upstream source is not bundled. NoAdMi's narrow decisions were independently implemented and checked against the installed application method signatures and callers.
