@@ -29,10 +29,6 @@ public final class MainActivity extends Activity {
         final Switch view;final String key;final boolean installed,defaultValue;
         RuleToggle(Switch view,String key,boolean installed,boolean defaultValue){this.view=view;this.key=key;this.installed=installed;this.defaultValue=defaultValue;}
     }
-    private static final class SectionTitle {
-        final String text;
-        SectionTitle(String text) { this.text = text; }
-    }
     private boolean frameworkReady;
     private Switch launcherIconSwitch;
     private boolean updatingLauncherIcon;
@@ -93,6 +89,7 @@ public final class MainActivity extends Activity {
             | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
+        scroll.setFitsSystemWindows(true);
         scroll.setBackgroundColor(Color.rgb(247, 246, 241));
         content = vertical();
         content.setPadding(dp(24), dp(24), dp(24), gap(28));
@@ -110,11 +107,8 @@ public final class MainActivity extends Activity {
             : "请在支持 libxposed API 102 的框架中启用模块并勾选目标应用，再重新打开模块。", 13, MUTED, false);
         label(status, "数量按可用子开关统计，每个开关计 1 项；未安装应用的项目不计入总数。启用数量表示配置状态，不是已屏蔽的广告条数。", 12, MUTED, false);
         if (Settings.status() != null) label(status, Settings.status(), 12, ORANGE, false);
-        homeCard();
-        healthCard();
-        browserCard();
-        marketCard();
-        systemCard();
+        advertisingCard();
+        programCard();
         label(content, "“隐藏”关闭时沿用应用原本的显示状态。分类会记住展开状态，不同版本效果以实际使用为准。", 12, MUTED, false);
         aboutCard();
         for (Runnable refresh : refreshers) refresh.run();
@@ -176,84 +170,157 @@ public final class MainActivity extends Activity {
         label(parent, "隐藏后可从 LSPosed 的模块设置重新打开；桌面可能稍后刷新。", 12, MUTED, false);
     }
 
-    private void homeCard() {
-        LinearLayout box = appGroup("app_home", "米家");
-        boolean installed = installedAppInfo(box, Rules.HOME, "");
-        bulkAdControl(box,"米家");
-        LinearLayout ads = section(box, "home_ads", "通用与横幅", "地区兼容、开屏、个人中心", new String[]{Rules.HOME_REGION_SWITCH, Rules.HOME_SWITCH, Rules.HOME_BANNER_SWITCH}, new boolean[]{false, true, true}, installed);
-        addToggle(ads, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false, installed);
-        label(ads, "Play 版：跳过下载大陆版的提示，仍按你选择的地区使用。登录与设备服务需实际验证。", 12, MUTED, false);
-        addToggle(ads, "隐藏启动页广告", Rules.HOME_SWITCH, true, installed);
-        addToggle(ads, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, installed);
-        String[] tabKeys = new String[Rules.HOME_TAB_IDS.length];
-        boolean[] tabDefaults = new boolean[tabKeys.length];
-        for (int i = 0; i < tabKeys.length; i++) {
-            tabKeys[i] = Rules.tabKey(Rules.HOME_TAB_IDS[i]);
-            tabDefaults[i] = Rules.productTab(Rules.HOME_TAB_IDS[i]);
-        }
-        LinearLayout tabs = section(box, "home_tabs", "底栏", "5 个页面入口", tabKeys, tabDefaults, installed);
-        label(tabs, "关闭单项隐藏后遵循米家原配置；商城仍可由原生开关关闭。至少保留一个页面，否则恢复原底栏。", 12, MUTED, false);
-        for (int i = 0; i < tabKeys.length; i++) addToggle(tabs, "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", tabKeys[i], tabDefaults[i], installed);
-        String[] mineKeys = new String[Rules.HOME_MINE_IDS.length];
-        for (int i = 0; i < mineKeys.length; i++) mineKeys[i] = Rules.mineKey(Rules.HOME_MINE_IDS[i]);
-        LinearLayout mine = section(box, "home_mine", "我的", "13 个功能与服务入口", mineKeys, new boolean[mineKeys.length], installed);
-        label(mine, "这些项目包含常用功能，请按需隐藏。应用原本未显示的入口不会被强制打开。", 12, MUTED, false);
-        for (int i = 0; i < mineKeys.length; i++) addToggle(mine, "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", mineKeys[i], false, installed);
+    private void advertisingCard() {
+        LinearLayout box = fold(card(), "advertising", "广告管理", "19 项广告隐藏 · 11 项官方广告设置", 0, 21, true);
+        LinearLayout official = fold(box, "system_official", "官方广告设置", "独立操作原应用的 11 项真实开关", 0, 16, false);
+        nativeAds = new NativeAdsPanel(this, official, this::savedNotice);
+        LinearLayout ads = fold(box, "app_ads", "App 广告", "按应用管理广告与推广隐藏", 2, 16, false);
+        bulkAdControl(ads);
+        label(ads, "按应用分组的下方单项就是总开关联动清单。打开补全可用广告隐藏，关闭停用；官方广告与程序管理独立操作。", 12, MUTED, false);
+        adHeading(ads, "米家", 2);
+        boolean home = installedAppInfo(ads, Rules.HOME, "");
+        addToggle(ads, "隐藏启动页广告", Rules.HOME_SWITCH, true, home);
+        addToggle(ads, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, home);
+        adHeading(ads, "小米运动健康", 7);
+        boolean domestic = installedAppInfo(ads, Rules.HEALTH, "国内版：");
+        boolean play = installedAppInfo(ads, Rules.HEALTH_PLAY, "Play 版：");
+        boolean health = domestic || play;
+        label(ads, "同时作用于已安装的国内版与 Play 版。", 12, MUTED, false);
+        addToggle(ads, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, health);
+        addToggle(ads, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, health);
+        addToggle(ads, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, health);
+        addToggle(ads, "隐藏运动页活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, health);
+        addToggle(ads, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, health);
+        addToggle(ads, "隐藏“我的”页活动横幅", Rules.HEALTH_BANNER_SWITCH, true, health);
+        addToggle(ads, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, health);
+        adHeading(ads, "小米浏览器", 2);
+        boolean browser = installedAppInfo(ads, Rules.BROWSER, "");
+        addToggle(ads, "隐藏主动与第三方唤起开屏广告", PromotionRules.BROWSER_SPLASH, false, browser);
+        addToggle(ads, "过滤信息流广告卡片", PromotionRules.BROWSER_FEED, false, browser);
+        label(ads, "需勾选浏览器作用域；仅处理浏览器自身推广，保留普通信息流内容，网页内广告不在此范围。", 12, MUTED, false);
+        adHeading(ads, "应用商店", 2);
+        boolean market = installedAppInfo(ads, Rules.MARKET, "");
+        addToggle(ads, "隐藏开屏广告", PromotionRules.MARKET_SPLASH, false, market);
+        addToggle(ads, "隐藏应用内推荐", PromotionRules.MARKET_RECOMMEND, false, market);
+        label(ads, "需勾选应用商店作用域。应用内推荐包含已适配的首页横幅、首次／回流、下载／更新、详情小卡及同类推荐。", 12, MUTED, false);
+        adHeading(ads, "网络助手（手机管家）", 4);
+        boolean network = installedAppInfo(ads, Rules.SECURITY_CENTER, "");
+        addToggle(ads, "隐藏流量充值入口", Rules.NETWORK_KEYS[0], false, network);
+        addToggle(ads, "隐藏话费充值入口", Rules.NETWORK_KEYS[1], false, network);
+        addToggle(ads, "隐藏“1元/天任性用”", Rules.NETWORK_KEYS[2], false, network);
+        addToggle(ads, "隐藏“0元领通用大流量卡”", Rules.NETWORK_KEYS[3], false, network);
+        label(ads, "需勾选手机管家 / 安全服务作用域。保留流量统计、联网管理和流量排行；充值入口也纳入广告总开关，请按需设置。", 12, MUTED, false);
+        adHeading(ads, "游戏助手（系统服务组件）", 2);
+        boolean game = installedAppInfo(ads, Rules.SECURITY_ADD, "");
+        addToggle(ads, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, game);
+        addToggle(ads, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, game);
+        label(ads, "需勾选系统服务组件作用域。推荐隐藏会收起热玩排行、游戏盒子等推广入口，保留已添加游戏与设置。", 12, MUTED, false);
     }
 
-    private void healthCard() {
-        LinearLayout box = appGroup("app_health", "小米运动健康");
-        boolean installed = installedAppInfo(box, Rules.HEALTH, "国内版：");
-        boolean playInstalled = installedAppInfo(box, Rules.HEALTH_PLAY, "Play 版：");
-        boolean rulesInstalled = installed || playInstalled;
-        bulkAdControl(box,"小米运动健康");
-        label(box, "去广告与入口选项同时作用于已安装的国内版和 Play 版，仅隐藏应用已有内容。", 12, MUTED, false);
-        LinearLayout general = section(box, "health_general", "通用与横幅", "地区兼容、开屏、健康与设备横幅", new String[]{Rules.HEALTH_REGION_SWITCH, Rules.HEALTH_SWITCH, Rules.HEALTH_HOME_BANNER_SWITCH, Rules.HEALTH_DEVICE_BANNER_SWITCH}, new boolean[]{false, true, true, true}, rulesInstalled);
-        addToggle(general, "Play 版中国大陆兼容（实验）", Rules.HEALTH_REGION_SWITCH, false, playInstalled);
-        label(general, "允许选择中国大陆，并跳过启动时的大陆版迁移引导。需在 LSPosed 勾选 Play 版运动健康。", 12, MUTED, false);
-        addToggle(general, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, rulesInstalled);
-        addToggle(general, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, rulesInstalled);
-        addToggle(general, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, rulesInstalled);
-        LinearLayout sport = section(box, "health_sport", "运动", "分别控制运动页三个推荐区块", new String[]{Rules.HEALTH_SPORT_GROUP_SWITCH, Rules.HEALTH_SPORT_ACTIVITY_SWITCH, Rules.HEALTH_SPORT_BANNER_SWITCH}, new boolean[]{true, true, true}, rulesInstalled);
-        label(sport, "保留运动入口、运动记录、训练指标和跑步路线。", 12, MUTED, false);
-        addToggle(sport, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true, rulesInstalled);
-        addToggle(sport, "隐藏活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, rulesInstalled);
-        addToggle(sport, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, rulesInstalled);
-        String[] mineKeys = new String[2 + Rules.HEALTH_MINE_IDS.length];
-        boolean[] mineDefaults = new boolean[mineKeys.length];
-        mineKeys[0] = Rules.HEALTH_BANNER_SWITCH;
-        mineKeys[1] = Rules.HEALTH_MEMBER_SWITCH;
-        for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) mineKeys[i + 2] = Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]);
-        java.util.Arrays.fill(mineDefaults, true);
-        LinearLayout mine = section(box, "health_mine", "我的", "广告、营销卡片与功能入口", mineKeys, mineDefaults, rulesInstalled);
-        addToggle(mine, "隐藏活动横幅", Rules.HEALTH_BANNER_SWITCH, true, rulesInstalled);
-        addToggle(mine, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, rulesInstalled);
-        label(mine, "以下为功能入口，可分别隐藏；关闭隐藏后恢复原有显示。", 12, MUTED, false);
-        for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) addToggle(mine,
-            "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, rulesInstalled);
+    private void adHeading(LinearLayout parent, String title, int count) {
+        divider(parent);
+        TextView heading = label(parent, title + " · " + count + " 项", 13, MUTED, true);
+        heading.setTag("ad_heading:" + title);
+        heading.setPadding(0, gap(16), 0, gap(4));
     }
 
-    private void browserCard() {
-        LinearLayout box=appGroup("app_browser","小米浏览器");
-        boolean installed=installedAppInfo(box,Rules.BROWSER,"");
-        bulkAdControl(box,"小米浏览器");
-        label(box,"需在 LSPosed 勾选“浏览器”。下方为独立 Hook 开关，保存后强行停止并重开浏览器。",12,MUTED,false);
-        LinearLayout ads=section(box,"browser_ads","开屏与信息流","仅处理浏览器自身推广，不作为网页广告过滤器。",
-            new String[]{PromotionRules.BROWSER_SPLASH,PromotionRules.BROWSER_FEED},new boolean[2],installed);
-        addToggle(ads,"隐藏主动与第三方唤起开屏广告",PromotionRules.BROWSER_SPLASH,false,installed);
-        addToggle(ads,"过滤信息流接口中的广告卡片",PromotionRules.BROWSER_FEED,false,installed);
-        label(ads,"只过滤带广告标记的浏览器信息流列表，保留普通内容；不保证覆盖缓存、全部视频广告或网页内广告。",12,MUTED,false);
+    private void programCard() {
+        LinearLayout box = fold(card(), "program", "程序管理", "米家 19 项 · 小米运动健康 10 项", 1, 21, true);
+        label(box, "功能入口、底栏与地区兼容按程序设置，不参与广告总开关。未安装版本保留设置值，不计入可用数量。", 12, MUTED, false);
+        LinearLayout home = fold(box, "app_home", "米家", "", 1, 16, true);
+        boolean installed = installedAppInfo(home, Rules.HOME, "");
+        directToggle(home, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false, installed);
+        indentedHelp(home, "Play 版：跳过下载大陆版的提示，仍按所选地区使用；登录与设备服务需实际验证。");
+        LinearLayout tabs = fold(home, "home_tabs", "底栏", "", 1, 14, false);
+        indentedHelp(tabs, "至少保留一个页面，否则恢复原底栏；关闭隐藏后遵循米家原配置。");
+        for (int i = 0; i < Rules.HOME_TAB_IDS.length; i++) directToggle(tabs,
+            "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", Rules.tabKey(Rules.HOME_TAB_IDS[i]), Rules.productTab(Rules.HOME_TAB_IDS[i]), installed);
+        LinearLayout mine = fold(home, "home_mine", "我的", "", 1, 14, false);
+        indentedHelp(mine, "包含常用功能，请按需隐藏；原本未显示的入口不会被强制打开。");
+        for (int i = 0; i < Rules.HOME_MINE_IDS.length; i++) directToggle(mine,
+            "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", Rules.mineKey(Rules.HOME_MINE_IDS[i]), false, installed);
+        LinearLayout health = fold(box, "app_health", "小米运动健康", "", 1, 16, true);
+        boolean domestic = installedAppInfo(health, Rules.HEALTH, "国内版：");
+        boolean play = installedAppInfo(health, Rules.HEALTH_PLAY, "Play 版：");
+        directToggle(health, "Play 版中国大陆兼容（实验）", Rules.HEALTH_REGION_SWITCH, false, play);
+        indentedHelp(health, "允许选择中国大陆并跳过大陆版迁移引导；需安装并勾选 Play 版作用域。");
+        directToggle(health, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true, domestic || play);
+        LinearLayout healthMine = fold(health, "health_mine", "我的", "", 1, 14, false);
+        for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) directToggle(healthMine,
+            "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, domestic || play);
     }
 
-    private void marketCard() {
-        LinearLayout box=appGroup("app_market","应用商店");
-        boolean installed=installedAppInfo(box,Rules.MARKET,"");
-        bulkAdControl(box,"应用商店");
-        label(box,"需在 LSPosed 勾选“应用商店”。独立控制原生推广区块，保存后强行停止并重开应用商店。",12,MUTED,false);
-        addToggle(box,"隐藏开屏广告",PromotionRules.MARKET_SPLASH,false,installed);
-        addToggle(box,"应用内推荐",PromotionRules.MARKET_RECOMMEND,false,installed);
-        label(box,"开启“应用内推荐”后，统一隐藏已适配的首页横幅、首次／回流推荐、下载／更新推荐、详情小卡，以及用户还喜欢、热门／同类、更多推荐。",12,MUTED,false);
+    private void directToggle(LinearLayout parent, String text, String key, boolean initial, boolean installed) {
+        divider(parent);
+        Switch toggle = addToggle(parent, text, key, initial, installed);
+        toggle.setPadding(dp(22), gap(12), 0, gap(12));
+    }
 
+    private void indentedHelp(LinearLayout parent, String text) {
+        TextView view = label(parent, text, 12, MUTED, false);
+        view.setPadding(dp(22), gap(4), 0, gap(8));
+    }
+
+    private void divider(LinearLayout parent) {
+        View line = new View(this);
+        line.setBackgroundColor(Color.rgb(231,235,229));
+        parent.addView(line, new LinearLayout.LayoutParams(-1, dp(1)));
+    }
+
+    /** Fixed chevron space keeps a plain switch and a folding row on the same text baseline. */
+    private LinearLayout fold(LinearLayout parent, String id, String title, String caption,
+            int countMode, int size, boolean initial) {
+        if (size < 21) divider(parent);
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        header.setPadding(0, gap(12), 0, gap(12));
+        header.setMinimumHeight(dp(52));
+        header.setFocusable(true);
+        header.setTag("fold:" + id);
+        TextView arrow = new TextView(this);
+        arrow.setTextSize(22); arrow.setTextColor(MUTED);
+        header.addView(arrow, new LinearLayout.LayoutParams(dp(22), -2));
+        LinearLayout titles = vertical();
+        header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView name = label(titles, title, size, INK, true);
+        name.setPadding(0, 0, 0, 0);
+        TextView detail = label(titles, caption, 12, MUTED, false);
+        detail.setPadding(0, gap(3), 0, 0);
+        TextView quantity = new TextView(this);
+        quantity.setTextSize(12); quantity.setTextColor(MUTED);
+        quantity.setGravity(android.view.Gravity.END);
+        quantity.setPadding(dp(8), 0, 0, 0);
+        header.addView(quantity, new LinearLayout.LayoutParams(-2, -2));
+        parent.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout body = vertical(); body.setTag("body:" + id);
+        parent.addView(body, new LinearLayout.LayoutParams(-1, -2));
+        Runnable refresh = () -> {
+            boolean expanded = uiPrefs.getBoolean(id, initial);
+            String summary = caption;
+            if (countMode != 0) {
+                SettingCounts counts = new SettingCounts();
+                for (RuleToggle row : ruleToggles) if (within(row.view, body))
+                    counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
+                summary = countMode == 2 ? counts.advertisingSummary() : counts.settingsSummary();
+                quantity.setText(counts.enabled + "/" + counts.available + " 项"
+                    + (counts.unavailable == 0 ? "" : "\n不可用 " + counts.unavailable + " 项"));
+                if (!caption.isEmpty()) summary = caption + "\n" + summary;
+            }
+            quantity.setVisibility(countMode == 1 && caption.isEmpty() ? View.VISIBLE : View.GONE);
+            arrow.setText(expanded ? "⌄" : "›");
+            detail.setText(summary);
+            detail.setVisibility(summary.isEmpty() || (countMode == 1 && caption.isEmpty()) ? View.GONE : View.VISIBLE);
+            header.setContentDescription(title + (summary.isEmpty() ? "" : "，" + summary) + (expanded ? "，点击收起" : "，点击展开"));
+            body.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        };
+        header.setOnClickListener(v -> {
+            uiPrefs.edit().putBoolean(id, !uiPrefs.getBoolean(id, initial)).apply();
+            refresh.run();
+            if (("advertising".equals(id) || "system_official".equals(id)) && nativeAds != null) nativeAds.refreshIfVisible();
+        });
+        refreshers.add(refresh);
+        return body;
     }
 
     private void aboutCard() {
@@ -309,25 +376,6 @@ public final class MainActivity extends Activity {
         return body;
     }
 
-    private void systemCard() {
-        LinearLayout box = appGroup("app_system", "系统应用广告");
-        bulkAdControl(box,"系统应用广告");
-        label(box, "官方广告开关可直接操作或一键关闭；无开关的推荐区块可单独 Hook。机型、地区和应用版本可能影响可见内容。", 12, MUTED, false);
-        LinearLayout official = section(box, "system_official", "官方广告开关", "操作原应用的真实开关；读取、保存失败时显示原因。",
-            new String[0], new boolean[0], true);
-        nativeAds = new NativeAdsPanel(this, official, this::savedNotice);
-        boolean networkInstalled = installedAppInfo(box, Rules.SECURITY_CENTER, "网络助手：");
-        LinearLayout network = section(box, "system_network", "网络助手", "需在 LSPosed 勾选“手机管家 / 安全服务”（com.miui.securitycenter）。保留流量统计、联网管理和流量排行；充值入口包含可用服务，请按需隐藏。",
-            Rules.NETWORK_KEYS, new boolean[Rules.NETWORK_KEYS.length], networkInstalled);
-        for (int i = 0; i < Rules.NETWORK_KEYS.length; i++)
-            addToggle(network, "隐藏“" + Rules.NETWORK_TITLES[i] + "”", Rules.NETWORK_KEYS[i], false, networkInstalled);
-        boolean gameInstalled = installedAppInfo(box, Rules.SECURITY_ADD, "游戏助手：");
-        LinearLayout game = section(box, "system_game", "游戏助手", "需在 LSPosed 勾选“系统服务组件”。推荐隐藏会一并收起热玩排行、游戏盒子等推广入口；保留已添加游戏与设置。",
-            new String[]{Rules.GAME_RECOMMEND_SWITCH, Rules.GAME_POPUP_SWITCH}, new boolean[2], gameInstalled);
-        addToggle(game, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, gameInstalled);
-        addToggle(game, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, gameInstalled);
-    }
-
     private boolean installedAppInfo(LinearLayout parent, String pkg, String prefix) {
         boolean installed = false;
         String text;
@@ -342,35 +390,6 @@ public final class MainActivity extends Activity {
         return installed;
     }
 
-    private LinearLayout section(LinearLayout parent, String id, String title, String detail,
-            String[] keys, boolean[] defaults, boolean installed) {
-        TextView header = label(parent, "", 16, INK, true);
-        header.setPadding(0, gap(15), 0, gap(15));
-        header.setMinHeight(dp(48));
-        header.setFocusable(true);
-        LinearLayout body = vertical();
-        body.setTag(new SectionTitle(title));
-        parent.addView(body, new LinearLayout.LayoutParams(-1, -2));
-        Runnable refresh = () -> {
-            boolean expanded = uiPrefs.getBoolean(id, false);
-            SettingCounts counts = new SettingCounts();
-            for (RuleToggle row : ruleToggles) if (within(row.view, body))
-                counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
-            String summary = keys.length == 0 ? "后台控制 · " + NativeAdRules.ENTRIES.length + " 项官方设置" : counts.settingsSummary();
-            header.setText((expanded ? "▾  " : "▸  ") + title + "  ·  " + summary);
-            header.setContentDescription(title + "，" + summary + (expanded ? "，点击收起" : "，点击展开"));
-            body.setVisibility(expanded ? View.VISIBLE : View.GONE);
-        };
-        header.setOnClickListener(v -> {
-            uiPrefs.edit().putBoolean(id, !uiPrefs.getBoolean(id, false)).apply();
-            refresh.run();
-            if ("system_official".equals(id) && nativeAds != null) nativeAds.refreshIfVisible();
-        });
-        refreshers.add(refresh);
-        label(body, detail, 12, ORANGE, false);
-        return body;
-    }
-
     private static boolean within(View child,View parent){
         for(android.view.ViewParent p=child.getParent();p instanceof View;p=p.getParent())if(p==parent)return true;
         return false;
@@ -383,47 +402,30 @@ public final class MainActivity extends Activity {
         return result;
     }
 
-    private String bulkScopeLabel(RuleToggle row) {
-        android.view.ViewParent parent = row.view.getParent();
-        Object section = parent instanceof View ? ((View) parent).getTag() : null;
-        return (section instanceof SectionTitle ? ((SectionTitle) section).text + " · " : "") + row.view.getText();
-    }
-
-    private void bulkAdControl(LinearLayout parent,String title){
-        Switch toggle=new Switch(this);toggle.setText("一键关闭广告");toggle.setContentDescription(title+"一键关闭广告");
-        toggle.setTextSize(14);toggle.setTextColor(INK);toggle.setPadding(0,gap(12),0,gap(12));toggle.setMinHeight(dp(48));
-        parent.addView(toggle,new LinearLayout.LayoutParams(-1,-2));
-        TextView summary=label(parent,"",12,MUTED,false);
-        summary.setTag(title+"广告隐藏状态");
-        TextView scope=label(parent,"",12,MUTED,false);
-        scope.setTag(title+"联动项目");
-        label(parent,"打开总开关：启用以下全部广告隐藏；关闭总开关：停用以下广告隐藏。部分开启时，打开总开关会补全剩余项。",12,MUTED,false);
-        if("米家".equals(title))label(parent,"不联动：地区兼容、底栏及“我的”功能入口。",12,MUTED,false);
-        if("小米运动健康".equals(title))label(parent,"不联动：地区兼容、运动团及“我的”八个功能入口。",12,MUTED,false);
-        if("系统应用广告".equals(title))label(parent,"不联动：流量充值、话费充值。下方 "+NativeAdRules.ENTRIES.length+" 项官方广告设置使用独立的“一键关闭已支持广告开关”按钮。",12,MUTED,false);
-        final boolean[] updating={false};
-        refreshers.add(()->{
-            SettingCounts counts=new SettingCounts();
-            StringBuilder included=new StringBuilder(),unavailable=new StringBuilder();
-            for(RuleToggle row:bulkMembers(parent)){
-                counts.include(row.installed,prefs.getBoolean(row.key,row.defaultValue));
-                StringBuilder list=row.installed?included:unavailable;
-                list.append("\n• ").append(bulkScopeLabel(row));
-            }
-            updating[0]=true;try{toggle.setChecked(counts.allEnabled());}finally{updating[0]=false;}
-            toggle.setEnabled(frameworkReady&&counts.available>0);
+    private void bulkAdControl(LinearLayout parent) {
+        Switch toggle = new Switch(this);
+        toggle.setText("广告隐藏总开关"); toggle.setContentDescription("广告隐藏总开关");
+        SettingsRow.style(this, toggle);
+        parent.addView(toggle, new LinearLayout.LayoutParams(-1, -2));
+        TextView summary = label(parent, "", 12, ORANGE, false);
+        summary.setTag("App 广告隐藏状态");
+        final boolean[] updating = {false};
+        refreshers.add(() -> {
+            SettingCounts counts = new SettingCounts();
+            for (RuleToggle row : bulkMembers(parent)) counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
+            updating[0] = true;
+            try { toggle.setChecked(counts.allEnabled()); } finally { updating[0] = false; }
+            toggle.setEnabled(frameworkReady && counts.available > 0);
             summary.setText(counts.advertisingSummary());
-            if(android.os.Build.VERSION.SDK_INT>=30)toggle.setStateDescription(counts.advertisingSummary());
-            scope.setText("联动项目（"+counts.available+" 项）："+(counts.available==0?"无":included.toString())
-                +(counts.unavailable==0?"":"\n未安装，不参与联动（"+counts.unavailable+" 项）："+unavailable));
+            if (android.os.Build.VERSION.SDK_INT >= 30) toggle.setStateDescription(counts.advertisingSummary());
         });
-        toggle.setOnCheckedChangeListener((button,checked)->{
-            if(updating[0])return;
-            SharedPreferences.Editor edit=prefs.edit();
-            for(RuleToggle row:bulkMembers(parent))if(row.installed)edit.putBoolean(row.key,checked);
-            boolean saved=edit.commit();if(saved)Settings.backup(this);
-            for(Runnable refresh:refreshers)refresh.run();
-            savedNotice(saved,saved?"已保存，请强行停止并重新打开对应应用":"保存失败，请重新打开模块");
+        toggle.setOnCheckedChangeListener((button, checked) -> {
+            if (updating[0]) return;
+            SharedPreferences.Editor edit = prefs.edit();
+            for (RuleToggle row : bulkMembers(parent)) if (row.installed) edit.putBoolean(row.key, checked);
+            boolean saved = edit.commit(); if (saved) Settings.backup(this);
+            for (Runnable refresh : refreshers) refresh.run();
+            savedNotice(saved, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块");
         });
     }
 
@@ -431,10 +433,7 @@ public final class MainActivity extends Activity {
             boolean installed) {
         Switch toggle = new Switch(this);
         toggle.setText(text);
-        toggle.setTextSize(14);
-        toggle.setTextColor(INK);
-        toggle.setPadding(0, gap(12), 0, gap(12));
-        toggle.setMinHeight(dp(48));
+        SettingsRow.style(this, toggle);
         toggle.setChecked(prefs.getBoolean(key, defaultValue));
         ruleToggles.add(new RuleToggle(toggle,key,installed,defaultValue));
         toggle.setTag(key);

@@ -10,7 +10,7 @@ final class BulkEnablePolicy {
         return Arrays.asList(Rules.HOME_SWITCH,Rules.HOME_BANNER_SWITCH,Rules.HEALTH_SWITCH,Rules.HEALTH_BANNER_SWITCH,
             Rules.HEALTH_HOME_BANNER_SWITCH,Rules.HEALTH_DEVICE_BANNER_SWITCH,Rules.HEALTH_MEMBER_SWITCH,
             Rules.HEALTH_SPORT_ACTIVITY_SWITCH,Rules.HEALTH_SPORT_BANNER_SWITCH,
-            Rules.GAME_RECOMMEND_SWITCH,Rules.GAME_POPUP_SWITCH,Rules.NETWORK_KEYS[2],Rules.NETWORK_KEYS[3]).contains(key);
+            Rules.GAME_RECOMMEND_SWITCH,Rules.GAME_POPUP_SWITCH,Rules.NETWORK_KEYS[0],Rules.NETWORK_KEYS[1],Rules.NETWORK_KEYS[2],Rules.NETWORK_KEYS[3]).contains(key);
     }
     private BulkEnablePolicy(){}
 }

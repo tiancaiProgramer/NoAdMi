@@ -24,6 +24,16 @@ public final class SettingCountsTest {
                 check(counts.settingsSummary().endsWith("（另有 2 项不可用）"));
             }
         }
+        // The unified App-ad master covers all 19 advertising keys, including recharge.
+        for (int selected = 0; selected <= 19; selected++) {
+            SettingCounts counts = new SettingCounts();
+            for (int i = 0; i < 19; i++) counts.include(true, i < selected);
+            check(counts.available == 19 && counts.enabled == selected);
+            check(counts.allEnabled() == (selected == 19));
+            check(counts.state().equals(selected == 0 ? "全部关闭" : selected == 19 ? "全部开启" : "部分开启"));
+            counts.include(false, true);
+            check(counts.available == 19 && counts.enabled == selected && counts.unavailable == 1);
+        }
         SettingCounts absent = new SettingCounts();
         absent.include(false, true);
         check(!absent.allEnabled());

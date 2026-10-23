@@ -3,7 +3,6 @@ package io.github.miclean.module;
 import android.app.Activity;
 import android.graphics.Color;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ProgressBar;
 import android.view.Gravity;
 import android.widget.LinearLayout;
@@ -29,7 +28,8 @@ final class NativeAdsPanel {
     private final LinearLayout root;
     private final TextView progress;
     private final ProgressBar spinner;
-    private final Button refresh, close;
+    private final TextView refresh, closeState;
+    private final Switch close;
     private final Map<String, Row> rows = new LinkedHashMap<>();
     private volatile boolean busy;
     private boolean updating;
@@ -53,14 +53,19 @@ final class NativeAdsPanel {
         progress.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         progress.setText("展开后读取实际设置；未识别的版本保留原状态。");
         status.addView(progress,new LinearLayout.LayoutParams(0,-2,1));
-        text("开关打开表示官方广告或推荐已开启。支持的开关在后台保存并回读确认；账号作用域不可用时，只显示官方设置入口。", 13);
+        close = new Switch(activity); close.setText("一键关闭官方广告");
+        close.setContentDescription("一键关闭官方广告"); close.setTag("official_close");
+        SettingsRow.style(activity, close); root.addView(close);
+        closeState = text("", 12); closeState.setTag("官方广告关闭状态");
+        closeState.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        text("仅执行关闭，全部回读确认关闭后显示完成；不会批量开启官方广告。下方单项打开表示官方广告或推荐已开启。", 13);
         text("需要 Root；本地配置保存时会停止对应应用。系统工具广告另需勾选“小米账号”作用域，并重启账号应用；后台保存由账号服务确认。", 12);
-        refresh = new Button(activity); refresh.setText("刷新真实开关状态"); root.addView(refresh);
-        close = new Button(activity); close.setText("一键关闭已支持广告开关"); root.addView(close);
+        refresh = text("刷新真实开关状态  ↻", 14);
+        refresh.setMinHeight(dp(52)); refresh.setGravity(Gravity.CENTER_VERTICAL);
+        refresh.setTextColor(Color.rgb(202,88,27)); refresh.setFocusable(true);
         for (NativeAdRules.Entry e : NativeAdRules.ENTRIES) {
             Row row = new Row(); row.toggle=new Switch(activity); row.toggle.setText(e.title);
-            row.toggle.setTextSize(14); row.toggle.setTextColor(Color.rgb(36,44,40));
-            row.toggle.setMinHeight(dp(48)); row.toggle.setPadding(0,gap(8),0,gap(8));
+            SettingsRow.style(activity, row.toggle);
             row.toggle.setVisibility(View.GONE); root.addView(row.toggle);
             row.state=text(e.title + " · 尚未读取", 12); rows.put(e.id,row);
             row.toggle.setOnCheckedChangeListener((button, enabled) -> {
@@ -69,8 +74,13 @@ final class NativeAdsPanel {
             });
         }
         refresh.setOnClickListener(v -> refresh());
-        close.setOnClickListener(v -> closeAll());
+        close.setOnCheckedChangeListener((button, checked) -> {
+            if (updating || busy) return;
+            // This is a one-way action: an unchecked state never re-enables official ads.
+            if (checked) closeAll(); else controls();
+        });
         text("文件管理扩展服务包含云盘等普通功能，不纳入批量关闭；手机管家目前没有已适配的独立官方广告开关。",12);
+        controls();
     }
     void refreshIfVisible() { if (root.isShown()) refresh(); }
     void refresh() {
@@ -121,14 +131,14 @@ final class NativeAdsPanel {
             List<String> failed=new ArrayList<>();
             for(NativeAdRules.Entry e:NativeAdRules.ENTRIES) {
                 JSONObject before=states.get(e.id);
-                if(before==null || !before.optBoolean("ok")) { failed.add(e.title);continue; }
+                if(before==null || !before.optBoolean("ok") || !(before.opt("enabled") instanceof Boolean)) { failed.add(e.title);continue; }
                 if(!before.optBoolean("enabled")) { already++;continue; }
                 if(e.kind==NativeAdRules.ACCOUNT && !before.optBoolean("writable")) { failed.add(e.title+"（请打开官方设置）");continue; }
                 ui(() -> progress.setText("正在关闭："+e.title));
                 try { merge(states,NativeAdController.write(activity.getApplicationContext(),e.id,false)); }
                 catch(Exception error){states.put(e.id,failure(e.id,error));}
                 JSONObject after=states.get(e.id);
-                if(after!=null && after.optBoolean("ok") && !after.optBoolean("enabled"))changed++;
+                if(after!=null && after.optBoolean("ok") && after.opt("enabled") instanceof Boolean && !after.optBoolean("enabled"))changed++;
                 else failed.add(e.title);
             }
             final String summary="已关闭 "+changed+" 项，原已关闭 "+already+" 项，未处理 "+failed.size()+" 项";
@@ -167,7 +177,14 @@ final class NativeAdsPanel {
     }
     private void controls(){
         spinner.setVisibility(busy?View.VISIBLE:View.GONE);
-        refresh.setEnabled(!busy);close.setEnabled(!busy);
+        OfficialAdCounts counts = new OfficialAdCounts();
+        for (Row row : rows.values()) counts.include(row.enabled);
+        updating = true;
+        try { close.setChecked(!busy && counts.allClosed()); } finally { updating = false; }
+        close.setEnabled(!busy && !counts.allClosed());
+        closeState.setText(busy ? "正在读取或保存，完成后回读确认…" : counts.summary());
+        if (android.os.Build.VERSION.SDK_INT >= 30) close.setStateDescription(closeState.getText());
+        refresh.setEnabled(!busy);
         for(Row row:rows.values()){row.toggle.setEnabled(!busy && row.enabled!=null);row.state.setEnabled(!busy);}
     }
     private void ui(Runnable action){activity.runOnUiThread(() -> {if(!activity.isFinishing()&&!activity.isDestroyed())action.run();});}

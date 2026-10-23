@@ -1,26 +1,42 @@
 {
   "module": "NoAdMi",
-  "version": "0.11.3-preview",
-  "versionCode": 38,
-  "date": "2026-10-23",
-  "publication": "GitHub prerelease v0.11.3-preview",
+  "version": "0.11.4-preview",
+  "versionCode": 40,
+  "date": "2026-10-24",
+  "publication": "GitHub prerelease v0.11.4-preview",
   "build": "PASS",
-  "unit_assertions": 6481,
-  "javascript_checks": 64,
+  "unit_assertions": 127394,
+  "javascript_checks": 81,
   "instrumentation_apk_build": "PASS",
   "device_ui_checks": {
-    "BulkUiSmoke": 768
+    "BulkUiSmoke": 700,
+    "LoadingUiSmoke": 14,
+    "UiSmoke": 16,
+    "PromotionUiSmoke": 14
   },
+  "device_ui_checks_total": 744,
   "installed_on_device": true,
   "certificate_sha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
-  "apk_sha256": "0bfe73da3d7819a44b31fdbc96ef7f78f2b97ccdd128deba4bf9b045cb7b0503",
+  "apk_sha256": "83f886d19a4ae6a0d127795b3d5bcfc7aa6e34855b24e3921e3b97abba76ab23",
+  "classification": {
+    "app_advertising": 19,
+    "program": 29,
+    "ordinary_child_settings": 48,
+    "official_settings_separate": 11,
+    "ad_group_sizes": [
+      2,
+      7,
+      2,
+      2,
+      4,
+      2
+    ]
+  },
   "checks": {
-    "counts": "1251 new assertions cover all selection combinations for group sizes 2/7/2/2/4, explicit partial/all/off states, unavailable-item exclusion and domestic-only health counts.",
-    "regression": "All 5230 existing Java assertions and 64 Market DOM checks pass.",
-    "preservation": "Existing allowlist, rule constants/defaults, preference storage/migration and every existing Hook implementation are byte-identical to versionCode37. No preference keys added.",
-    "ui": "PASS: 768 actual module UI checks verify five lists and exact totals2/7/2/2/4, section context, all-off/all-on/partial1-of-N states, accessibility state descriptions, domestic health3/3 plus1 unavailable, child synchronization and functional/cross-group isolation. Test finally restores rule and fold preferences.",
-    "signature": "Production and local instrumentation APKs built through the original-key wrapper; expected certificate and APK v2/v3 verified.",
-    "windows": "Build succeeds with explicit UTF-8 source reading and direct D8 Java invocation; no separate verification shim required.",
+    "ui": "PASS: actual module controls verify the 19/29 split, six advertising headings, recharge inclusion, App-ad fold default collapse, official fold order, plain functional rows, aligned rows, all-on/off/partial for every available ad rule, program isolation and original About/update controls.",
+    "official": "PASS: detached actual NativeAdsPanel with simulated all-closed/one-enabled/unknown/busy states; no real official writes. Real device read-only loading completes and shows 11/11 closed. Global official control is one-way and unknown results cannot mark completion.",
+    "signature": "Original keystore only; certificate SHA-256 and APK v2/v3 verified; installed APK matches final packaged SHA-256.",
+    "preservation": "Rule keys/defaults, Settings storage/migrations, all target Hook implementations and NativeAdController are byte-identical to0.11.3. BulkEnablePolicy explicitly adds only the two recharge keys. No rule setting keys added.",
     "device_restoration": {
       "same_remote_preferences": true,
       "same_ui_preferences": true,
@@ -32,203 +48,270 @@
       "differences": [],
       "installed_apk_matches_expected": true
     },
-    "installed_apk": "PASS: original-signed code38 installed with -r; installed APK SHA-256 equals packaged APK. No module uninstall or data clearing."
+    "screenshots": [
+      "layout-overview.png",
+      "layout-ads.png",
+      "layout-program.png",
+      "layout-official.png"
+    ],
+    "safe_area": "Android16 actual captures confirm content avoids status/navigation bars after applying system insets.",
+    "source_boundary": {
+      "changed_existing_main_java_files": [
+        "BulkEnablePolicy.java",
+        "MainActivity.java",
+        "NativeAdsPanel.java"
+      ],
+      "hook_implementations_unchanged": true,
+      "unit_assertions": 127394
+    }
   },
-  "bulk_group_counts": {
-    "home": 2,
-    "health": 7,
-    "browser": 2,
-    "market": 2,
-    "system": 4
+  "device": {
+    "model": "Xiaomi MIX Fold3 (2308CPXD0C)",
+    "android": 16,
+    "hyperos": "OS3.0.304.0.WMVCNXM",
+    "scope_count": 7
   },
-  "ordinary_child_settings": 48,
-  "bulk_linked_settings": 17,
-  "official_settings_separate": 11,
   "limitations": [
-    "Module UI verified through instrumentation against actual device views. No new target-application advertising runtime or full business regression was performed.",
-    "Application Hook implementations remain unchanged. Prior target-advertising tests are historical under prior_validation.",
-    "Counts describe selected settings for installed applications, not actual advertisements removed or runtime Hook compatibility.",
-    "The newer securitycenter12.7.5 and KernelSU3.3.1 have not received a new target-application Hook regression run."
+    "This version validates module UI and configuration preservation; no new full target-application advertising/business regression was performed.",
+    "Official real-state read tests do not toggle actual official advertising settings. Partial/error/one-way completion states are simulated in a detached native panel.",
+    "Counts describe selected settings for installed applications, not actual advertisements removed or target Hook compatibility.",
+    "Play health is not installed on this phone: 28/29 program settings are available; its compatibility preference is retained and excluded from available count."
   ],
   "prior_validation": {
-    "0.11.2": {
+    "0.11.3": {
       "module": "NoAdMi",
-      "version": "0.11.2-preview",
-      "versionCode": 37,
+      "version": "0.11.3-preview",
+      "versionCode": 38,
       "date": "2026-10-23",
-      "publication": "Local preview; not published to GitHub",
+      "publication": "GitHub prerelease v0.11.3-preview",
       "build": "PASS",
-      "unit_assertions": 5230,
+      "unit_assertions": 6481,
       "javascript_checks": 64,
+      "instrumentation_apk_build": "PASS",
       "device_ui_checks": {
-        "BulkUiSmoke": 673,
-        "UiSmoke": 16
+        "BulkUiSmoke": 768
       },
-      "unified_recommendation_ui_checks": 46,
+      "installed_on_device": true,
       "certificate_sha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
-      "apk_sha256": "2bcbf3ee1ed5782713bebfd09f05c5d51e6f9d174dbc7f35d1174e5fc3c79492",
-      "tested_device": {
-        "model": "Xiaomi MIX Fold 3",
-        "os": "OS3.0.304.0.WMVCNXM",
-        "android": 16,
-        "root": "KernelSU v3.3.0",
-        "native_apps": {
-          "com.xiaomi.account": "R-25.10.23.03 (325102303)",
-          "com.android.settings": "16 (36)",
-          "com.miui.weather2": "17.0.3.34-HD (170003034)",
-          "com.miui.cleanmaster": "1024.0.260205.release (101024)",
-          "com.xiaomi.market": "5.18.0 (5003340)",
-          "com.android.browser": "20.2.101027 (200201000)",
-          "com.android.providers.downloads.ui": "125.12.24.800004 (1251224004)",
-          "com.android.calendar": "17.10.8.2 (171008020)"
-        }
-      },
-      "tested_framework": "LSPosed 2.2.1 (7912), API 102",
-      "tested_apps": {
-        "com.xiaomi.market": "5.18.0 (5003340); web-res-3176"
-      },
-      "reference": {
-        "repository": "ReChronoRain/HyperCeiler",
-        "commit": "5af3daeff128130afe10c1aa1d1534d425ec2f71",
-        "date": "2026-10-23",
-        "implementation": "Independently implemented against actual installed native methods and recommendation components; no upstream source included."
-      },
+      "apk_sha256": "0bfe73da3d7819a44b31fdbc96ef7f78f2b97ccdd128deba4bf9b045cb7b0503",
       "checks": {
-        "migration": "PASS: all 64 combinations of six legacy settings tested with missing/unset/explicit-true/explicit-false unified key; 256 assertions. Existing selected recommendations migrate once; explicit unified false wins over all legacy true values.",
-        "bulk_advertising": "PASS: 673 real module UI checks across five groups, including all-off/all-on/partial derivation, individual toggle synchronization, unchanged functional entry/navigation/region/recharge/other-group values, About exclusion, and complete restoration of test preferences. One preference transaction per bulk change; UI refresh listeners suppressed.",
-        "dom": "PASS: 64 semantic component/type/root ownership, category variants, old-title fallback, nested/missing headings, unknown components, retained content, late insertion, observer coalescing, repeat injection, recycled card and CSS restoration checks, executed through bundled Node runtime.",
-        "unified_cases": {
-          "tested_build": 36,
-          "hook_code_unchanged_in_final_build": 37,
-          "cases": [
-            {
-              "case": "off",
-              "unified_recommendations": false,
-              "ui_checks": 23,
-              "hits": [],
-              "passed": true
-            },
-            {
-              "case": "on",
-              "unified_recommendations": true,
-              "ui_checks": 23,
-              "hits": [
-                "hit market_home_banner removed=1",
-                "hit market.detail.cards removed=3",
-                "hit market.detail.cards removed=3",
-                "hit market.detail.cards removed=3"
-              ],
-              "passed": true
-            }
-          ]
+        "counts": "1251 new assertions cover all selection combinations for group sizes 2/7/2/2/4, explicit partial/all/off states, unavailable-item exclusion and domestic-only health counts.",
+        "regression": "All 5230 existing Java assertions and 64 Market DOM checks pass.",
+        "preservation": "Existing allowlist, rule constants/defaults, preference storage/migration and every existing Hook implementation are byte-identical to versionCode37. No preference keys added.",
+        "ui": "PASS: 768 actual module UI checks verify five lists and exact totals2/7/2/2/4, section context, all-off/all-on/partial1-of-N states, accessibility state descriptions, domestic health3/3 plus1 unavailable, child synchronization and functional/cross-group isolation. Test finally restores rule and fold preferences.",
+        "signature": "Production and local instrumentation APKs built through the original-key wrapper; expected certificate and APK v2/v3 verified.",
+        "windows": "Build succeeds with explicit UTF-8 source reading and direct D8 Java invocation; no separate verification shim required.",
+        "device_restoration": {
+          "same_remote_preferences": true,
+          "same_ui_preferences": true,
+          "same_local_preferences": true,
+          "same_scope": true,
+          "same_framework_state": true,
+          "remote_preference_count": 58,
+          "ui_preference_count": 26,
+          "differences": [],
+          "installed_apk_matches_expected": true
         },
-        "visual": "PASS: browser, WeChat and Alipay detail pages tested with recommendations off/on. User-likes, popular category and more recommendations removed together. Alipay popular home/lifestyle category is not a hardcoded fallback title, confirming component selection. Screenshots, description, version, privacy/permissions, same-developer entry, report and native install/upgrade controls remain. Home carousel restored when disabled and removed when enabled; ordinary curated home content remains.",
-        "final_runtime": "PASS: final versionCode 37 fresh process logs confirm home banner removed=1 and detail cards removed=3. Temporary diagnostic code removed.",
-        "final_installation": {
-          "version": "0.11.2-preview",
-          "versionCode": 37,
-          "apk_sha256": "2bcbf3ee1ed5782713bebfd09f05c5d51e6f9d174dbc7f35d1174e5fc3c79492",
-          "existing_settings_preserved": 57,
-          "ui_choices_preserved": 26,
-          "unified_recommendations_enabled": true,
-          "installed_apk_matches_output": true,
-          "original_certificate": true,
-          "temporary_diagnostics_absent": true,
-          "uninstall_feature_absent": true
-        },
-        "privacy": "Archive allowlists own source/assets/docs/tests only; excludes signing/password files, target app APK/decompiled/resources, temporary diagnostics, device captures and private handoff."
+        "installed_apk": "PASS: original-signed code38 installed with -r; installed APK SHA-256 equals packaged APK. No module uninstall or data clearing."
       },
+      "bulk_group_counts": {
+        "home": 2,
+        "health": 7,
+        "browser": 2,
+        "market": 2,
+        "system": 4
+      },
+      "ordinary_child_settings": 48,
+      "bulk_linked_settings": 17,
+      "official_settings_separate": 11,
       "limitations": [
-        "Current phone and Market 5.18.0 resource 3176 verified. Unknown layouts, new component types or server resource revisions remain unchanged until adapted.",
-        "Application recommendations switch controls the adapted startup/download/update/mini-card/home-banner/detail recommendations; does not remove every ordinary curated homepage item or the same-developer functional entry.",
-        "Bulk switch covers advertising and promotion hooks only. Functional-entry hiding, tabs, sport group, recharge services and mainland experiments remain individual. Official persisted advertising settings retain their dedicated close-all control.",
-        "No actual app download/upgrade/uninstall or new official advertising-setting write was performed for this test.",
-        "Earlier Browser feed filter still lacks a live advertising sample on the current simple homepage; no new Browser business regression or other-app full regression was repeated."
+        "Module UI verified through instrumentation against actual device views. No new target-application advertising runtime or full business regression was performed.",
+        "Application Hook implementations remain unchanged. Prior target-advertising tests are historical under prior_validation.",
+        "Counts describe selected settings for installed applications, not actual advertisements removed or runtime Hook compatibility.",
+        "The newer securitycenter12.7.5 and KernelSU3.3.1 have not received a new target-application Hook regression run."
       ],
       "prior_validation": {
-        "0.11.1": {
+        "0.11.2": {
+          "module": "NoAdMi",
+          "version": "0.11.2-preview",
+          "versionCode": 37,
+          "date": "2026-10-23",
+          "publication": "Local preview; not published to GitHub",
+          "build": "PASS",
+          "unit_assertions": 5230,
+          "javascript_checks": 64,
+          "device_ui_checks": {
+            "BulkUiSmoke": 673,
+            "UiSmoke": 16
+          },
+          "unified_recommendation_ui_checks": 46,
+          "certificate_sha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+          "apk_sha256": "2bcbf3ee1ed5782713bebfd09f05c5d51e6f9d174dbc7f35d1174e5fc3c79492",
+          "tested_device": {
+            "model": "Xiaomi MIX Fold 3",
+            "os": "OS3.0.304.0.WMVCNXM",
+            "android": 16,
+            "root": "KernelSU v3.3.0",
+            "native_apps": {
+              "com.xiaomi.account": "R-25.10.23.03 (325102303)",
+              "com.android.settings": "16 (36)",
+              "com.miui.weather2": "17.0.3.34-HD (170003034)",
+              "com.miui.cleanmaster": "1024.0.260205.release (101024)",
+              "com.xiaomi.market": "5.18.0 (5003340)",
+              "com.android.browser": "20.2.101027 (200201000)",
+              "com.android.providers.downloads.ui": "125.12.24.800004 (1251224004)",
+              "com.android.calendar": "17.10.8.2 (171008020)"
+            }
+          },
+          "tested_framework": "LSPosed 2.2.1 (7912), API 102",
+          "tested_apps": {
+            "com.xiaomi.market": "5.18.0 (5003340); web-res-3176"
+          },
+          "reference": {
+            "repository": "ReChronoRain/HyperCeiler",
+            "commit": "5af3daeff128130afe10c1aa1d1534d425ec2f71",
+            "date": "2026-10-23",
+            "implementation": "Independently implemented against actual installed native methods and recommendation components; no upstream source included."
+          },
           "checks": {
-            "independent_cases": [
-              {
-                "case": "off",
-                "likes": false,
-                "tools": false,
-                "banner": false,
-                "ui_checks": 35,
-                "hits": [],
-                "passed": true
-              },
-              {
-                "case": "likes-only",
-                "likes": true,
-                "tools": false,
-                "banner": true,
-                "ui_checks": 35,
-                "hits": [
-                  "hit market_home_banner removed=1",
-                  "hit market.detail.cards likes=1 tools=0"
-                ],
-                "passed": true
-              },
-              {
-                "case": "tools-only",
-                "likes": false,
-                "tools": true,
-                "banner": true,
-                "ui_checks": 35,
-                "hits": [
-                  "hit market_home_banner removed=1",
-                  "hit market.detail.cards likes=0 tools=1"
-                ],
-                "passed": true
-              },
-              {
-                "case": "all-on",
-                "likes": true,
-                "tools": true,
-                "banner": true,
-                "ui_checks": 35,
-                "hits": [
-                  "hit market_home_banner removed=1",
-                  "hit market.detail.cards likes=1 tools=1"
-                ],
-                "passed": true
-              }
-            ],
-            "visual": "PASS: all-off restores top home carousel and both detail recommendation groups. Likes-only removes that card and keeps tools. Tools-only removes tools and keeps likes. All-on removes both, naturally advances following content, and removes the home carousel without its reserved row. Screenshots, descriptions, privacy/permissions links, version, native header and upgrade action remain; no install/upgrade clicked.",
-            "script": "PASS: 92 checks of all toggle pairs, exact structure/title selection, unrelated content retained, null headings, nested headings, late rendering, one observer, frame coalescing, idempotence, recycled cards and original CSS display/priority restoration. Tested via bundled Node runtime.",
-            "native_boundaries": "PASS: pure tests require detail HTML names and the recognized first home banner component; preserve unknown types, later rows, ordinary horizontal apps and other page components. Production additionally requires home context and page zero.",
+            "migration": "PASS: all 64 combinations of six legacy settings tested with missing/unset/explicit-true/explicit-false unified key; 256 assertions. Existing selected recommendations migrate once; explicit unified false wins over all legacy true values.",
+            "bulk_advertising": "PASS: 673 real module UI checks across five groups, including all-off/all-on/partial derivation, individual toggle synchronization, unchanged functional entry/navigation/region/recharge/other-group values, About exclusion, and complete restoration of test preferences. One preference transaction per bulk change; UI refresh listeners suppressed.",
+            "dom": "PASS: 64 semantic component/type/root ownership, category variants, old-title fallback, nested/missing headings, unknown components, retained content, late insertion, observer coalescing, repeat injection, recycled card and CSS restoration checks, executed through bundled Node runtime.",
+            "unified_cases": {
+              "tested_build": 36,
+              "hook_code_unchanged_in_final_build": 37,
+              "cases": [
+                {
+                  "case": "off",
+                  "unified_recommendations": false,
+                  "ui_checks": 23,
+                  "hits": [],
+                  "passed": true
+                },
+                {
+                  "case": "on",
+                  "unified_recommendations": true,
+                  "ui_checks": 23,
+                  "hits": [
+                    "hit market_home_banner removed=1",
+                    "hit market.detail.cards removed=3",
+                    "hit market.detail.cards removed=3",
+                    "hit market.detail.cards removed=3"
+                  ],
+                  "passed": true
+                }
+              ]
+            },
+            "visual": "PASS: browser, WeChat and Alipay detail pages tested with recommendations off/on. User-likes, popular category and more recommendations removed together. Alipay popular home/lifestyle category is not a hardcoded fallback title, confirming component selection. Screenshots, description, version, privacy/permissions, same-developer entry, report and native install/upgrade controls remain. Home carousel restored when disabled and removed when enabled; ordinary curated home content remains.",
+            "final_runtime": "PASS: final versionCode 37 fresh process logs confirm home banner removed=1 and detail cards removed=3. Temporary diagnostic code removed.",
             "final_installation": {
-              "version": "0.11.1-preview",
-              "versionCode": 33,
-              "apk_sha256": "20de86163bad29221ee59f0e97b741afae660d57e56726fb7fa439cf3be0e85a",
+              "version": "0.11.2-preview",
+              "versionCode": 37,
+              "apk_sha256": "2bcbf3ee1ed5782713bebfd09f05c5d51e6f9d174dbc7f35d1174e5fc3c79492",
               "existing_settings_preserved": 57,
-              "current_ui_choices_preserved": 25,
-              "prior_48_settings_preserved": true,
-              "three_new_controls_enabled": true,
-              "final_ui_checks": 16,
+              "ui_choices_preserved": 26,
+              "unified_recommendations_enabled": true,
+              "installed_apk_matches_output": true,
+              "original_certificate": true,
               "temporary_diagnostics_absent": true,
               "uninstall_feature_absent": true
             },
-            "diagnostics": "PASS: no temporary structure/URL diagnostics in final APK. Same-version local prototype cache was observed during development; final tested build uses incremented versionCode 33.",
-            "privacy": "Source archive includes only project code/assets/docs/tests; signing material, APK/decompiled resources of target apps, live page resources, phone captures and HyperPriv handoff excluded."
+            "privacy": "Archive allowlists own source/assets/docs/tests only; excludes signing/password files, target app APK/decompiled/resources, temporary diagnostics, device captures and private handoff."
           },
           "limitations": [
-            "Verified against current native APK and web resource 3176 on MIX Fold 3. Server changes to markup or titles and other devices/ROMs require fresh verification; unmatched structures remain unchanged.",
-            "Only the requested two detail recommendation cards and first home carousel are covered by these three options. Other recommendation cards remain controlled by their own existing behavior.",
-            "Card recycling and CSS restoration covered by mocked DOM tests; current live page cases verified against actual served content, not all Vue lifecycle variants.",
-            "Previously added Browser feed-ad filter still has no live advertising sample on the current simple homepage; prior 0.11.0 limitations remain applicable.",
-            "No download/install/upgrade/uninstall/disable/restore operation performed. No repeated full business regression for unrelated applications."
-          ]
+            "Current phone and Market 5.18.0 resource 3176 verified. Unknown layouts, new component types or server resource revisions remain unchanged until adapted.",
+            "Application recommendations switch controls the adapted startup/download/update/mini-card/home-banner/detail recommendations; does not remove every ordinary curated homepage item or the same-developer functional entry.",
+            "Bulk switch covers advertising and promotion hooks only. Functional-entry hiding, tabs, sport group, recharge services and mainland experiments remain individual. Official persisted advertising settings retain their dedicated close-all control.",
+            "No actual app download/upgrade/uninstall or new official advertising-setting write was performed for this test.",
+            "Earlier Browser feed filter still lacks a live advertising sample on the current simple homepage; no new Browser business regression or other-app full regression was repeated."
+          ],
+          "prior_validation": {
+            "0.11.1": {
+              "checks": {
+                "independent_cases": [
+                  {
+                    "case": "off",
+                    "likes": false,
+                    "tools": false,
+                    "banner": false,
+                    "ui_checks": 35,
+                    "hits": [],
+                    "passed": true
+                  },
+                  {
+                    "case": "likes-only",
+                    "likes": true,
+                    "tools": false,
+                    "banner": true,
+                    "ui_checks": 35,
+                    "hits": [
+                      "hit market_home_banner removed=1",
+                      "hit market.detail.cards likes=1 tools=0"
+                    ],
+                    "passed": true
+                  },
+                  {
+                    "case": "tools-only",
+                    "likes": false,
+                    "tools": true,
+                    "banner": true,
+                    "ui_checks": 35,
+                    "hits": [
+                      "hit market_home_banner removed=1",
+                      "hit market.detail.cards likes=0 tools=1"
+                    ],
+                    "passed": true
+                  },
+                  {
+                    "case": "all-on",
+                    "likes": true,
+                    "tools": true,
+                    "banner": true,
+                    "ui_checks": 35,
+                    "hits": [
+                      "hit market_home_banner removed=1",
+                      "hit market.detail.cards likes=1 tools=1"
+                    ],
+                    "passed": true
+                  }
+                ],
+                "visual": "PASS: all-off restores top home carousel and both detail recommendation groups. Likes-only removes that card and keeps tools. Tools-only removes tools and keeps likes. All-on removes both, naturally advances following content, and removes the home carousel without its reserved row. Screenshots, descriptions, privacy/permissions links, version, native header and upgrade action remain; no install/upgrade clicked.",
+                "script": "PASS: 92 checks of all toggle pairs, exact structure/title selection, unrelated content retained, null headings, nested headings, late rendering, one observer, frame coalescing, idempotence, recycled cards and original CSS display/priority restoration. Tested via bundled Node runtime.",
+                "native_boundaries": "PASS: pure tests require detail HTML names and the recognized first home banner component; preserve unknown types, later rows, ordinary horizontal apps and other page components. Production additionally requires home context and page zero.",
+                "final_installation": {
+                  "version": "0.11.1-preview",
+                  "versionCode": 33,
+                  "apk_sha256": "20de86163bad29221ee59f0e97b741afae660d57e56726fb7fa439cf3be0e85a",
+                  "existing_settings_preserved": 57,
+                  "current_ui_choices_preserved": 25,
+                  "prior_48_settings_preserved": true,
+                  "three_new_controls_enabled": true,
+                  "final_ui_checks": 16,
+                  "temporary_diagnostics_absent": true,
+                  "uninstall_feature_absent": true
+                },
+                "diagnostics": "PASS: no temporary structure/URL diagnostics in final APK. Same-version local prototype cache was observed during development; final tested build uses incremented versionCode 33.",
+                "privacy": "Source archive includes only project code/assets/docs/tests; signing material, APK/decompiled resources of target apps, live page resources, phone captures and HyperPriv handoff excluded."
+              },
+              "limitations": [
+                "Verified against current native APK and web resource 3176 on MIX Fold 3. Server changes to markup or titles and other devices/ROMs require fresh verification; unmatched structures remain unchanged.",
+                "Only the requested two detail recommendation cards and first home carousel are covered by these three options. Other recommendation cards remain controlled by their own existing behavior.",
+                "Card recycling and CSS restoration covered by mocked DOM tests; current live page cases verified against actual served content, not all Vue lifecycle variants.",
+                "Previously added Browser feed-ad filter still has no live advertising sample on the current simple homepage; prior 0.11.0 limitations remain applicable.",
+                "No download/install/upgrade/uninstall/disable/restore operation performed. No repeated full business regression for unrelated applications."
+              ]
+            }
+          }
         }
+      },
+      "tested_device": {
+        "model": "Xiaomi MIX Fold 3 (2308CPXD0C)",
+        "android": 16,
+        "os": "OS3.0.304.0.WMVCNXM",
+        "framework": "LSPosed2.2.1 (7912)",
+        "root": "KernelSU3.3.1 (32680)"
       }
     }
   },
-  "tested_device": {
-    "model": "Xiaomi MIX Fold 3 (2308CPXD0C)",
-    "android": 16,
-    "os": "OS3.0.304.0.WMVCNXM",
-    "framework": "LSPosed2.2.1 (7912)",
-    "root": "KernelSU3.3.1 (32680)"
-  }
+  "release_url": "https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.11.4-preview"
 }
