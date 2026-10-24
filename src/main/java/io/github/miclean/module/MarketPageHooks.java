@@ -10,7 +10,41 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class MarketPageHooks {
     static void install(ClassLoader loader,SharedPreferences prefs){
-        if(PromotionSettings.recommendations(prefs)){detail(loader);home(loader);}
+        if(PromotionSettings.recommendations(prefs)){detail(loader);nativeDetail(loader);home(loader);}
+    }
+    private static void nativeDetail(ClassLoader loader){
+        try{
+            Class<?> detail=Reflect.findClass("com.xiaomi.market.h52native.detail.DetailDirectFragment",loader);
+            Class<?> task=Reflect.findClass("com.xiaomi.market.h52native.base.ResponseTask",loader);
+            Class<?> context=Reflect.findClass("com.xiaomi.market.h52native.INativeFragmentContext",loader);
+            Class<?> component=Reflect.findClass("com.xiaomi.market.h52native.componentbeans.BaseNativeComponent",loader);
+            Method request=task.getMethod("getRequestApi"),data=task.getMethod("getData");
+            Method handle=detail.getDeclaredMethod("handleResponseData",task);
+            Method parse=Reflect.findClass("com.xiaomi.market.h52native.base.BaseViewModel",loader).getDeclaredMethod("parseResponse",context,int.class,org.json.JSONObject.class);
+            if(request.getReturnType()!=String.class||data.getReturnType()!=org.json.JSONObject.class||handle.getReturnType()!=void.class||parse.getReturnType()!=List.class)
+                throw new NoSuchMethodException("native detail response");
+            MarketNativeDetailFilter filter=new MarketNativeDetailFilter();
+            // The response is queued and parsed on another coroutine. Track its identity,
+            // rather than a thread-local flag, and leave the response/queue callbacks intact.
+            HookRuntime.hookMethod(handle,new MethodHook(){
+                @Override protected void beforeHookedMethod(Param p)throws Throwable{
+                    if(detail.isInstance(p.thisObject)&&task.isInstance(p.args[0]))
+                        filter.remember((String)request.invoke(p.args[0]),data.invoke(p.args[0]));
+                }
+            });
+            HookRuntime.hookMethod(parse,new MethodHook(){
+                final AtomicBoolean logged=new AtomicBoolean();
+                @Override protected void afterHookedMethod(Param p){
+                    if(p.hasThrowable()||!detail.isInstance(p.args[0])||!Integer.valueOf(0).equals(p.args[1]))return;
+                    Object before=p.getResult(),after=filter.filter(p.args[2],before,component);
+                    if(after!=before){
+                        p.setResult(after);
+                        if(logged.compareAndSet(false,true))HookEntry.report("hit market.detail.native removed="+((List<?>)before).size());
+                    }
+                }
+            });
+            HookEntry.report("installed market.detail.native recommendation filter");
+        }catch(Throwable e){HookEntry.report("skip market.detail.native: "+e.getClass().getSimpleName());}
     }
     private static void detail(ClassLoader loader){
         try{

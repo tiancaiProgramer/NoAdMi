@@ -7,4 +7,5 @@
  <instrumentation android:name=".BulkUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi bulk controls test" />
  <instrumentation android:name=".LayoutCapture" android:targetPackage="io.github.miclean.module" android:label="NoAdMi local layout capture" />
  <application android:hasCode="true" android:label="NoAdMi local tests" />
+ <instrumentation android:name=".MarketRecommendationControl" android:targetPackage="io.github.miclean.module" android:label="NoAdMi local market recommendation A/B control" />
 </manifest>
