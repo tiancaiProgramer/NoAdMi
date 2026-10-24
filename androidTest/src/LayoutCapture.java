@@ -23,10 +23,11 @@ public final class LayoutCapture extends Instrumentation {
     void main(Runnable action){runOnMainSync(action);waitForIdleSync();}
     void capture(String mode,String anchor)throws Exception{
         final Throwable[] error={null};
+        final boolean programView=mode.equals("program")||mode.equals("hierarchy");
         main(()->{try{
-            SharedPreferences.Editor edit=prefs.edit().putBoolean("advertising",!mode.equals("program")).putBoolean("program",mode.equals("program"))
+            SharedPreferences.Editor edit=prefs.edit().putBoolean("advertising",!programView).putBoolean("program",programView)
                 .putBoolean("app_ads",mode.equals("ads")).putBoolean("system_official",mode.equals("official"))
-                .putBoolean("app_home",true).putBoolean("app_health",true).putBoolean("home_tabs",false).putBoolean("home_mine",false).putBoolean("health_mine",false);
+                .putBoolean("app_home",true).putBoolean("app_health",true).putBoolean("home_tabs",mode.equals("hierarchy")).putBoolean("home_mine",false).putBoolean("health_mine",false);
             if(!edit.commit())throw new AssertionError("Capture fold save failed");render();
         }catch(Throwable e){error[0]=e;}});if(error[0]!=null)throw new Exception(error[0]);
         if(mode.equals("official")){
@@ -38,11 +39,25 @@ public final class LayoutCapture extends Instrumentation {
             View root=activity.getWindow().getDecorView();View row=tagged(root,anchor);ScrollView page=scroll(root);
             if(row==null||page==null)throw new AssertionError("Screenshot anchor missing");
             int[] location=new int[2],top=new int[2];row.getLocationOnScreen(location);page.getLocationOnScreen(top);
-            page.scrollTo(0,Math.max(0,page.getScrollY()+location[1]-top[1]-16));
+            page.scrollTo(0,Math.max(0,page.getScrollY()+location[1]-top[1]-page.getPaddingTop()-16));
+        });
+        if(mode.equals("hierarchy"))main(() -> {
+            View root=activity.getWindow().getDecorView();
+            View heading=tagged(root,"fold:app_home"),nested=tagged(root,"fold:home_tabs"),guide=tagged(root,"guide:app_home"),innerGuide=tagged(root,"guide:home_tabs");
+            if(heading==null||nested==null||guide==null||innerGuide==null)throw new AssertionError("Hierarchy views absent");
+            if(!guide.isShown()||!innerGuide.isShown()||guide.getWidth()<=0||guide.getHeight()<=0||innerGuide.getHeight()<=0)throw new AssertionError("Expanded guide has no measured area");
+            int[] outer=new int[2],inner=new int[2];heading.getLocationOnScreen(outer);nested.getLocationOnScreen(inner);
+            if(inner[0]<=outer[0])throw new AssertionError("Nested menu lacks visible indentation");
+            if(heading.getBackground()==null||nested.getBackground()==null)throw new AssertionError("Nested title surfaces absent");
         });
         // Frame callbacks run before capture; this also avoids an in-progress launch animation.
         SystemClock.sleep(400);waitForIdleSync();
-        Bitmap image=getUiAutomation().takeScreenshot();if(image==null)throw new AssertionError("Screenshot unavailable");
+        View decor=activity.getWindow().getDecorView();
+        Bitmap image=Bitmap.createBitmap(decor.getWidth(),decor.getHeight(),Bitmap.Config.ARGB_8888);
+        java.util.concurrent.CountDownLatch copied=new java.util.concurrent.CountDownLatch(1);
+        int[] resultCode={-1};
+        runOnMainSync(() -> android.view.PixelCopy.request(activity.getWindow(),image,result -> {resultCode[0]=result;copied.countDown();},new Handler(Looper.getMainLooper())));
+        if(!copied.await(8,java.util.concurrent.TimeUnit.SECONDS)||resultCode[0]!=android.view.PixelCopy.SUCCESS){image.recycle();throw new AssertionError("Module-window capture failed: "+resultCode[0]);}
         try(FileOutputStream file=new FileOutputStream(new File(activity.getFilesDir(),"layout-"+mode+".png"))){if(!image.compress(Bitmap.CompressFormat.PNG,100,file))throw new AssertionError("Screenshot write failed");}finally{image.recycle();}
     }
     @Override public void onStart(){Bundle result=new Bundle();Throwable failure=null;try{
@@ -54,11 +69,12 @@ public final class LayoutCapture extends Instrumentation {
         prefs=(SharedPreferences)field(activity,"uiPrefs");
         JSONObject snapshot=new JSONObject(new String(android.util.Base64.decode(arguments.getString("ui_snapshot"),android.util.Base64.DEFAULT),"UTF-8"));
         Iterator<String> keys=snapshot.keys();while(keys.hasNext()){String key=keys.next();original.put(key,snapshot.getBoolean(key));}
-        capture("overview",null);capture("ads","fold:app_ads");capture("program","fold:program");capture("official","fold:system_official");
+        capture("overview",null);
+        if(!"overview".equals(arguments.getString("capture_mode"))){capture("ads","fold:app_ads");capture("program","fold:program");capture("hierarchy","fold:program");capture("official","fold:system_official");}
     }catch(Throwable e){failure=e;}finally{if(prefs!=null&&!original.isEmpty()){
         final Throwable[] restoreError={null};main(()->{try{SharedPreferences.Editor edit=prefs.edit().clear();for(Map.Entry<String,Boolean> item:original.entrySet())edit.putBoolean(item.getKey(),item.getValue());if(!edit.commit()||!original.equals(prefs.getAll()))throw new AssertionError("Exact fold restoration failed");render();}catch(Throwable e){restoreError[0]=e;}});
         if(restoreError[0]!=null)failure=restoreError[0];
     }}
-        result.putString("stream",failure==null?"PASS: 4 actual layout screenshots; exact original fold snapshot committed and verified.\n":"FAIL: "+failure+"\n");finish(failure==null?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);
+        result.putString("stream",failure==null?("overview".equals(arguments.getString("capture_mode"))?"PASS: actual module overview screenshot; exact original fold snapshot committed and verified.\n":"PASS: 5 actual layout screenshots and measured nesting geometry; exact original fold snapshot committed and verified.\n"):"FAIL: "+failure+"\n");finish(failure==null?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);
     }
 }

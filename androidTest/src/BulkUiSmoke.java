@@ -67,10 +67,16 @@ public final class BulkUiSmoke extends Instrumentation {
             check(ads!=null&&ads.getVisibility()==View.GONE,"App ads must start collapsed");
             Switch master=(Switch)text(root,"广告隐藏总开关");check(master!=null&&!master.isShown(),"Collapsed ads leaks master");
             View official=tagged(root,"fold:system_official"),adsHeader=tagged(root,"fold:app_ads");
-            check(official.getParent()==adsHeader.getParent()&&((ViewGroup)official.getParent()).indexOfChild(official)<((ViewGroup)adsHeader.getParent()).indexOfChild(adsHeader),"Official settings must precede App ads");
+            check(tagged(root,"group:system_official").getParent()==tagged(root,"group:app_ads").getParent()&&((ViewGroup)tagged(root,"group:system_official").getParent()).indexOfChild(tagged(root,"group:system_official"))<((ViewGroup)tagged(root,"group:app_ads").getParent()).indexOfChild(tagged(root,"group:app_ads")),"Official settings must precede App ads");
             open(root,"app_ads");check(master.isShown()&&master.isEnabled(),"Advertising master unavailable");
             List<Switch> advertising=new ArrayList<>(),functional=new ArrayList<>();switches(ads,advertising);switches(program,functional);
             check(advertising.size()==19&&functional.size()==29,"19/29 classification count changed");
+            for (String id : new String[]{"system_official","app_ads","app_home","app_health","home_tabs","home_mine","health_mine"}) {
+                View heading=tagged(root,"fold:"+id),guide=tagged(root,"guide:"+id);
+                check(heading!=null&&heading.getBackground()!=null,"Nested heading lacks its own surface "+id);
+                check(guide!=null,"Expanded content lacks a nesting guide "+id);
+            }
+            check(tagged(root,"fold:advertising").getBackground()==null,"Primary heading lost its white-card style");
             Set<String> eligible=new HashSet<>();for(Switch row:advertising){check(eligible.add((String)row.getTag()),"Duplicate advertising key");check(!row.getText().toString().contains("·"),"Repeated app prefix");}
             check(eligible.contains("system_network_traffic_recharge")&&eligible.contains("system_network_phone_recharge"),"Recharge entries not classified as ads");
             for(Switch row:functional)check(!eligible.contains(row.getTag()),"Functional item included in advertising");

@@ -36,6 +36,7 @@ public final class MainActivity extends Activity {
     private LinearLayout content;
     private NativeAdsPanel nativeAds;
     private final List<Runnable> refreshers = new ArrayList<>();
+    private final java.util.Map<View,Integer> foldLevels = new java.util.IdentityHashMap<>();
     private static final int INK = Color.rgb(36, 44, 40);
     private static final int MUTED = Color.rgb(102, 112, 106);
     private static final int ORANGE = Color.rgb(202, 88, 27);
@@ -57,6 +58,7 @@ public final class MainActivity extends Activity {
     private void render() {
         frameworkReady = Settings.ready();
         refreshers.clear();
+        foldLevels.clear();
         ruleToggles.clear();
         prefs = Settings.current(this);
         if (frameworkReady) {
@@ -103,9 +105,8 @@ public final class MainActivity extends Activity {
         label(content, "按需精简，保留常用。", 14, MUTED, false);
         LinearLayout status = card();
         label(status, frameworkReady ? "框架服务已连接" : "等待框架服务连接", 17, INK, true);
-        label(status, frameworkReady ? "展开分类设置；保存后请强行停止并重新打开对应应用。"
+        label(status, frameworkReady ? "修改后，强行停止并重开对应应用生效。"
             : "请在支持 libxposed API 102 的框架中启用模块并勾选目标应用，再重新打开模块。", 13, MUTED, false);
-        label(status, "数量按可用子开关统计，每个开关计 1 项；未安装应用的项目不计入总数。启用数量表示配置状态，不是已屏蔽的广告条数。", 12, MUTED, false);
         if (Settings.status() != null) label(status, Settings.status(), 12, ORANGE, false);
         advertisingCard();
         programCard();
@@ -270,16 +271,30 @@ public final class MainActivity extends Activity {
     /** Fixed chevron space keeps a plain switch and a folding row on the same text baseline. */
     private LinearLayout fold(LinearLayout parent, String id, String title, String caption,
             int countMode, int size, boolean initial) {
-        if (size < 21) divider(parent);
+        int level = foldLevels.containsKey(parent) ? foldLevels.get(parent) : 0;
+        LinearLayout group = vertical();
+        group.setTag("group:" + id);
+        LinearLayout.LayoutParams groupParams = new LinearLayout.LayoutParams(-1, -2);
+        if (level > 0) { groupParams.topMargin = gap(level == 1 ? 12 : 6); groupParams.bottomMargin = gap(4); }
+        parent.addView(group, groupParams);
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        header.setPadding(0, gap(12), 0, gap(12));
-        header.setMinimumHeight(dp(52));
+        header.setPadding(level == 1 ? dp(12) : 0, gap(12), level == 1 ? dp(12) : 0, gap(12));
+        header.setMinimumHeight(dp(level == 0 ? 60 : level == 1 ? 56 : 52));
+        if (level > 0) {
+            GradientDrawable headingBackground = new GradientDrawable();
+            headingBackground.setColor(level == 1 ? Color.rgb(237,242,232) : Color.rgb(246,248,243));
+            headingBackground.setCornerRadius(dp(level == 1 ? 10 : 8));
+            if (level == 1) headingBackground.setStroke(dp(1), Color.rgb(219,228,212));
+            header.setBackground(headingBackground);
+        }
         header.setFocusable(true);
         header.setTag("fold:" + id);
         TextView arrow = new TextView(this);
         arrow.setTextSize(22); arrow.setTextColor(MUTED);
+        arrow.setGravity(android.view.Gravity.CENTER);
+        arrow.setText("›");
         header.addView(arrow, new LinearLayout.LayoutParams(dp(22), -2));
         LinearLayout titles = vertical();
         header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
@@ -292,9 +307,26 @@ public final class MainActivity extends Activity {
         quantity.setGravity(android.view.Gravity.END);
         quantity.setPadding(dp(8), 0, 0, 0);
         header.addView(quantity, new LinearLayout.LayoutParams(-2, -2));
-        parent.addView(header, new LinearLayout.LayoutParams(-1, -2));
+        group.addView(header, new LinearLayout.LayoutParams(-1, -2));
         LinearLayout body = vertical(); body.setTag("body:" + id);
-        parent.addView(body, new LinearLayout.LayoutParams(-1, -2));
+        foldLevels.put(body, level + 1);
+        LinearLayout expandedArea;
+        if (level > 0) {
+            expandedArea = new LinearLayout(this);
+            expandedArea.setOrientation(LinearLayout.HORIZONTAL);
+            expandedArea.setPadding(dp(level == 1 ? 12 : 10), gap(8), 0, gap(4));
+            View guide = new View(this);
+            guide.setTag("guide:" + id);
+            guide.setBackgroundColor(Color.rgb(211,223,202));
+            expandedArea.addView(guide, new LinearLayout.LayoutParams(dp(2), -1));
+            LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(0, -2, 1);
+            bodyParams.leftMargin = dp(10);
+            expandedArea.addView(body, bodyParams);
+        } else {
+            expandedArea = body;
+            divider(body);
+        }
+        group.addView(expandedArea, new LinearLayout.LayoutParams(-1, -2));
         Runnable refresh = () -> {
             boolean expanded = uiPrefs.getBoolean(id, initial);
             String summary = caption;
@@ -308,11 +340,12 @@ public final class MainActivity extends Activity {
                 if (!caption.isEmpty()) summary = caption + "\n" + summary;
             }
             quantity.setVisibility(countMode == 1 && caption.isEmpty() ? View.VISIBLE : View.GONE);
-            arrow.setText(expanded ? "⌄" : "›");
+            arrow.setRotation(expanded ? 90f : 0f);
             detail.setText(summary);
             detail.setVisibility(summary.isEmpty() || (countMode == 1 && caption.isEmpty()) ? View.GONE : View.VISIBLE);
             header.setContentDescription(title + (summary.isEmpty() ? "" : "，" + summary) + (expanded ? "，点击收起" : "，点击展开"));
             body.setVisibility(expanded ? View.VISIBLE : View.GONE);
+            expandedArea.setVisibility(expanded ? View.VISIBLE : View.GONE);
         };
         header.setOnClickListener(v -> {
             uiPrefs.edit().putBoolean(id, !uiPrefs.getBoolean(id, initial)).apply();
@@ -327,15 +360,23 @@ public final class MainActivity extends Activity {
         LinearLayout box = appGroup("about", "关于");
         updateControl(box);
         launcherIconControl(box);
+        label(box, "数量按可用开关统计，未安装项不计入；不是已拦截广告次数。", 12, MUTED, false);
         testedVersionsSection(box);
     }
 
     private void testedVersionsSection(LinearLayout box) {
         TextView header = label(box, "", 17, INK, true);
         header.setPadding(0, gap(12), 0, gap(12));
-        header.setMinHeight(dp(48));
+        header.setMinHeight(dp(56));
+        header.setPadding(dp(12), gap(12), dp(12), gap(12));
+        GradientDrawable headingBackground = new GradientDrawable();
+        headingBackground.setColor(Color.rgb(237,242,232));
+        headingBackground.setCornerRadius(dp(10));
+        headingBackground.setStroke(dp(1), Color.rgb(219,228,212));
+        header.setBackground(headingBackground);
         header.setFocusable(true);
         LinearLayout body = vertical();
+        body.setPadding(dp(24), gap(8), 0, 0);
         box.addView(body, new LinearLayout.LayoutParams(-1, -2));
         label(body, "近期测试记录在前，同批按版本从新到旧排列；测试记录不限制规则加载。", 12, MUTED, false);
         for (Rules.TestedApp app : Rules.testedAppsNewestFirst())
