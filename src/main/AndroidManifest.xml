@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="43" android:versionName="0.11.7-preview">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.miclean.module" android:versionCode="57" android:versionName="0.12.5-preview">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <permission android:name="io.github.miclean.module.permission.ACCOUNT_AD_CONTROL" android:protectionLevel="signature" />
     <uses-permission android:name="io.github.miclean.module.permission.ACCOUNT_AD_CONTROL" />
     <queries>
@@ -20,6 +25,15 @@
         <package android:name="com.android.calendar" />
     </queries>
     <application android:name=".ModuleApp" android:description="@string/module_description" android:label="NoAdMi" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:supportsRtl="true">
+        <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true" />
+        <provider android:name="rikka.shizuku.ShizukuProvider" android:authorities="io.github.miclean.module.shizuku" android:multiprocess="false" android:exported="true" android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+        <activity android:name=".SmartSkipActivity" android:exported="false" />
+        <service android:name=".skip.SkipAccessibilityService" android:label="NoAdMi 智能跳过"
+            android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/smart_skip_service" />
+        </service>
+        <service android:name=".skip.SkipUpdateJob" android:exported="false" android:permission="android.permission.BIND_JOB_SERVICE" />
         <provider android:name="io.github.libxposed.service.XposedProvider"
             android:authorities="io.github.miclean.module.XposedService" android:exported="true" />
         <activity android:name=".MainActivity" android:exported="true">

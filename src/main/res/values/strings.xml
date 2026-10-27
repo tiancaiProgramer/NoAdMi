@@ -1,1 +1,4 @@
-<resources><string name="module_description">米家、运动健康与系统应用广告精简 · 官方开关后台控制</string></resources>
+<resources>
+    <string name="module_description">米家、运动健康与系统应用广告精简 · 官方开关后台控制 · 智能跳过</string>
+    <string name="smart_skip_description">按照你启用的 GKD 格式订阅读取当前应用控件，并执行跳过、关闭等规则动作。规则在本机匹配，不上传页面内容。仅在智能跳过总开关及订阅均开启时执行；原有 Hook 功能不需要此服务。</string>
+</resources>

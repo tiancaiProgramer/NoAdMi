@@ -1,0 +1,60 @@
+{
+  "versionName": "0.12.5-preview",
+  "versionCode": 57,
+  "apkSha256": "4479318d682b25148bf751f3eacc762909a118e9ab3f4fef68c091eade0b850c",
+  "originalSignerSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "baselineCommit": "48d9590bb65c6b7219a955b7405c530328f9306c",
+  "coreChecks": 67,
+  "javaChecks": 127515,
+  "bindingPolicyChecks": 8,
+  "rootRecovery": {
+    "connectedCallbackObserved": true,
+    "version": "0.12.5-preview",
+    "startedFromCrashedMarker": true,
+    "singleEnableRequestRestoredRealBinding": true,
+    "crashedMarkerCleared": true,
+    "otherServicesPreserved": true,
+    "workerReceipt": "NOADMI_ACCESS_OK"
+  },
+  "shizuku": {
+    "result": "passed",
+    "independentFixtureProcess": true,
+    "officialGrant": true,
+    "userServiceIpc": true,
+    "directDisableEnable": true,
+    "realServiceReconnection": true,
+    "duplicateServerRestartedByUser": true
+  },
+  "finalState": {
+    "serviceBound": true,
+    "crashedMarker": false,
+    "controlMethod": "shizuku",
+    "smartSkipMaster": "false",
+    "shizukuServerCount": 1,
+    "workerConnectedInLogs": true,
+    "realConnectionCallbackInLogs": true
+  },
+  "existingSubscriptionsAndMasterRetained": true,
+  "publicationTarget": {
+    "repository": "https://github.com/tiancaiProgramer/NoAdMi",
+    "tag": "v0.12.5-preview",
+    "channel": "prerelease"
+  },
+  "knownIssues": {
+    "status": "unfixed",
+    "userReportedFailures": [
+      "com.taobao.taobao",
+      "com.taobao.idlefish"
+    ],
+    "emptyExecutionLogReported": true,
+    "confirmedDifferences": [
+      "startup follow-up polling",
+      "whole-tree snapshot failure stops retries",
+      "unknown Activity filtering",
+      "missing non-execution diagnostics"
+    ],
+    "realTargetAppAcceptance": "not passed; do not infer acceptance from service/fixture checks",
+    "details": "KNOWN_ISSUES.md",
+    "offlineProbe": "diagnostics/gkd-compat/reference-result.txt"
+  }
+}

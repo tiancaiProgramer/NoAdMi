@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/api/13.1.5/api-13.1.5.aar",
+    "aarSha256": "4def9bde498ef8626614c2fc5db9af4749c86f16f6c33e3f5658d35e70bab59b",
+    "file": "shizuku-api-13.1.5.jar",
+    "sha256": "4315fcd853f487321548be5a997749fe43105fa29aaaa6f6e7a8cdc958a38357"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/provider/13.1.5/provider-13.1.5.aar",
+    "aarSha256": "b0f18cd9812464ec171c53cac93a819fe411718a3965c311f01eb4de265381b3",
+    "file": "shizuku-provider-13.1.5.jar",
+    "sha256": "35aee86b938cb8d06b315c9d73c30f41ec7cfdc10009a5de83733bc5c4db5051"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/aidl/13.1.5/aidl-13.1.5.aar",
+    "aarSha256": "33fe7191cdd69fcb66d649264f3b0c47acb2f3d6343afc05b98dbbff6f221963",
+    "file": "shizuku-aidl-13.1.5.jar",
+    "sha256": "584945c98f21b0c4e3ccdb74b51528f89852174c30bb2a4786c43a8ca456e496"
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/dev/rikka/shizuku/shared/13.1.5/shared-13.1.5.aar",
+    "aarSha256": "4659642c9339be0a26e9c65bb8648f7ad6d8f4a465f557993ccbc78802381635",
+    "file": "shizuku-shared-13.1.5.jar",
+    "sha256": "8557b8c715d374f8da18e148ca5b971d1c7435e91447e6d4f7664403c7328760"
+  }
+]

@@ -35,6 +35,8 @@ public final class MainActivity extends Activity {
     private final SaveNoticeGate saveNotice = new SaveNoticeGate();
     private LinearLayout content;
     private NativeAdsPanel nativeAds;
+    private SmartSkipPanel smartSkip;
+    private SubscriptionActions subscriptionActions;
     private final List<Runnable> refreshers = new ArrayList<>();
     private final java.util.Map<View,Integer> foldLevels = new java.util.IdentityHashMap<>();
     private static final int INK = Color.rgb(36, 44, 40);
@@ -44,18 +46,22 @@ public final class MainActivity extends Activity {
     private final Runnable settingsListener = () -> runOnUiThread(() -> { if (!isFinishing()) render(); });
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        subscriptionActions=new SubscriptionActions(this,()->{if(smartSkip!=null)smartSkip.refresh();},()->{if(smartSkip!=null)smartSkip.refresh();});
         Settings.listen(settingsListener);
         render();
     }
-    @Override public void onDestroy() { Settings.unlisten(settingsListener); super.onDestroy(); }
+    @Override public void onDestroy() { Settings.unlisten(settingsListener); if(smartSkip!=null)smartSkip.close(); if(subscriptionActions!=null)subscriptionActions.close(); super.onDestroy(); }
+    @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(subscriptionActions!=null)subscriptionActions.onActivityResult(request,result,data);}
     @Override public void onResume() {
         super.onResume();
         if (frameworkReady != (Settings.ready())) render();
         syncLauncherIconSwitch();
         if (nativeAds != null) nativeAds.refreshIfVisible();
+        if (smartSkip != null) smartSkip.refresh();
     }
 
     private void render() {
+        if(smartSkip!=null){smartSkip.close();smartSkip=null;}
         frameworkReady = Settings.ready();
         refreshers.clear();
         foldLevels.clear();
@@ -172,50 +178,57 @@ public final class MainActivity extends Activity {
     }
 
     private void advertisingCard() {
-        LinearLayout box = fold(card(), "advertising", "广告管理", "19 项广告隐藏 · 11 项官方广告设置", 0, 21, true);
+        LinearLayout box = fold(card(), "advertising", "广告管理", "官方广告设置 · App 广告 · 智能跳过", 0, 21, true);
         LinearLayout official = fold(box, "system_official", "官方广告设置", "独立操作原应用的 11 项真实开关", 0, 16, false);
         nativeAds = new NativeAdsPanel(this, official, this::savedNotice);
         LinearLayout ads = fold(box, "app_ads", "App 广告", "按应用管理广告与推广隐藏", 2, 16, false);
         bulkAdControl(ads);
         label(ads, "按应用分组的下方单项就是总开关联动清单。打开补全可用广告隐藏，关闭停用；官方广告与程序管理独立操作。", 12, MUTED, false);
-        adHeading(ads, "米家", 2);
-        boolean home = installedAppInfo(ads, Rules.HOME, "");
-        addToggle(ads, "隐藏启动页广告", Rules.HOME_SWITCH, true, home);
-        addToggle(ads, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, home);
-        adHeading(ads, "小米运动健康", 7);
-        boolean domestic = installedAppInfo(ads, Rules.HEALTH, "国内版：");
-        boolean play = installedAppInfo(ads, Rules.HEALTH_PLAY, "Play 版：");
+        LinearLayout homeAds = adCategory(ads, "ad_home", "米家", 2);
+        boolean home = installedAppInfo(homeAds, Rules.HOME, "");
+        addToggle(homeAds, "隐藏启动页广告", Rules.HOME_SWITCH, true, home);
+        addToggle(homeAds, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, home);
+        LinearLayout healthAds = adCategory(ads, "ad_health", "小米运动健康", 7);
+        boolean domestic = installedAppInfo(healthAds, Rules.HEALTH, "国内版：");
+        boolean play = installedAppInfo(healthAds, Rules.HEALTH_PLAY, "Play 版：");
         boolean health = domestic || play;
-        label(ads, "同时作用于已安装的国内版与 Play 版。", 12, MUTED, false);
-        addToggle(ads, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, health);
-        addToggle(ads, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, health);
-        addToggle(ads, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, health);
-        addToggle(ads, "隐藏运动页活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, health);
-        addToggle(ads, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, health);
-        addToggle(ads, "隐藏“我的”页活动横幅", Rules.HEALTH_BANNER_SWITCH, true, health);
-        addToggle(ads, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, health);
-        adHeading(ads, "小米浏览器", 2);
-        boolean browser = installedAppInfo(ads, Rules.BROWSER, "");
-        addToggle(ads, "隐藏主动与第三方唤起开屏广告", PromotionRules.BROWSER_SPLASH, false, browser);
-        addToggle(ads, "过滤信息流广告卡片", PromotionRules.BROWSER_FEED, false, browser);
-        label(ads, "需勾选浏览器作用域；仅处理浏览器自身推广，保留普通信息流内容，网页内广告不在此范围。", 12, MUTED, false);
-        adHeading(ads, "应用商店", 2);
-        boolean market = installedAppInfo(ads, Rules.MARKET, "");
-        addToggle(ads, "隐藏开屏广告", PromotionRules.MARKET_SPLASH, false, market);
-        addToggle(ads, "隐藏应用内推荐", PromotionRules.MARKET_RECOMMEND, false, market);
-        label(ads, "需勾选应用商店作用域。应用内推荐包含已适配的首页横幅、首次／回流、下载／更新、详情小卡及同类推荐。", 12, MUTED, false);
-        adHeading(ads, "网络助手（手机管家）", 4);
-        boolean network = installedAppInfo(ads, Rules.SECURITY_CENTER, "");
-        addToggle(ads, "隐藏流量充值入口", Rules.NETWORK_KEYS[0], false, network);
-        addToggle(ads, "隐藏话费充值入口", Rules.NETWORK_KEYS[1], false, network);
-        addToggle(ads, "隐藏“1元/天任性用”", Rules.NETWORK_KEYS[2], false, network);
-        addToggle(ads, "隐藏“0元领通用大流量卡”", Rules.NETWORK_KEYS[3], false, network);
-        label(ads, "需勾选手机管家 / 安全服务作用域。保留流量统计、联网管理和流量排行；充值入口也纳入广告总开关，请按需设置。", 12, MUTED, false);
-        adHeading(ads, "游戏助手（系统服务组件）", 2);
-        boolean game = installedAppInfo(ads, Rules.SECURITY_ADD, "");
-        addToggle(ads, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, game);
-        addToggle(ads, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, game);
-        label(ads, "需勾选系统服务组件作用域。推荐隐藏会收起热玩排行、游戏盒子等推广入口，保留已添加游戏与设置。", 12, MUTED, false);
+        label(healthAds, "同时作用于已安装的国内版与 Play 版。", 12, MUTED, false);
+        addToggle(healthAds, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, health);
+        addToggle(healthAds, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, health);
+        addToggle(healthAds, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, health);
+        addToggle(healthAds, "隐藏运动页活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, health);
+        addToggle(healthAds, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, health);
+        addToggle(healthAds, "隐藏“我的”页活动横幅", Rules.HEALTH_BANNER_SWITCH, true, health);
+        addToggle(healthAds, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, health);
+        LinearLayout browserAds = adCategory(ads, "ad_browser", "小米浏览器", 2);
+        boolean browser = installedAppInfo(browserAds, Rules.BROWSER, "");
+        addToggle(browserAds, "隐藏主动与第三方唤起开屏广告", PromotionRules.BROWSER_SPLASH, false, browser);
+        addToggle(browserAds, "过滤信息流广告卡片", PromotionRules.BROWSER_FEED, false, browser);
+        label(browserAds, "需勾选浏览器作用域；仅处理浏览器自身推广，保留普通信息流内容，网页内广告不在此范围。", 12, MUTED, false);
+        LinearLayout marketAds = adCategory(ads, "ad_market", "应用商店", 2);
+        boolean market = installedAppInfo(marketAds, Rules.MARKET, "");
+        addToggle(marketAds, "隐藏开屏广告", PromotionRules.MARKET_SPLASH, false, market);
+        addToggle(marketAds, "隐藏应用内推荐", PromotionRules.MARKET_RECOMMEND, false, market);
+        label(marketAds, "需勾选应用商店作用域。应用内推荐包含已适配的首页横幅、首次／回流、下载／更新、详情小卡及同类推荐。", 12, MUTED, false);
+        LinearLayout networkAds = adCategory(ads, "ad_network", "网络助手（手机管家）", 4);
+        boolean network = installedAppInfo(networkAds, Rules.SECURITY_CENTER, "");
+        addToggle(networkAds, "隐藏流量充值入口", Rules.NETWORK_KEYS[0], false, network);
+        addToggle(networkAds, "隐藏话费充值入口", Rules.NETWORK_KEYS[1], false, network);
+        addToggle(networkAds, "隐藏“1元/天任性用”", Rules.NETWORK_KEYS[2], false, network);
+        addToggle(networkAds, "隐藏“0元领通用大流量卡”", Rules.NETWORK_KEYS[3], false, network);
+        label(networkAds, "需勾选手机管家 / 安全服务作用域。保留流量统计、联网管理和流量排行；充值入口也纳入广告总开关，请按需设置。", 12, MUTED, false);
+        LinearLayout gameAds = adCategory(ads, "ad_game", "游戏助手（系统服务组件）", 2);
+        boolean game = installedAppInfo(gameAds, Rules.SECURITY_ADD, "");
+        addToggle(gameAds, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, game);
+        addToggle(gameAds, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, game);
+        label(gameAds, "需勾选系统服务组件作用域。推荐隐藏会收起热玩排行、游戏盒子等推广入口，保留已添加游戏与设置。", 12, MUTED, false);
+        LinearLayout skip = fold(box, "smart_skip", "智能跳过", "GKD 格式订阅 · 无障碍自动执行", 0, 16, false);
+        smartSkip = new SmartSkipPanel(this, skip, subscriptionActions);
+    }
+
+    private LinearLayout adCategory(LinearLayout parent,String id,String title,int count){
+        if(count==1){adHeading(parent,title,count);return parent;}
+        return fold(parent,id,title,"",1,14,false);
     }
 
     private void adHeading(LinearLayout parent, String title, int count) {
@@ -362,6 +375,7 @@ public final class MainActivity extends Activity {
         launcherIconControl(box);
         label(box, "数量按可用开关统计，未安装项不计入；不是已拦截广告次数。", 12, MUTED, false);
         testedVersionsSection(box);
+        OpenSourcePanel.add(this,box);
     }
 
     private void testedVersionsSection(LinearLayout box) {
@@ -521,6 +535,7 @@ public final class MainActivity extends Activity {
         view.setText(text);
         view.setTextSize(size);
         view.setTextColor(color);
+        view.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
         view.setLineSpacing(gap(4), 1);
         view.setPadding(0, gap(5), 0, gap(5));
         if (bold) view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);

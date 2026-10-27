@@ -1,0 +1,9 @@
+Public reference subscription: id=667 version=619 apps=988
+com.taobao.taobao enabled app rules=1; allowed with unknown activity=1; eligible global rules=0
+com.taobao.idlefish enabled app rules=0; allowed with unknown activity=0; eligible global rules=2
+Idlefish global group=开屏广告-全局 key=0 matchTime=10000 forcedTime=10000 nextPollAfterMiss=true
+Idlefish global group=开屏广告-全局 key=1 matchTime=10000 forcedTime=10000 nextPollAfterMiss=true
+Taobao real splash selector matched its synthetic close node: true
+Taobao after initial miss: ready=true, matchTime=10000, forcedTime=0, scheduledPoll=false
+NoAdMi rejects an Activity-restricted rule when Activity is unknown: true
+PASS: real Taobao selector syntax works; startup follow-up polling and Activity fallback differ from GKD

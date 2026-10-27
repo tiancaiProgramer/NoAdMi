@@ -8,6 +8,8 @@ import secrets
 import shutil
 import subprocess
 import zipfile
+import hashlib
+import json
 
 ROOT = Path(__file__).resolve().parent
 
@@ -35,6 +37,8 @@ def main():
     p.add_argument('--sdk', default=os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT')))
     p.add_argument('--java-home', default=os.environ.get('JAVA_HOME'))
     p.add_argument('--libxposed-dir', required=True, help='Directory containing extracted api, service and interface AARs (102.0.0)')
+    p.add_argument('--kotlin-compiler-dir', required=True, help='Kotlin 2.4.21 embeddable compiler and its dependencies')
+    p.add_argument('--d8-jar', required=True, help='Official R8 9.5.28 JAR (D8 entry point)')
     p.add_argument('--platform', default='android-35')
     p.add_argument('--build-tools', default='36.0.0')
     p.add_argument('--work-dir', default=str(ROOT / 'build'))
@@ -42,7 +46,7 @@ def main():
     p.add_argument('--keystore', help='Existing JKS or PKCS12 signing keystore')
     p.add_argument('--store-pass-file', help='Password file for --keystore; the password is never printed')
     p.add_argument('--key-alias', default='miclean-preview')
-    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.11.6-preview.apk'))
+    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.12.5-preview.apk'))
     a = p.parse_args()
     if bool(a.keystore) != bool(a.store_pass_file):
         p.error('--keystore and --store-pass-file must be supplied together.')
@@ -67,9 +71,17 @@ def main():
             shutil.rmtree(path)
         path.mkdir()
     run([sys.executable, ROOT / 'tools/embed_market_detail.py'])
+    sys.path.insert(0, str(ROOT / 'tools'))
+    from build_smart_skip import compile_core
+    skip_runtime = compile_core(ROOT, build, jdk, android, a.kotlin_compiler_dir)
+    for dependency in json.loads((ROOT / 'third_party/shizuku/manifest.json').read_text()):
+        jar = ROOT / 'third_party/shizuku' / dependency['file']
+        if hashlib.sha256(jar.read_bytes()).hexdigest() != dependency['sha256']:
+            raise ValueError('Shizuku dependency checksum mismatch: ' + jar.name)
+    skip_runtime += sorted((ROOT / 'third_party/shizuku').glob('*.jar'))
     sources = sorted((ROOT / 'src/main/java').rglob('*.java'))
     run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-source', '8', '-target', '8',
-         '-classpath', os.pathsep.join(map(str, (android, api, *runtime))), '-d', build / 'classes', *sources])
+         '-classpath', os.pathsep.join(map(str, (android, api, *runtime, *skip_runtime))), '-d', build / 'classes', *sources])
     test_sources = sorted((ROOT / 'tests').glob('*.java'))
     run([tool(jdk / 'bin', 'javac'), '-encoding', 'UTF-8', '-classpath', os.pathsep.join(map(str, (build / 'classes', api, android))),
          '-d', build / 'tests', *test_sources])
@@ -78,8 +90,8 @@ def main():
         package = re.search(r'^package ([\w.]+);', test.read_text(encoding='utf-8'), re.M)
         test_class = (package.group(1) + '.' if package else '') + test.stem
         run([tool(jdk / 'bin', 'java'), '-cp', os.pathsep.join(map(str, (build / 'classes', build / 'tests', api, android))), test_class])
-    run([tool(tools, 'd8'), '--min-api', '26', '--lib', android, '--classpath', api,
-         '--output', build / 'dex', *sorted((build / 'classes').rglob('*.class')), *runtime], env)
+    run([tool(jdk / 'bin', 'java'), '-Xmx1536m', '-cp', Path(a.d8_jar).resolve(), 'com.android.tools.r8.D8', '--min-api', '26', '--lib', android, '--classpath', api,
+         '--output', build / 'dex', *sorted((build / 'classes').rglob('*.class')), *runtime, *skip_runtime], env)
     unsigned = build / 'unsigned.apk'
     run([tool(tools, 'aapt'), 'package', '-f', '-M', ROOT / 'src/main/AndroidManifest.xml',
          '-S', ROOT / 'src/main/res', '-A', ROOT / 'src/main/assets', '-I', android, '-F', unsigned])

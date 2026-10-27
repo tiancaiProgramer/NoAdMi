@@ -7,5 +7,11 @@
  <instrumentation android:name=".BulkUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi bulk controls test" />
  <instrumentation android:name=".LayoutCapture" android:targetPackage="io.github.miclean.module" android:label="NoAdMi local layout capture" />
  <application android:hasCode="true" android:label="NoAdMi local tests" />
+ <instrumentation android:name=".SmartSkipUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi smart skip UI test" />
+ <instrumentation android:name=".SmartSkipEngineSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi isolated accessibility test" />
+ <instrumentation android:name=".UiAlignmentSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi alignment and category test" />
+ <instrumentation android:name=".ExternalSkipSmoke" android:targetPackage="io.github.miclean.skipfixture" android:label="NoAdMi independent service test" />
+ <instrumentation android:name=".ShizukuAccessSmoke" android:targetPackage="io.github.miclean.skipfixture" android:label="NoAdMi Shizuku permission and direct control test" />
  <instrumentation android:name=".MarketRecommendationControl" android:targetPackage="io.github.miclean.module" android:label="NoAdMi local market recommendation A/B control" />
+ <instrumentation android:name=".SubscriptionToggleSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi subscription switch race regression" />
 </manifest>

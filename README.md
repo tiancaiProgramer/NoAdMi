@@ -4,7 +4,17 @@
 
 米家、小米运动健康、小米浏览器、应用商店与系统应用广告的 libxposed API 102 精简模块。首页分为“广告管理”“程序管理”和“关于”；广告与功能入口分开设置，保留 Play 版中国大陆兼容实验开关。
 
-[下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [验证记录](verification.json)
+> **智能跳过已知问题：** 用户实测淘宝、闲鱼未跳过且执行记录为空。本预发布尚未修复启动补检、节点读取中断和诊断信息不足等执行器差异；服务连接与简单测试页通过不代表这些 App 已验证。详见 [已知问题](KNOWN_ISSUES.md) 和 [开发交接](CONTINUE_SMART_SKIP.md)。
+
+[下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [最新验证记录](SMART_SKIP_VERIFICATION.md) · [原有 Hook 验证](verification.json)
+
+## 智能跳过（0.12.5-preview）
+
+订阅开关按 ID 保持控件稳定，保存独立于下载任务；快速切换以最后一次选择为准，不再因整组刷新闪烁或保存时禁用而无法点击。
+
+智能跳过直接显示“启用”和默认折叠的“订阅管理、设置、执行记录”。自动更新与移动网络更新位于订阅管理；设置仅保留无障碍服务和无障碍方式两行，服务开关直接操作，不跳转。有开关的项目集中在上方，下方只保留一个“详情与规则”入口，进入后按订阅用独立卡片展示信息，点击卡片原地展开或收起详情；“添加订阅链接、导入本地规则、立即更新订阅”始终排在最下方；订阅弹窗与主页使用一致的颜色、圆角、文字和间距。支持 Root / Shizuku 控制，许可统一放在整体“关于”；App 广告按应用折叠，测试版本说明等标题统一垂直居中。
+
+新增 **广告管理 → 智能跳过**，与官方广告设置、App 广告并列。支持 GKD 格式的订阅、本地导入编辑、应用与规则组开关、无障碍执行及本机执行记录。使用和构建见 [智能跳过](SMART_SKIP.md)，来源与许可见 [第三方说明](THIRD_PARTY_NOTICES.md)。默认不附带第三方订阅；原有 Hook 设置保留。
 
 ## 原生详情页推荐过滤（0.11.7-preview）
 
@@ -158,11 +168,11 @@
 - 从旧版分类总开关迁移时，保留原本实际生效的隐藏状态，避免此前未生效的选项突然隐藏入口。
 - 米家底栏至少保留一个入口；全选隐藏时保留原底栏。关闭模块的“隐藏商城”后，米家原生设置仍可能使商城不显示。
 - 动态页面需要匹配结构指纹；App 内部脚本或方法变化可能导致部分规则跳过。未知组件原样放行，不承诺所有版本的全部选项均生效。
-- 仅处理列出的入口和广告位，不全局拦截网络请求或弹窗，不覆盖所有设备插件的广告。
+- 原有 Hook 仅处理列出的入口和广告位，不全局拦截网络请求或弹窗，不覆盖所有设备插件的广告。
 
 ## 更新入口
 
-页面末尾“关于”中提供“检查更新”，打开 https://github.com/tiancaiProgramer/NoAdMi/releases，包含正式版与预览版。由用户查看版本并下载安装；模块不在后台下载，不自动安装，不要求网络权限。测试版本说明按最近验证批次优先，同批按应用版本从新到旧排列；应用实机测试批次按上表列出；0.11.4 已通过 744 项模块界面实机检查，并核对恢复 58 条远程偏好和 26 项界面状态；目标应用广告效果继续引用原实机批次，不将旧结果重新标为新一轮验证。
+页面末尾“关于”中提供“检查更新”，打开 https://github.com/tiancaiProgramer/NoAdMi/releases，包含正式版与预览版。由用户查看版本并下载安装；应用更新不在后台下载或自动安装；0.12.0 起网络权限用于用户配置的订阅更新。测试版本说明按最近验证批次优先，同批按应用版本从新到旧排列；应用实机测试批次按上表列出；0.11.4 已通过 744 项模块界面实机检查，并核对恢复 58 条远程偏好和 26 项界面状态；目标应用广告效果继续引用原实机批次，不将旧结果重新标为新一轮验证。
 
 ## 从 NSP 旧版迁移
 
@@ -178,18 +188,20 @@ python3 tools/stage_legacy_settings.py --adb /path/to/adb --serial DEVICE_SERIAL
 
 ## 编译
 
-需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 36.0.0，以及 Maven Central 上 `io.github.libxposed` 的 `api`、`service`、`interface` 102.0.0 AAR。分别解压到一个依赖目录中的 `api/`、`service/`、`interface/`，其中均应有 `classes.jar`。
+先按 [智能跳过构建说明](SMART_SKIP.md) 准备 Kotlin 2.4.21 / D8 9.5.28。需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 36.0.0，以及 Maven Central 上 `io.github.libxposed` 的 `api`、`service`、`interface` 102.0.0 AAR。分别解压到一个依赖目录中的 `api/`、`service/`、`interface/`，其中均应有 `classes.jar`。
 
 ```sh
 python3 build.py \
   --sdk "$ANDROID_HOME" \
   --java-home "$JAVA_HOME" \
   --libxposed-dir /path/to/libxposed-102 \
+  --kotlin-compiler-dir /path/to/smart-skip-toolchain \
+  --d8-jar /path/to/smart-skip-toolchain/r8-9.5.28.jar \
   --work-dir build \
   --keystore /private/path/NoAdMi-original.p12 \
   --store-pass-file /private/path/password.txt \
   --key-alias miclean-preview \
-  --output NoAdMi-0.11.4-preview.apk
+  --output NoAdMi-0.12.5-preview.apk
 ```
 
 API 仅用于编译，不打包框架实现。APK 包含官方 `service` / `interface` Binder 客户端；见 THIRD_PARTY_NOTICES.txt。原有外部 JKS / PKCS12 签名参数和 Windows 工具链支持保留。升级必须沿用原密钥，私钥和密码不得放入源码包或 GitHub。
