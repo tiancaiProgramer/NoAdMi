@@ -1,0 +1,50 @@
+{
+  "version": "0.12.10-preview",
+  "versionCode": 86,
+  "baseCommit": "499ca86f341f2ae6f7b83a281c420f6cc61c4da5",
+  "apkSha256": "aa0a8ea6c37659e11513fefb7dacbdab38e426f61fde5d9d892b8d9facf05815",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code86": true
+  },
+  "tests": {
+    "offline_new_delay_runtime_guards": 73,
+    "offline_scene_notice": 81,
+    "offline_core": 66,
+    "shizuku_runtime_connection": "PASS: authorized worker, default-display metadata, task listener (final code86)",
+    "shizuku_input_manager_delayed_repeat": {
+      "runs": 5,
+      "realPageClosed": 5,
+      "actionDelayMs": 800
+    },
+    "root_accessibility_node_delayed_repeat": {
+      "runs": 5,
+      "realPageClosed": 5,
+      "actionDelayMs": 800,
+      "noisyContentIntervalMs": 100
+    },
+    "notice_ui": 10,
+    "app_rule_management_ui": 82,
+    "app_rule_management_navigation_main_thread_ms": 8
+  },
+  "limits": [
+    "WeChat issue device not connected; real mini-program repeat-entry acceptance remains open.",
+    "Input-command fallback returned success without closing the fixture on this phone; final InputManager route closed the fixture in 5/5 delayed repeat trials.",
+    "Root mode uses accessibility input; Shizuku enhancement requires selecting Shizuku and separately authorizing NoAdMi.",
+    "Not published to GitHub."
+  ]
+}

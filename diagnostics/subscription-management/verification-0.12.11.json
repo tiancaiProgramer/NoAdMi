@@ -1,0 +1,59 @@
+{
+  "version": "0.12.11-preview",
+  "versionCode": 88,
+  "baseCommit": "499ca86f341f2ae6f7b83a281c420f6cc61c4da5",
+  "apkSha256": "045deee96097bc2164d94f23182d91308f178619b4a20807d6fa36d9ce76361f",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code88": true
+  },
+  "tests": {
+    "offline_build_regressions": "PASS",
+    "offline_delay_recovery_guards": 73,
+    "offline_scene_notice": 81,
+    "offline_core": 66,
+    "shizuku_connection_task_listener": "PASS",
+    "real_input_manager_repeat": {
+      "runs": 5,
+      "closed": 5,
+      "actualTouchesReceived": 5
+    },
+    "fresh_root_two_rule_pass": {
+      "runs": 5,
+      "actions": 10,
+      "gapMs": [
+        15,
+        17,
+        17,
+        15,
+        15
+      ]
+    },
+    "root_delayed_node_repeat": {
+      "runs": 5,
+      "closed": 5,
+      "actionDelayMs": 800
+    }
+  },
+  "limits": [
+    "Video: normal sample closes after about 1.1s; slow sample shows action notice about 2s before closing. No claim of a unique hardware cause.",
+    "Original subscription delay of 800ms retained. Ordered independent rule continuation is not unconditional repetition of an accepted click.",
+    "Virtual device 0 comparison did not deliver touches on connected MIX Fold 3; final code88 retains the tested code86 input parameters.",
+    "Issue phone is not connected; actual WeChat delay improvement remains unverified.",
+    "No GitHub publication performed."
+  ]
+}

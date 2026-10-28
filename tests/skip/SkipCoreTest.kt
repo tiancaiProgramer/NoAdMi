@@ -50,14 +50,14 @@ fun main() {
     verify(rule(source(rules = "{matchRoot: true, matches: '@Button[clickable=true] <2 FrameLayout'}")).query(root) === skip)
     verify(rule(source(rules = "{matches: '[text~=\"^跳.*\" && visibleToUser=true]'}")).query(root) === skip)
     verify(!RawSubscription.parse(source(rules = "{matches: '[unknownAttr=true]'}")).apps[0].groups[0].valid)
-    // Match timing, prerequisite chain, per-screen count and action-delay cancellation.
+    // Match timing, prerequisite chain, per-screen count and retained action delay.
     var time = 10000L
     val first = rule(source(extra = "actionCd: 500, actionMaximum: 1,", rules = "{key: 0, matches: '[text=\"跳过\"]'}, {key: 1, preKeys: 0, actionDelay: 200, matches: '[text=\"跳过\"]'}"))
     val second = SkipRule(first.source, first.app, first.group, first.group.rules[1], 1)
     val session = SkipSession { time }; session.transition("test.app", "test.app.Main", listOf(first, second))
     verify(session.ready(first)); verify(!session.ready(second)); session.success(first)
     verify(!session.ready(first)); verify(session.ready(second)); verify(!session.matched(second)); time += 199; verify(!session.matched(second))
-    session.missed(second); time += 1; verify(!session.matched(second)); time += 200; verify(session.matched(second)); session.success(second)
+    session.missed(second); time += 1; verify(session.matched(second)); session.success(second)
     verify(!session.ready(second)); time += 1000; session.transition("test.app", "test.app.Main", listOf(first, second)); verify(!session.ready(first))
     session.transition("test.app", "test.app.Other", listOf(first, second)); verify(session.ready(first)); verify(!session.ready(second))
     val delayed = rule(source(extra = "matchDelay: 300, matchTime: 500, forcedTime: 1000,"))

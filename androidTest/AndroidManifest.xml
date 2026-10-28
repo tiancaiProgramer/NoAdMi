@@ -16,4 +16,10 @@
  <instrumentation android:name=".SubscriptionToggleSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi subscription switch race regression" />
  <instrumentation android:name=".AppRulesManagementSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi rule management regression" />
  <instrumentation android:name=".SubscriptionEditorSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi document and subscription editor regression" />
+ <instrumentation android:name=".SkipNoticeUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi skip notice controls" />
+ <instrumentation android:name=".SkipRepeatSetup" android:targetPackage="io.github.miclean.module" android:label="NoAdMi isolated repeat setup" />
+ <instrumentation android:name=".SkipRepeatExternalSmoke" android:targetPackage="io.github.miclean.skipfixture" android:label="NoAdMi same Activity repeat and toast" />
+ <instrumentation android:name=".SkipRuntimeBridgeSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi Shizuku runtime connection" />
+ <instrumentation android:name=".ShizukuRestartProbe" android:targetPackage="io.github.miclean.skipfixture" android:label="Existing Shizuku restart probe" />
+ <instrumentation android:name=".SkipInputModeUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi reversible input comparison UI" />
 </manifest>

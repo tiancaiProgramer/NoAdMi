@@ -1,0 +1,42 @@
+{
+  "version": "0.12.9-preview",
+  "versionCode": 82,
+  "baseCommit": "499ca86f341f2ae6f7b83a281c420f6cc61c4da5",
+  "apkSha256": "83201ef181180e7d9b71e01817999eb92869bd3130437e65720d00a2367bc8bb",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "installed_apk_matches_build": true,
+    "installed_code82": true,
+    "originalExecutionRecordsRetained": true,
+    "temporaryRepeatRecordsRemoved": true
+  },
+  "verificationScope": {
+    "uiCode82": {
+      "notice": 10,
+      "appRules": 81
+    },
+    "uiCode81ExistingRegression": 89,
+    "sameActivityRuntimeCode82": {
+      "rounds": 5,
+      "acceptedNodeActions": 5,
+      "screenshotsReviewed": 5,
+      "allCustomMessagesVisible": true
+    },
+    "offlineSceneAssertions": 81
+  },
+  "knownLimitations": [
+    "Wechat failure phone not connected; actual mini-program outcome remains unverified.",
+    "GKD privileged coordinate input and full task-stack listener are not integrated."
+  ]
+}

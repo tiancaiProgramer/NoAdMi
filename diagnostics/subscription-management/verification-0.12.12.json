@@ -1,0 +1,68 @@
+{
+  "version": "0.12.12-preview",
+  "versionCode": 90,
+  "baseCommit": "499ca86f341f2ae6f7b83a281c420f6cc61c4da5",
+  "apkSha256": "b7a194c163dd24bb2d850b04b84832ba489cf18902ae7b965d7935aff14463c7",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code90": true
+  },
+  "tests": {
+    "offline_build_regressions": "PASS",
+    "offline_input_modes_fixed_commands": 23,
+    "offline_delay_recovery_guards": 73,
+    "offline_scene_notice": 81,
+    "offline_core": 66,
+    "input_comparison_ui": 46,
+    "notice_ui": 10,
+    "shizuku_worker_task_listener": "PASS",
+    "gesture_with_task_tracking": {
+      "status": "PARTIAL",
+      "firstRun": {
+        "actualCloses": 2,
+        "interruptedAtRound": 3,
+        "failureScreenshot": "LSPosed visible instead of fixture"
+      },
+      "retry": {
+        "actualCloses": 4,
+        "failedToReopenAtRound": 5
+      },
+      "fiveRoundAcceptance": "NOT PASSED",
+      "temporaryRulesAndOptionsRestored": true
+    },
+    "input_manager_code89": {
+      "status": "FAILED",
+      "acceptedCalls": 1,
+      "actualCloses": 0
+    },
+    "fixed_gkd_command_code89": {
+      "status": "FAILED",
+      "acceptedCalls": 1,
+      "actualCloses": 0
+    },
+    "virtual_input_code90": "NOT DEVICE TESTED"
+  },
+  "limits": [
+    "Diagnostic comparison build; no claim of a stable fix for WeChat.",
+    "New user video still shows about 1.8s between accepted-action notice and actual closure.",
+    "Fault phone is not connected. Current test phone is a separate device.",
+    "Privileged API/command accepted calls did not deliver touches in earlier code89 trials; retained as failures, not passes.",
+    "Gesture retries closed 2 and 4 actual fixture pages respectively, but neither completed the requested five-round run.",
+    "Third-party rule delay 800ms and default input unchanged; explicit comparison selection required.",
+    "No GitHub publication performed."
+  ]
+}

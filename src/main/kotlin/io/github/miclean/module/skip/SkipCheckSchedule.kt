@@ -23,3 +23,19 @@ class SkipDiagnosticGate(private val now: () -> Long) {
         return true
     }
 }
+
+/** Event inspections do not postpone GKD's independent 300 ms follow-up job. */
+class SkipFollowupSchedule {
+    var dueAt: Long? = null
+        private set
+    fun request(now: Long, active: Boolean): Long? {
+        if (!active) { dueAt = null; return null }
+        if (dueAt == null) dueAt = now + 300
+        return (dueAt!! - now).coerceAtLeast(0)
+    }
+    fun consume(now: Long): Boolean {
+        if (dueAt?.let { now >= it } != true) return false
+        dueAt = null; return true
+    }
+    fun clear() { dueAt = null }
+}

@@ -11,7 +11,7 @@ This integrated NoAdMi version is distributed under GPL-3.0-only. The complete l
 - Original selector sources and license are retained in `third_party/gkd-selector/`.
 - Original subscription model, parser, expression and execution parameter sources are retained in `third_party/gkd-core/`.
 - NoAdMi's build removes JavaScript export annotations for JVM compilation, uses the upstream JVM regex implementation, and adapts resource-based error messages into ordinary exceptions. It does not change selector syntax or JSON5 parsing.
-- NoAdMi supplies its own native UI, storage, Android accessibility adapter and scheduling. This is not the complete GKD application. GKD's Compose UI, privileged rule execution, HTTP service, inspection tools and snapshots are not included.
+- NoAdMi supplies its own native UI, storage, Android accessibility adapter and scheduling. This is not the complete GKD application. GKD's Compose UI, HTTP service, inspection tools and snapshots are not included. NoAdMi adapts bounded task observation and touch execution through its own authorized Shizuku worker.
 
 ## Runtime dependencies
 
@@ -29,7 +29,7 @@ Subscription rules are separate works with their own licenses. No third-party su
 
 ## Shizuku API
 
-Shizuku API / provider / aidl / shared 13.1.5, MIT License, copyright Rikka. Source: https://github.com/RikkaApps/Shizuku-API . Unmodified Maven binaries and SHA-256 values are retained in `third_party/shizuku/`; the full license is also embedded in the APK as `licenses/Shizuku-MIT.txt`. Shizuku controls the module's own accessibility service; no generic command execution IPC is exposed.
+Shizuku API / provider / aidl / shared 13.1.5, MIT License, copyright Rikka. Source: https://github.com/RikkaApps/Shizuku-API . Unmodified Maven binaries and SHA-256 values are retained in `third_party/shizuku/`; the full license is also embedded in the APK as `licenses/Shizuku-MIT.txt`. Shizuku controls the module's own accessibility service and, when selected and authorized, a separate runtime worker for default-display foreground tasks and bounded touch input. No generic command execution IPC is exposed.
 
 ## GKD Android runtime reference
 

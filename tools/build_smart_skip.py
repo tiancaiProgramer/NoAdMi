@@ -46,7 +46,11 @@ class SubscriptionParseException(val path: String, val detail: String, cause: Th
     sources += sorted((root / 'src/main/kotlin').rglob('*.kt'))
     jar = build / 'smart-skip.jar'
     java = jdk / 'bin' / ('java.exe' if os.name == 'nt' else 'java')
-    cp = os.pathsep.join(map(str, [android, *runtime]))
+    shizuku = root / 'third_party/shizuku'
+    for item in json.loads((shizuku / 'manifest.json').read_text()):
+        if hashlib.sha256((shizuku / item['file']).read_bytes()).hexdigest() != item['sha256']:
+            raise ValueError('Shizuku dependency checksum mismatch: ' + item['file'])
+    cp = os.pathsep.join(map(str, [android, *runtime, *sorted(shizuku.glob('*.jar'))]))
     subprocess.run([str(java), '-Xmx1536m', '-cp', os.pathsep.join(map(str, compiler_jars)),
         'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-no-stdlib', '-no-reflect', '-jvm-target', '11',
         '-Xplugin=' + str(next(compiler.glob('kotlin-serialization-compiler-plugin-embeddable-*.jar'))),

@@ -127,14 +127,15 @@ class SkipSession(private val now: () -> Long) {
     private var last: SkipRule? = null
     private var app = ""; private var activity: String? = null
     private var previous = emptySet<String>()
-    fun transition(nextApp: String, nextActivity: String?, rules: List<SkipRule>) {
-        val appChanged = app != nextApp; val activityChanged = appChanged || activity != nextActivity
+    private var scene = 0L
+    @JvmOverloads fun transition(nextApp: String, nextActivity: String?, rules: List<SkipRule>, generation: Long = 0L) {
+        val appChanged = app != nextApp; val activityChanged = appChanged || activity != nextActivity || scene != generation
         rules.forEach { rule ->
                 val reset = rule.params.resetMatch ?: "activity"
                 if (appChanged || (activityChanged && reset == "activity") || (reset == "match" && rule.identity !in previous)) states.remove(rule.identity)
         }
         if (activityChanged) {
-            last = null; app = nextApp; activity = nextActivity
+            app = nextApp; activity = nextActivity; scene = generation
         }
         previous = rules.map { it.identity }.toSet()
         rules.forEach { state(it) }
@@ -146,12 +147,18 @@ class SkipSession(private val now: () -> Long) {
         }
     }
     private fun state(rule: SkipRule) = states.getOrPut(rule.identity) { State(now()) }
+    private fun prerequisite(rule: SkipRule): Boolean {
+        val p = rule.params
+        return p.preKeys.isEmpty() || (last?.let {
+            it.source.id == rule.source.id && it.app == rule.app &&
+                (it.group.key == rule.group.key || rule.group.scopeKeys.orEmpty().contains(it.group.key)) && p.preKeys.contains(it.raw.key)
+        } == true)
+    }
     fun ready(rule: SkipRule): Boolean {
         val s = state(rule); val p = rule.params; val t = now()
         if (p.actionMaximum != null && s.maximum.count >= p.actionMaximum!!) return false
-        if (p.preKeys.isNotEmpty() && (last == null || last!!.source.id != rule.source.id ||
-                last!!.app != rule.app || (last!!.group.key != rule.group.key && !rule.group.scopeKeys.orEmpty().contains(last!!.group.key)) ||
-                !p.preKeys.contains(last!!.raw.key))) return false
+        if (!prerequisite(rule)) return false
+        if (delayRemaining(rule)?.let { it > 0 } == true) return false
         return t - s.entered >= p.matchDelay && (p.matchTime == null || t - s.entered <= p.matchDelay + p.matchTime!!) &&
             t - s.cooldown.time >= p.actionCd
     }
@@ -161,18 +168,24 @@ class SkipSession(private val now: () -> Long) {
         if (state.delayed == null) state.delayed = time
         return time - state.delayed!! >= rule.params.actionDelay
     }
-    fun missed(rule: SkipRule) { state(rule).delayed = null }
+    // GKD keeps actionTriggerTime across temporary nonmatches. A delayed job
+    // must re-query a fresh window at its deadline; it never retains a node.
+    fun missed(rule: SkipRule) { /* only success or the reset policy clears delay */ }
+    fun delayRemaining(rule: SkipRule): Long? = state(rule).delayed?.let {
+        (rule.params.actionDelay - (now() - it)).coerceAtLeast(0)
+    }
+    fun delayedDue(rule: SkipRule): Boolean = delayRemaining(rule) == 0L && ready(rule)
     fun success(rule: SkipRule) {
         val s = state(rule); s.cooldown.time = now(); s.maximum.count++; s.delayed = null; last = rule
     }
     fun needsPoll(rule: SkipRule): Boolean {
         val s = state(rule); val p = rule.params; val t = now() - s.entered
         if (p.actionMaximum != null && s.maximum.count >= p.actionMaximum!!) return false
-        if (p.preKeys.isNotEmpty() && !ready(rule) && t >= p.matchDelay) return false
+        if (!prerequisite(rule) && t >= p.matchDelay) return false
         // App startup can render its ad after the first event even when forcedTime=0.
         // GKD's application-change follow-up lasts three seconds.
         val startup = s.maximum.count == 0 && t < 3000L
-        return (startup || t < p.matchDelay || s.delayed != null || t < p.matchDelay + p.forcedTime) &&
+        return (startup || t < p.matchDelay || (delayRemaining(rule)?.let { it > 0 } == true) || t < p.matchDelay + p.forcedTime) &&
             (p.matchTime == null || t <= p.matchDelay + p.matchTime!!)
     }
     fun priority(rule: SkipRule): Boolean = ready(rule) && rule.params.priorityTime > 0 &&

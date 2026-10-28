@@ -28,7 +28,7 @@ final class SmartSkipPanel implements AutoCloseable {
     private final SkipRepository repository;
     private final SharedPreferences ui;
     private final SubscriptionActions actions;
-    private final Switch enabled,service,autoUpdate,mobileUpdate;
+    private final Switch enabled,service,autoUpdate,mobileUpdate,notice;
     private final LinearLayout sources,logs;
     private final TextView method,progress,update,details;
     private final AccessibilityAccess access;
@@ -37,6 +37,7 @@ final class SmartSkipPanel implements AutoCloseable {
     private final Map<Long,String> sourceDocuments=new LinkedHashMap<>();
     private final LatestToggleWrites.Listener sourceListener=this::sourceSaved;
     private TextView emptySources;
+    private AlertDialog noticeDialog,methodDialog,inputRouteDialog;
     private boolean syncingSources;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private boolean updating,closed;
@@ -57,11 +58,15 @@ final class SmartSkipPanel implements AutoCloseable {
         update=action(subscriptions,"立即更新订阅",actions::updateAll);
         LinearLayout settings=fold(parent,"skip_compact_settings","设置",null);
         service=toggle(settings,"无障碍服务");
-        LinearLayout methodRow=new LinearLayout(activity);methodRow.setGravity(Gravity.CENTER_VERTICAL);methodRow.setMinimumHeight(dp(52));methodRow.setPadding(0,gap(12),0,gap(12));
+        LinearLayout methodRow=new LinearLayout(activity);methodRow.setTag("skip_access_method");methodRow.setGravity(Gravity.CENTER_VERTICAL);methodRow.setMinimumHeight(dp(52));methodRow.setPadding(0,gap(12),0,gap(12));
         TextView title=new TextView(activity);title.setText("无障碍方式");title.setTextColor(INK);title.setTextSize(14);title.setGravity(Gravity.CENTER_VERTICAL);methodRow.addView(title,new LinearLayout.LayoutParams(0,-2,1));
         method=new TextView(activity);method.setTextSize(14);method.setTextColor(MUTED);method.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);methodRow.addView(method,new LinearLayout.LayoutParams(-2,-2));settings.addView(methodRow,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout noticeRow=new LinearLayout(activity);noticeRow.setTag("skip_notice_row");noticeRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView noticeTitle=new TextView(activity);noticeTitle.setTag("skip_notice_editor");noticeTitle.setText("跳过提示  ›");noticeTitle.setTextSize(14);noticeTitle.setTextColor(INK);noticeTitle.setMinHeight(dp(52));noticeTitle.setGravity(Gravity.CENTER_VERTICAL);noticeRow.addView(noticeTitle,new LinearLayout.LayoutParams(0,-2,1));
+        notice=new Switch(activity);notice.setTag("skip_notice_enabled");notice.setContentDescription("跳过提示开关");SettingsRow.style(activity,notice);noticeRow.addView(notice,new LinearLayout.LayoutParams(-2,-2));settings.addView(noticeRow,new LinearLayout.LayoutParams(-1,-2));
+        noticeTitle.setOnClickListener(v->editNotice());notice.setOnCheckedChangeListener((button,value)->{if(!updating)repository.getPreferences().edit().putBoolean(SkipNotice.ENABLED,value).apply();});
         access=new AccessibilityAccess(activity,this::refreshControls);
-        methodRow.setOnClickListener(v->{if(access.busy())return;DialogUi.builder(activity).setTitle("无障碍方式").setSingleChoiceItems(new String[]{"Root","Shizuku"},access.shizukuMode()?1:0,(dialog,which)->{dialog.dismiss();access.method(which==1);if(which==1)access.authorize();refreshControls();}).setNegativeButton("取消",null).show();});
+        methodRow.setOnClickListener(v->{if(access.busy())return;methodDialog=DialogUi.builder(activity).setTitle("无障碍方式").setSingleChoiceItems(new String[]{"Root","Shizuku"},access.shizukuMode()?1:0,(dialog,which)->{dialog.dismiss();access.method(which==1);if(which==1)access.authorize();refreshControls();}).setNeutralButton("输入对照",(dialog,which)->editInputRoute()).setNegativeButton("取消",null).show();});
         service.setOnCheckedChangeListener((button,value)->{if(!updating){polls=0;access.setEnabled(value);}});
         enabled.setOnCheckedChangeListener((button,value)->{if(!updating)repository.setEnabled(value);});
         logs=fold(parent,"skip_compact_logs","执行记录",this::renderLogs);
@@ -70,13 +75,27 @@ final class SmartSkipPanel implements AutoCloseable {
     void refresh(){if(closed)return;refreshControls();renderSources();if(logs.isShown())renderLogs();}
     private void refreshControls(){
         if(closed)return;updating=true;
-        enabled.setChecked(repository.getEnabled());autoUpdate.setChecked(repository.getPreferences().getBoolean("auto_update",false));mobileUpdate.setChecked(!repository.getPreferences().getBoolean("wifi_only",true));
+        enabled.setChecked(repository.getEnabled());notice.setChecked(repository.getPreferences().getBoolean(SkipNotice.ENABLED,false));autoUpdate.setChecked(repository.getPreferences().getBoolean("auto_update",false));mobileUpdate.setChecked(!repository.getPreferences().getBoolean("wifi_only",true));
         boolean active=repository.serviceEnabled(),busy=access.busy();service.setChecked(active);service.setEnabled(!busy);
         String state=busy?"正在修改系统设置…":!active?"服务未启用":SkipAccessibilityService.connected?"服务已连接":"等待系统连接…";
         if(android.os.Build.VERSION.SDK_INT>=30)service.setStateDescription(state);
-        service.setText(busy?"无障碍服务\n正在修改系统设置…":access.error()!=null?"无障碍服务\n"+access.error():active&&!SkipAccessibilityService.connected?"无障碍服务\n"+(polls>=10?"服务未连接，请关闭后重新开启":"等待系统连接…"):"无障碍服务");
+        service.setText(busy?"无障碍服务\n正在修改系统设置…":access.error()!=null?"无障碍服务\n"+access.error():active&&!SkipAccessibilityService.connected?"无障碍服务\n"+(polls>=10?"服务未连接，请关闭后重新开启":"等待系统连接…"):access.shizukuMode()&&!SkipRuntimeClient.status.isEmpty()?"无障碍服务\n"+SkipRuntimeClient.status:"无障碍服务");
         method.setText((access.shizukuMode()?"Shizuku":"Root")+"  ›");updating=false;
-        handler.removeCallbacks(checkConnection);if(active&&!SkipAccessibilityService.connected&&polls++<10)handler.postDelayed(checkConnection,700);
+        handler.removeCallbacks(checkConnection);if(active&&((!SkipAccessibilityService.connected&&polls++<10)||access.shizukuMode()))handler.postDelayed(checkConnection,700);
+    }
+    private void editInputRoute(){
+        if(closed||activity.isFinishing()||inputRouteDialog!=null&&inputRouteDialog.isShowing())return;
+        int mode;try{mode=SkipInputMode.normalize(repository.getPreferences().getInt(SkipInputMode.KEY,SkipInputMode.COMPAT));}catch(ClassCastException invalid){mode=SkipInputMode.COMPAT;}
+        inputRouteDialog=DialogUi.builder(activity).setTitle("增强输入对照（Shizuku）")
+            .setSingleChoiceItems(new String[]{"当前兼容输入（默认）","GKD 命令输入（对照）","GKD 虚拟触屏（对照）","无障碍手势（保留前台识别）"},mode,(dialog,which)->{
+                repository.getPreferences().edit().putInt(SkipInputMode.KEY,SkipInputMode.normalize(which)).apply();dialog.dismiss();
+            }).setNegativeButton("取消",null).show();
+    }
+    private void editNotice(){
+        if(noticeDialog!=null&&noticeDialog.isShowing())return;
+        LinearLayout form=DialogUi.content(activity);DialogUi.description(form,"点击或手势收到成功回调后显示提示，不代表页面一定已关闭。留空恢复默认文案。");
+        EditText input=new EditText(activity);input.setTag("skip_notice_text");input.setTextSize(14);input.setSingleLine(true);input.setHint(SkipNotice.DEFAULT_TEXT);input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(SkipNotice.MAX_LENGTH)});DialogUi.input(input);input.setText(SkipNotice.text(repository.getPreferences().getString(SkipNotice.TEXT,null)));form.addView(input,new LinearLayout.LayoutParams(-1,-2));
+        noticeDialog=DialogUi.builder(activity).setTitle("跳过提示").setView(form).setNegativeButton("取消",null).setPositiveButton("保存",(dialog,which)->repository.getPreferences().edit().putString(SkipNotice.TEXT,SkipNotice.text(input.getText().toString())).apply()).show();
     }
     private final Runnable checkConnection=()->refreshControls();
     private void renderSources(){
@@ -108,6 +127,7 @@ final class SmartSkipPanel implements AutoCloseable {
     private void renderLogs(){
         if(closed)return;logs.removeAllViews();List<SkipLog> records=repository.logs();
         if(records.isEmpty()){text(logs,"暂无执行记录",13,MUTED,false);return;}
+        text(logs,"记录表示点击或手势调用已受理，实际效果以页面变化为准。",12,MUTED,false);
         action(logs,"清空执行记录",()->DialogUi.builder(activity).setTitle("清空执行记录？").setMessage("仅清除本机记录，订阅与开关保持原样。").setNegativeButton("取消",null).setPositiveButton("清空",(d,w)->{repository.clearLogs();renderLogs();}).show());
         for(SkipLog record:records){text(logs,record.getGroup()+" · "+record.getResult(),14,INK,true);text(logs,record.getApp()+"\n"+record.getSubscription()+" · "+record.getRule()+"\n"+DateFormat.getDateTimeInstance().format(new Date(record.getTime())),12,MUTED,false);}
     }
@@ -128,5 +148,5 @@ final class SmartSkipPanel implements AutoCloseable {
     private LinearLayout vertical(){LinearLayout layout=new LinearLayout(activity);layout.setOrientation(LinearLayout.VERTICAL);return layout;}
     private int dp(int value){return Math.round(value*activity.getResources().getDisplayMetrics().density);}
     private int gap(int value){return UiSpacing.vertical(activity,value);}
-    @Override public void close(){closed=true;sourceWrites.remove(sourceListener);handler.removeCallbacksAndMessages(null);access.close();}
+    @Override public void close(){closed=true;if(noticeDialog!=null)noticeDialog.dismiss();if(methodDialog!=null)methodDialog.dismiss();if(inputRouteDialog!=null)inputRouteDialog.dismiss();sourceWrites.remove(sourceListener);handler.removeCallbacksAndMessages(null);access.close();}
 }
