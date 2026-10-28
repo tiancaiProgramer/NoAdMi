@@ -13,16 +13,22 @@ import li.gkd.app.subscription.RawSubscription
 data class SkipSource(
     val id: Long, val document: String, val url: String = "", val enabled: Boolean = false,
     val apps: Map<String, Boolean> = emptyMap(), val groups: Map<String, Boolean> = emptyMap(),
-    val checkedAt: Long = 0,
+    val checkedAt: Long = 0, val categories: Map<Int, Boolean> = emptyMap(),
 ) {
     val subscription: RawSubscription by lazy { RawSubscription.parse(document) }
     val name: String get() = subscription.name
     val version: Int get() = subscription.version
     val local: Boolean get() = url.isEmpty()
     fun groupKey(app: String, key: Int): String = "$app/$key"
+    // Explicit group choices win; a chosen category overrides subscription defaults.
+    // Categories describe app groups only (GKD globals have separate controls).
+    fun groupPreference(app: String, group: RawSubscription.RawGroupProps): Boolean {
+        val category = if (app == "*") null else subscription.getCategory(group.name)
+        return groups[groupKey(app, group.key)] ?: category?.let { categories[it.key] }
+            ?: group.enable ?: category?.enable ?: true
+    }
     fun groupEnabled(app: String, group: RawSubscription.RawGroupProps): Boolean =
-        enabled && apps[app] != false && (groups[groupKey(app, group.key)]
-            ?: group.enable ?: subscription.getCategory(group.name)?.enable ?: true)
+        enabled && apps[app] != false && groupPreference(app, group)
 }
 
 /** One atomic file owns subscriptions and their overrides; an unsuccessful update never replaces it. */
@@ -72,11 +78,34 @@ class SkipSources(private val file: File) {
         save(current.map { if (it.id == id) old.copy(document = document, checkedAt = System.currentTimeMillis()) else it })
         return true
     }
+    /** An edited URL and downloaded document become trusted together, only after validation. */
+    @Synchronized fun replaceFromUrl(id: Long, document: String, url: String): Boolean {
+        val old = find(id)
+        require(!old.local) { "本地订阅没有更新链接" }
+        val normalized = requireHttps(url).toString()
+        require(document.toByteArray().size <= MAX_BYTES) { "订阅文件超过 10 MB" }
+        val raw = RawSubscription.parse(document)
+        require(raw.id == id) { "更新返回了不同的订阅 ID，原链接和规则已保留" }
+        require(raw.version >= old.version) { "服务器版本较旧，原链接和规则已保留" }
+        val updated = raw.version > old.version
+        save(current.map { if (it.id == id) old.copy(document = if (updated) document else old.document,
+            url = normalized, checkedAt = System.currentTimeMillis()) else it })
+        return updated
+    }
     @Synchronized fun checked(id: Long) = modify(id) { it.copy(checkedAt = System.currentTimeMillis()) }
     @Synchronized fun enable(id: Long, value: Boolean) = modify(id) { it.copy(enabled = value) }
     @Synchronized fun enableApp(id: Long, app: String, value: Boolean) = modify(id) { it.copy(apps = it.apps + (app to value)) }
     @Synchronized fun enableGroup(id: Long, app: String, key: Int, value: Boolean) = modify(id) {
         it.copy(groups = it.groups + (it.groupKey(app, key) to value))
+    }
+    @Synchronized fun enableCategory(id: Long, key: Int, value: Boolean) = modify(id) {
+        require(it.subscription.categories.any { category -> category.key == key }) { "规则分类已不存在" }
+        it.copy(categories = it.categories + (key to value))
+    }
+    @Synchronized fun changeUrl(id: Long, url: String) = modify(id) {
+        require(!it.local) { "本地订阅没有更新链接" }
+        val normalized = requireHttps(url).toString()
+        it.copy(url = normalized, checkedAt = 0)
     }
     @Synchronized fun remove(id: Long) = save(current.filter { it.id != id })
     private fun modify(id: Long, change: (SkipSource) -> SkipSource) {

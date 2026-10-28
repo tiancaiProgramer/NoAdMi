@@ -1,0 +1,37 @@
+{
+  "version": "0.12.8-preview",
+  "versionCode": 78,
+  "baseCommit": "9be017cd263fb9fc2c41bca5f3072668daef51f4",
+  "apkSha256": "aa62458d8c38b879947badddfe1712f1c00707bcd5f96fca5317ca7c0dac398a",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "installed_apk_matches_build": true,
+    "installed_code78": true
+  },
+  "uiChecks": {
+    "editorAndLargeDocument": 40,
+    "appRules": 81,
+    "existingUi": 89,
+    "total": 210,
+    "documentCharacters": 3000000,
+    "documentOpenMainThreadMs": 36,
+    "largeSubscriptionApps": 1502,
+    "appListNavigationMainThreadMs": 11,
+    "backgroundUpdateQueueBlockedDuringEdits": true
+  },
+  "limitations": [
+    "Read-only viewing is virtualized; local JSON5 editing still uses the existing editor.",
+    "No new Taobao/Xianyu ad-scene acceptance in this UI task."
+  ]
+}

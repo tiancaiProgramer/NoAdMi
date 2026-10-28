@@ -91,6 +91,7 @@ class SkipAccessibilityService : AccessibilityService() {
             root?.recycle()
             if (rightApp == latest.app) {
                 if (eventApp != rightApp) {
+                    repository.noteAppVisit(rightApp)
                     activity = null; appChangeTime = SystemClock.elapsedRealtime()
                     discardQueryEvents()
                 }

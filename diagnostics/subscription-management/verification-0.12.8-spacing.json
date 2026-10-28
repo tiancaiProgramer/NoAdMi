@@ -1,0 +1,28 @@
+{
+  "version": "0.12.8-preview",
+  "versionCode": 79,
+  "baseCommit": "9be017cd263fb9fc2c41bca5f3072668daef51f4",
+  "apkSha256": "789ff449228a04fce045f6400bf5b03abf176600db50cd167387ed3ef1bd0f02",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged": true,
+    "installed_apk_matches_build": true,
+    "installed_code79": true
+  },
+  "uiChecks": {
+    "existingEditorRegression": 40,
+    "uniformGapBaseDp": 12,
+    "documentOpenMainThreadMs": 26,
+    "remoteAndLocalScreenshotsReviewed": true
+  }
+}

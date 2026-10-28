@@ -13,11 +13,12 @@ import java.util.concurrent.Executors
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable data class SkipLog(val time: Long, val subscription: String, val app: String, val group: String, val rule: String, val result: String)
+@Serializable data class SkipLog(val time: Long, val subscription: String, val app: String, val group: String, val rule: String, val result: String, val sourceId: Long? = null)
 
 class SkipRepository private constructor(context: Context) {
     private val app = context.applicationContext
     val preferences: SharedPreferences = app.getSharedPreferences("smart_skip", Context.MODE_PRIVATE)
+    private val usage = app.getSharedPreferences("smart_skip_usage", Context.MODE_PRIVATE)
     private val directory = File(app.filesDir, "smart_skip")
     val sources = SkipSources(File(directory, "sources.json"))
     private val logFile = File(directory, "actions.json")
@@ -31,12 +32,24 @@ class SkipRepository private constructor(context: Context) {
     @Synchronized fun clearLogs() { logFile.delete(); logs = emptyList() }
     @Synchronized fun record(rule: SkipRule, app: String, result: String) {
         logs = (logs + SkipLog(System.currentTimeMillis(), rule.source.name, app, rule.group.name,
-            rule.raw.name ?: "规则 ${rule.index + 1}", result)).takeLast(200)
+            rule.raw.name ?: "规则 ${rule.index + 1}", result, rule.source.id)).takeLast(200)
         directory.mkdirs()
         val atomic = android.util.AtomicFile(logFile)
         val stream = atomic.startWrite()
         try { stream.write(json.encodeToString(logs).toByteArray()); atomic.finishWrite(stream) }
         catch (e: Exception) { atomic.failWrite(stream); android.util.Log.w("NoAdMiSkip", "执行记录保存失败", e) }
+    }
+    /** Package IDs and visit times only, observed on confirmed foreground transitions. */
+    fun noteAppVisit(packageName: String) {
+        usage.edit().putLong(packageName, System.currentTimeMillis()).apply()
+    }
+    fun recentVisits(): Map<String, Long> = usage.all.mapNotNull { (key, value) ->
+        (value as? Long)?.let { key to it }
+    }.toMap()
+    @Synchronized fun recentTriggers(id: Long): Map<String, Long> {
+        val name = sources.find(id).name
+        return logs.filter { (it.sourceId == id || (it.sourceId == null && it.subscription == name)) &&
+            it.result.startsWith("已执行 ") }.groupBy { it.app }.mapValues { (_, entries) -> entries.maxOf { it.time } }
     }
     fun update(id: Long): Boolean {
         val source = sources.find(id)

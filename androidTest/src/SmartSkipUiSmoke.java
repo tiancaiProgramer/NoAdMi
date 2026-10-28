@@ -61,7 +61,7 @@ public final class SmartSkipUiSmoke extends Instrumentation {
         for(int i=0;i<labels.length;i++)check(body.getChildAt(body.getChildCount()-3+i)==text(body,labels[i]),"Subscription action moved from footer: "+labels[i]);
         check(body.indexOfChild(tag(body,"skip_source_list"))<body.getChildCount()-3,"Source list below footer");
     });}
-    private void awaitSource(boolean exists){for(int i=0;i<50;i++){if(repository.getSources().list().stream().anyMatch(s->s.getId()==id)==exists)return;SystemClock.sleep(100);}throw new AssertionError("Subscription operation timed out");}
+    private void awaitSource(boolean exists){for(int i=0;i<50;i++){if(repository.getSources().list().stream().anyMatch(s->s.getId()==id)==exists)return;SystemClock.sleep(100);}throw new AssertionError("Subscription operation timed out, expected exists="+exists);}
     @Override public void onStart(){
         Bundle result=new Bundle();SharedPreferences ui=getTargetContext().getSharedPreferences("miclean_ui",0);Map<String,?> before=new HashMap<>(ui.getAll());
         SharedPreferences prefs=getTargetContext().getSharedPreferences("smart_skip",0);boolean oldWifi=prefs.getBoolean("wifi_only",true),oldAuto=prefs.getBoolean("auto_update",false);
@@ -85,7 +85,7 @@ public final class SmartSkipUiSmoke extends Instrumentation {
                 check(text(root,"移动网络更新").getParent()==tag(root,"body:skip_compact_sources"),"Mobile switch outside subscriptions");
                 Switch mobile=(Switch)text(root,"移动网络更新");check(mobile.isChecked()==!oldWifi,"Mobile value changed during upgrade");
                 mobile.setChecked(oldWifi);check(prefs.getBoolean("wifi_only",true)==!oldWifi,"Mobile toggle not inverted");mobile.setChecked(!oldWifi);
-                Switch auto=(Switch)text(root,"自动更新订阅");auto.setChecked(!oldAuto);check(prefs.getBoolean("auto_update",false)==!oldAuto,"Auto update not persisted");auto.setChecked(oldAuto);
+                Switch auto=(Switch)text(root,"自动更新订阅");check(auto.isChecked()==oldAuto,"Auto update preference changed during upgrade"); // Do not schedule network jobs against real subscriptions in a UI regression.
                 if(tag(root,"body:skip_compact_settings").getVisibility()!=View.VISIBLE)tag(root,"fold:skip_compact_settings").performClick();LinearLayout settings=(LinearLayout)tag(root,"body:skip_compact_settings");check(settings.isShown(),"Settings not visible");
                 check(settings.getChildCount()==2,"Settings has duplicate controls");check(text(settings,"无障碍方式")!=null&&settings.getChildAt(0) instanceof Switch,"Accessibility controls missing");
                 check(text(root,"查看完整 GPL-3.0 许可")==null,"License still inside smart skip");
@@ -108,13 +108,13 @@ public final class SmartSkipUiSmoke extends Instrumentation {
                 for(int i=0;i<details.getChildCount();i++){View view=details.getChildAt(i);check(view instanceof ViewGroup&&((ViewGroup)view).getChildAt(0).isClickable(),"Detail header not clickable");LinearLayout.LayoutParams params=(LinearLayout.LayoutParams)view.getLayoutParams();check(params.topMargin>0&&params.bottomMargin>0,"Detail cards have no spacing");}
                 View content=tag(root,"skip_source_content:"+id);check(content!=null&&!content.isShown(),"Source initially expanded");
                 card.performClick();check(content.isShown(),"Source did not expand below header");check(tag(root,"skip_source_details")==details,"Source expansion navigated away");card.performClick();check(!content.isShown(),"Source did not collapse");card.performClick();check(content.isShown(),"Source did not reopen");});waitForIdleSync();SystemClock.sleep(200);
-            click("应用规则  ›");click("规则组  ›");
+            click("应用规则  ›");for(int i=0;i<100;i++){boolean[] ready={false};onMain(()->ready[0]=text(current.getWindow().getDecorView(),"规则组  ›")!=null);if(ready[0])break;SystemClock.sleep(50);}click("规则组  ›");
             onMain(()->{TextView toggle=text(current.getWindow().getDecorView(),"测试广告组");check(toggle instanceof Switch,"Group not a switch");((Switch)toggle).setChecked(false);});
             SystemClock.sleep(500);check(Boolean.FALSE.equals(repository.getSources().find(id).getGroups().get("io.github.miclean.skipfixture/1")),"Group override not saved");
             click("1 条规则 · 查看规则内容  ›");dialogAction("关闭",null);click("‹  订阅管理");click("‹  订阅管理");
-            click("删除订阅");dialogAction("删除",null);awaitSource(false);SystemClock.sleep(300);click("‹  订阅管理");checkBottomActions();check(repository.getEnabled()==originalMaster,"Master changed during UI edits");check(java.util.Objects.equals(originalServices,android.provider.Settings.Secure.getString(getTargetContext().getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)),"Selected services changed during UI edits");check(originalMethod.equals(prefs.getString("access_method","root")),"Access method changed during UI edits");
+            click("编辑订阅  ›");dialogAction("删除",null);dialogAction("删除",null);awaitSource(false);SystemClock.sleep(300);click("‹  订阅管理");checkBottomActions();check(repository.getEnabled()==originalMaster,"Master changed during UI edits");check(java.util.Objects.equals(originalServices,android.provider.Settings.Secure.getString(getTargetContext().getContentResolver(),android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)),"Selected services changed during UI edits");check(originalMethod.equals(prefs.getString("access_method","root")),"Access method changed during UI edits");
             result.putString("stream","PASS: "+checks+" smart skip UI checks; grouped switches above a single details entry, dedicated page with separate source cards, inline source expansion/collapse without a third details page, card spacing and correct source controls, subscription actions stay last before/after add/delete, HTTPS validation keeps dialog open, inline compact folds, default collapse, two-row settings, inverted mobile preference, live controls, JSON5 editor/import, disabled default, app/group pages, persisted group switch, rule dialog, back and deletion.\n");
-        }catch(Throwable error){result.putString("stream","FAIL: "+error.toString()+"\n");}
+        }catch(Throwable error){try{captureDialog("old-regression-failure.png");}catch(Throwable ignored){}result.putString("stream","FAIL: "+error.toString()+"\n");}
         finally{
             prefs.edit().putBoolean("wifi_only",oldWifi).putBoolean("auto_update",oldAuto).commit();if(repository!=null)repository.schedule();
             if(repository!=null&&repository.getSources().list().stream().anyMatch(s->s.getId()==id))repository.getSources().remove(id);

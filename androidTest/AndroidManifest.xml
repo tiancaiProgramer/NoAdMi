@@ -14,4 +14,6 @@
  <instrumentation android:name=".ShizukuAccessSmoke" android:targetPackage="io.github.miclean.skipfixture" android:label="NoAdMi Shizuku permission and direct control test" />
  <instrumentation android:name=".MarketRecommendationControl" android:targetPackage="io.github.miclean.module" android:label="NoAdMi local market recommendation A/B control" />
  <instrumentation android:name=".SubscriptionToggleSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi subscription switch race regression" />
+ <instrumentation android:name=".AppRulesManagementSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi rule management regression" />
+ <instrumentation android:name=".SubscriptionEditorSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi document and subscription editor regression" />
 </manifest>

@@ -56,10 +56,10 @@ public final class ExternalSkipSmoke extends Instrumentation {
             start(FIXTURE,".FixtureActivity");SystemClock.sleep(800);check(has(FIXTURE,"测试广告等待关闭"),"Disabled master executed");report("Master off: fixture retained");
             mainControls();toggle("启用",true);start(FIXTURE,".FixtureActivity");
             for(int i=0;i<100&&!has(FIXTURE,"测试广告已关闭");i++)SystemClock.sleep(100);check(has(FIXTURE,"测试广告已关闭"),"Enabled subscription did not execute");report("Master on: real accessibility closed the isolated fixture");mainControls();start(FIXTURE,".FixtureActivity");for(int i=0;i<100&&!has(FIXTURE,"测试广告已关闭");i++)SystemClock.sleep(100);check(has(FIXTURE,"测试广告已关闭"),"Returning from NoAdMi did not reset the per-screen limit");
-            mainControls();toggle("启用",false);collapse("订阅管理");collapse("设置");fold("执行记录");check(has(MODULE,"外部进程验证"),"Execution record missing");management();details();click("删除订阅");click("删除");added=false;
+            mainControls();toggle("启用",false);collapse("订阅管理");collapse("设置");fold("执行记录");check(has(MODULE,"外部进程验证"),"Execution record missing");management();details();click("编辑订阅  ›");click("删除");click("删除");added=false;
             result.putString("stream","PASS: "+checks+" external-process direct-switch, real-service, JSON5 import, disabled-master, automatic action and execution-log checks.\n");
         }catch(Throwable error){diagnostic();result.putString("stream","FAIL: "+error+"\n");}
-        finally{if(captured)try{report("Restoring master="+master+", service="+service);mainControls();toggle("启用",false);if(added){management();details();click("删除订阅");click("删除");mainControls();}toggle("启用",false);settings();toggle("无障碍服务",service);collapse("订阅管理");collapse("设置");collapse("执行记录");}catch(Throwable cleanup){result.putString("stream",result.getString("stream","")+"RESTORE FAILED: "+cleanup+"\n");}}
+        finally{if(captured)try{report("Restoring master="+master+", service="+service);mainControls();toggle("启用",false);if(added){management();details();click("编辑订阅  ›");click("删除");click("删除");mainControls();}toggle("启用",false);settings();toggle("无障碍服务",service);collapse("订阅管理");collapse("设置");collapse("执行记录");}catch(Throwable cleanup){result.putString("stream",result.getString("stream","")+"RESTORE FAILED: "+cleanup+"\n");}}
         finish(result.getString("stream","").startsWith("PASS:")?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);
     }
 }
