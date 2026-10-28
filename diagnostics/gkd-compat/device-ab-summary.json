@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-28",
+  "apkVersionCode": 72,
+  "method": "normal MAIN/LAUNCHER cold start; independent service A/B; bugreport recording plus ActivityTaskManager transitions and action records",
+  "cases": [
+    {
+      "case": "gkd-normal-1",
+      "engine": "gkd",
+      "gkdActions": 1,
+      "noadmiActions": 0,
+      "displayedToHomeRequestSeconds": 0.395,
+      "settingsAndSourcesPreserved": true
+    },
+    {
+      "case": "noadmi-normal-1",
+      "engine": "noadmi",
+      "gkdActions": 0,
+      "noadmiActions": 1,
+      "displayedToHomeRequestSeconds": 0.415,
+      "settingsAndSourcesPreserved": true
+    },
+    {
+      "case": "noadmi-normal-2",
+      "engine": "noadmi",
+      "gkdActions": 0,
+      "noadmiActions": 1,
+      "displayedToHomeRequestSeconds": 0.489,
+      "settingsAndSourcesPreserved": true
+    },
+    {
+      "case": "noadmi-normal-3",
+      "engine": "noadmi",
+      "gkdActions": 0,
+      "noadmiActions": 1,
+      "displayedToHomeRequestSeconds": 1.341,
+      "settingsAndSourcesPreserved": true
+    },
+    {
+      "case": "off-normal-1",
+      "engine": "off",
+      "gkdActions": 0,
+      "noadmiActions": 0,
+      "displayedToHomeRequestSeconds": 3.085,
+      "settingsAndSourcesPreserved": true
+    },
+    {
+      "case": "noadmi-normal-warm-1",
+      "engine": "noadmi",
+      "gkdActions": 0,
+      "noadmiActions": 0,
+      "displayedToHomeRequestSeconds": null,
+      "settingsAndSourcesPreserved": true
+    }
+  ],
+  "gkdActualAction": {
+    "action": "clickNode",
+    "result": true,
+    "shell": false,
+    "subscriptionId": 667,
+    "subscriptionVersion": 619,
+    "globalGroupKey": 0,
+    "ruleIndex": 0,
+    "targetViewId": "com.aihuishou.opt:id/count_down_tv"
+  },
+  "acceptance": "3/3 normal cold starts exited splash earlier than master-off control; warm no-ad and master-off had no actions",
+  "limits": [
+    "Single device and current target version only",
+    "Frame retention and timing vary; does not establish identical visual latency to GKD",
+    "Taobao and Idlefish not verified in this revision",
+    "Prior direct-component launch videos were insufficient alone to decide actual skip behavior; no unique root cause inferred"
+  ]
+}

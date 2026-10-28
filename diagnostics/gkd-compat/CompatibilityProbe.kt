@@ -31,8 +31,8 @@ fun main(args: Array<String>) {
     println("Taobao real splash selector matched its synthetic close node: true")
     var now=0L;val session=SkipSession{now};session.transition("com.taobao.taobao","com.taobao.tao.welcome.Welcome",listOf(rule));now=100L
     println("Taobao after initial miss: ready=${session.ready(rule)}, matchTime=${rule.params.matchTime}, forcedTime=${rule.params.forcedTime}, scheduledPoll=${session.needsPoll(rule)}")
-    check(session.ready(rule)&&rule.params.matchTime==10000L&&!session.needsPoll(rule))
-    check(!SkipScope.activity("com.taobao.idlefish",null,listOf(".maincontainer.activity.MainActivity"),null))
-    println("NoAdMi rejects an Activity-restricted rule when Activity is unknown: true")
-    println("PASS: real Taobao selector syntax works; startup follow-up polling and Activity fallback differ from GKD")
+    check(session.ready(rule)&&rule.params.matchTime==10000L&&session.needsPoll(rule))
+    check(SkipScope.activity("com.taobao.idlefish",null,listOf(".maincontainer.activity.MainActivity"),null))
+    println("Unknown Activity follows GKD AppRule fallback and still requires node matching: true")
+    println("PASS: real Taobao selector syntax, GKD startup follow-up and Activity fallback")
 }

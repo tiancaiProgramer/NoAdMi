@@ -63,14 +63,14 @@ fun main() {
     val delayed = rule(source(extra = "matchDelay: 300, matchTime: 500, forcedTime: 1000,"))
     val wait = SkipSession { time }; wait.transition("test.app", "Main", listOf(delayed)); verify(!wait.ready(delayed)); verify(wait.needsPoll(delayed))
     time += 300; verify(wait.ready(delayed)); time += 501; verify(!wait.ready(delayed)); verify(!wait.needsPoll(delayed))
-    // Group restrictions are inherited; unknown foreground activity/version cannot bypass them.
-    verify(!SkipScope.activity("test.app", null, listOf(".Main"), null))
+    // Known Activity/version restrictions are inherited; unknown Activity follows GKD fallback.
+    verify(SkipScope.activity("test.app", null, listOf(".Main"), null))
     verify(SkipScope.activity("test.app", "test.app.Main", listOf(".Main"), null))
     verify(!SkipScope.activity("test.app", "test.app.MainDialog", null, listOf(".Main")))
     val versioned = rule(source(extra = "versionCodes: [42], activityIds: '.Main',"))
     verify(!SkipScope.applicable(versioned.source, versioned.group, versioned.raw, "test.app", "test.app.Main", 41, "1", false, false))
     verify(SkipScope.applicable(versioned.source, versioned.group, versioned.raw, "test.app", "test.app.Main", 42, "1", false, false))
-    verify(!SkipScope.applicable(versioned.source, versioned.group, versioned.raw, "test.app", null, 42, "1", false, false))
+    verify(SkipScope.applicable(versioned.source, versioned.group, versioned.raw, "test.app", null, 42, "1", false, false))
     val position = RawSubscription.parse(source(rules = "{position: {right: 'width / 4', top: 'height / 2'}, matches: '[text=\"跳过\"]'}")).apps[0].groups[0].rules[0].position!!
     verify(position.calc(RuleBounds(100, 100, 300, 200), 1080, 2400) == (250f to 150f))
     val limited = rule(source(extra = "actionMaximum: 1,"))

@@ -1,60 +1,113 @@
 {
-  "versionName": "0.12.5-preview",
-  "versionCode": 57,
-  "apkSha256": "4479318d682b25148bf751f3eacc762909a118e9ab3f4fef68c091eade0b850c",
+  "versionName": "0.12.6-preview",
+  "versionCode": 72,
+  "status": "preview; original-device PJT 3/3 passed; second-device repeat confirms PJT, JD and Bilibili",
+  "date": "2026-10-28",
+  "apkSha256": "d466182c599f38cbaad64af247a6e5d761d9ac543666dbc3a76fdb32d7cc1413",
   "originalSignerSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
-  "baselineCommit": "48d9590bb65c6b7219a955b7405c530328f9306c",
+  "baselineCommit": "c6e38c20d437f0d375cec1c4758254f9bc9f84e6",
+  "runtimeReferenceCommit": "5a00f844989471458e4cf4601acb3f4710438f9a",
   "coreChecks": 67,
   "javaChecks": 127515,
-  "bindingPolicyChecks": 8,
-  "rootRecovery": {
-    "connectedCallbackObserved": true,
-    "version": "0.12.5-preview",
-    "startedFromCrashedMarker": true,
-    "singleEnableRequestRestoredRealBinding": true,
-    "crashedMarkerCleared": true,
-    "otherServicesPreserved": true,
-    "workerReceipt": "NOADMI_ACCESS_OK"
+  "recoveryChecks": 1283,
+  "nativeReadRegression": "passed: concurrency, timeout, busy, late result disposal and shutdown",
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "targetPackage": "com.aihuishou.opt",
+    "targetVersion": "3.48.1 / 3048001",
+    "gkdVersion": "1.12.1 / 92",
+    "isAdaptationWhitelist": false
   },
-  "shizuku": {
-    "result": "passed",
-    "independentFixtureProcess": true,
-    "officialGrant": true,
-    "userServiceIpc": true,
-    "directDisableEnable": true,
-    "realServiceReconnection": true,
-    "duplicateServerRestartedByUser": true
+  "realTargetAcceptance": {
+    "status": "passed for 3 normal cold starts on current device and target version",
+    "normalLaunch": true,
+    "independentGkdComparison": true,
+    "gkdActualAction": "clickNode; result=true; shell=false",
+    "coldStartPasses": 3,
+    "coldStartTrials": 3,
+    "masterOffNoNewActions": true,
+    "warmNoAdNoNewActions": true,
+    "displayedToHomeRequestSeconds": [
+      0.415,
+      0.489,
+      1.341
+    ],
+    "masterOffDisplayedToHomeRequestSeconds": 3.085,
+    "gkdDisplayedToHomeRequestSeconds": 0.395,
+    "metricsArePixelDisplayDuration": false,
+    "visualLatencyIdenticalToGkdClaimed": false,
+    "taobaoAndIdlefish": "Second-device cold launches inspected twice, but no verifiable skippable splash in either; historical ad-scene acceptance remains open",
+    "evidence": "diagnostics/gkd-compat/device-ab-summary.json",
+    "priorAssessment": "Direct-component videos and red-region duration alone were insufficient to conclude failure; initial inconclusive material retained privately; no unique root cause inferred"
   },
   "finalState": {
     "serviceBound": true,
     "crashedMarker": false,
     "controlMethod": "shizuku",
-    "smartSkipMaster": "false",
-    "shizukuServerCount": 1,
-    "workerConnectedInLogs": true,
-    "realConnectionCallbackInLogs": true
+    "smartSkipMaster": true,
+    "gkdAccessibilityServiceEnabled": false,
+    "temporarySourcesRemoved": true,
+    "originalSourcesByteIdentical": true,
+    "smartSkipPreferencesByteIdentical": true,
+    "serviceListRestored": true,
+    "temporaryHelpersRemoved": true,
+    "frameworkPreferencesRetained": 58,
+    "uiPreferencesRetained": 36,
+    "scopeRetained": 7
   },
-  "existingSubscriptionsAndMasterRetained": true,
-  "publicationTarget": {
-    "repository": "https://github.com/tiancaiProgramer/NoAdMi",
-    "tag": "v0.12.5-preview",
-    "channel": "prerelease"
+  "published": true,
+  "knownIssues": "KNOWN_ISSUES.md",
+  "historical0125ServiceControl": {
+    "versionName": "0.12.5-preview",
+    "versionCode": 57,
+    "rootRecovery": {
+      "connectedCallbackObserved": true,
+      "version": "0.12.5-preview",
+      "startedFromCrashedMarker": true,
+      "singleEnableRequestRestoredRealBinding": true,
+      "crashedMarkerCleared": true,
+      "otherServicesPreserved": true,
+      "workerReceipt": "NOADMI_ACCESS_OK"
+    },
+    "shizuku": {
+      "result": "passed",
+      "independentFixtureProcess": true,
+      "officialGrant": true,
+      "userServiceIpc": true,
+      "directDisableEnable": true,
+      "realServiceReconnection": true,
+      "duplicateServerRestartedByUser": true
+    }
   },
-  "knownIssues": {
-    "status": "unfixed",
-    "userReportedFailures": [
-      "com.taobao.taobao",
-      "com.taobao.idlefish"
+  "additionalDeviceSmoke": {
+    "evidence": "diagnostics/gkd-compat/new-device-smoke-summary.json",
+    "appsTested": 11,
+    "normalColdStartsPerApp": 1,
+    "adSkipObservedApps": 1,
+    "adSkipUnverifiedApps": 10,
+    "gkdKeptOff": true,
+    "originalFilesByteIdentical": 4,
+    "frameworkPreferencesRetained": 41,
+    "scopeRetained": 2,
+    "noApkChange": true
+  },
+  "releaseTag": "v0.12.6-preview",
+  "additionalDeviceRepeat": {
+    "evidence": "diagnostics/gkd-compat/new-device-repeat-summary.json",
+    "appsTested": 11,
+    "normalColdStartsPerApp": 1,
+    "adSkipObservedApps": 3,
+    "adSkipUnverifiedApps": 8,
+    "confirmedApps": [
+      "com.aihuishou.opt",
+      "com.jingdong.app.mall",
+      "tv.danmaku.bili"
     ],
-    "emptyExecutionLogReported": true,
-    "confirmedDifferences": [
-      "startup follow-up polling",
-      "whole-tree snapshot failure stops retries",
-      "unknown Activity filtering",
-      "missing non-execution diagnostics"
-    ],
-    "realTargetAppAcceptance": "not passed; do not infer acceptance from service/fixture checks",
-    "details": "KNOWN_ISSUES.md",
-    "offlineProbe": "diagnostics/gkd-compat/reference-result.txt"
+    "gkdKeptOff": true,
+    "originalFilesByteIdentical": 4,
+    "frameworkPreferencesRetained": 41,
+    "scopeRetained": 2,
+    "noApkChange": true
   }
 }

@@ -6,44 +6,79 @@ import li.gkd.selector.NodeAdapter
 import li.gkd.selector.Selector
 
 /** Stable snapshot: selector traversal never mixes nodes from different accessibility events. */
-class SkipNode(val attrs: Map<String, Any?>, val handle: Any? = null) {
+class SkipNode(val attrs: Map<String, Any?>, val handle: Any? = null,
+    private val childCountHint: Int? = null, private val parentLookup: (() -> SkipNode?)? = null,
+    private val childLookup: ((Int) -> SkipNode)? = null) {
     val children = mutableListOf<SkipNode>()
-    var parent: SkipNode? = null
+    private val loaded = mutableMapOf<Int, SkipNode>()
+    private var parentRead = parentLookup == null
+    private var parentValue: SkipNode? = null
+    var parent: SkipNode?
+        get() {
+            if (!parentRead) { parentValue = parentLookup?.invoke(); parentRead = true }
+            return parentValue
+        }
+        set(value) { parentValue = value; parentRead = true }
     fun add(child: SkipNode) { child.parent = this; children.add(child) }
+    fun count(): Int = childCountHint ?: children.size
+    fun child(index: Int): SkipNode? = if (childCountHint == null) children.getOrNull(index)
+        else if (index !in 0 until childCountHint) null else loaded.getOrPut(index) { childLookup!!(index) }
 }
 
-object SkipAdapter : NodeAdapter<SkipNode>() {
+open class SnapshotNodeAdapter : NodeAdapter<SkipNode>() {
+    protected open fun traversalChildCount(node: SkipNode): Int = node.count()
     override fun getAttr(target: Any, name: String): Any? {
         val node = target as? SkipNode ?: return null
         return when (name) {
             "parent" -> node.parent
-            "childCount" -> node.children.size
+            "childCount" -> node.count()
             "index" -> node.attrs["index"] ?: 0
             else -> node.attrs[name]
         }
     }
     override fun getInvoke(target: Any, name: String, args: List<Any>): Any? =
-        if (target is SkipNode && name == "getChild" && args.size == 1) target.children.getOrNull(args[0] as Int) else null
+        if (target is SkipNode && name == "getChild" && args.size == 1) target.child(args[0] as Int) else null
     override fun getName(node: SkipNode): String? = node.attrs["name"] as? String
-    override fun getChildCount(node: SkipNode): Int = node.children.size
-    override fun getChild(node: SkipNode, index: Int): SkipNode? = node.children.getOrNull(index)
+    override fun getChildCount(node: SkipNode): Int = node.count()
+    override fun getChild(node: SkipNode, index: Int): SkipNode? = node.child(index)
     override fun getParent(node: SkipNode): SkipNode? = node.parent
     override fun getNodeKey(node: SkipNode): Any = node
+    override fun getDescendants(node: SkipNode): Sequence<SkipNode> = sequence {
+        // Preserve depth-first order without eagerly loading every sibling first.
+        class Frame(val node: SkipNode, var next: Int = 0)
+        val stack = mutableListOf(Frame(node)); val visited = mutableSetOf(node)
+        while (stack.isNotEmpty()) {
+            val frame = stack.last()
+            if (frame.next >= traversalChildCount(frame.node)) { stack.removeAt(stack.lastIndex); continue }
+            val child = frame.node.child(frame.next++) ?: continue
+            if (visited.add(child)) { yield(child); stack.add(Frame(child)) }
+        }
+    }
 }
+object SkipAdapter : SnapshotNodeAdapter()
 
 class SkipRule(val source: SkipSource, val app: String, val group: RawSubscription.RawGroupProps,
     val raw: RawSubscription.RawRuleProps, val index: Int) {
     val params = RuleExecutionParameters(raw, group)
     val identity = "${source.id}/$app/${group.key}/$index"
-    fun query(root: SkipNode): SkipNode? {
+    fun query(root: SkipNode, excluded: () -> Unit = {}, adapter: NodeAdapter<SkipNode> = SkipAdapter,
+        stage: (String) -> Unit = {}, windowRoot: SkipNode = root,
+        windowRootProvider: (() -> SkipNode)? = null): SkipNode? {
+        val actualWindow by lazy { windowRootProvider?.invoke() ?: windowRoot }
+        val queryRoot by lazy { if (params.matchRoot) actualWindow else root }
         fun query(selector: Selector): SkipNode? =
-            if (selector.isMatchRoot) selector.match(root, SkipAdapter, params.matchOptions)
-            else selector.match(root, SkipAdapter, params.matchOptions) ?: SkipAdapter.querySelector(root, selector, params.matchOptions)
-        if (params.excludeMatches.any { query(it) != null }) return null
-        if (params.excludeAllMatches.isNotEmpty() && params.excludeAllMatches.all { query(it) != null }) return null
+            if (selector.isMatchRoot) selector.match(actualWindow, adapter, params.matchOptions)
+            else selector.match(queryRoot, adapter, params.matchOptions) ?: adapter.querySelector(queryRoot, selector, params.matchOptions)
         var target: SkipNode? = null
-        if (params.anyMatches.isNotEmpty()) target = params.anyMatches.firstNotNullOfOrNull { query(it) } ?: return null
-        for (selector in params.matches) target = query(selector) ?: return null
+        if (params.anyMatches.isNotEmpty()) target = params.anyMatches.withIndex().firstNotNullOfOrNull {
+            stage("any/${it.index}"); query(it.value)
+        } ?: return null
+        for ((i, selector) in params.matches.withIndex()) { stage("match/$i"); target = query(selector) ?: return null }
+        // Match the positive selectors first, as GKD does. An absent target
+        // must not consume the inspection budget scanning unrelated exclusions.
+        // Every exclusion is still validated before returning an action target.
+        if (params.excludeMatches.withIndex().any { stage("exclude/${it.index}"); query(it.value) != null }) { excluded(); return null }
+        if (params.excludeAllMatches.isNotEmpty() && params.excludeAllMatches.withIndex().all { stage("excludeAll/${it.index}"); query(it.value) != null }) { excluded(); return null }
         return target
     }
 }
@@ -52,7 +87,8 @@ class SkipRule(val source: SkipSource, val app: String, val group: RawSubscripti
 object SkipScope {
     fun activity(app: String, current: String?, included: List<String>?, excluded: List<String>?): Boolean {
         fun full(value: String) = if (value.startsWith('.')) app + value else value
-        if (current == null) return included.isNullOrEmpty() && excluded.isNullOrEmpty()
+        // GKD AppRule.matchActivity: unknown Activity still enters node matching.
+        if (current == null) return true
         return excluded.orEmpty().none { current.startsWith(full(it)) } &&
             (included.isNullOrEmpty() || included.any { current.startsWith(full(it)) })
     }
@@ -133,7 +169,10 @@ class SkipSession(private val now: () -> Long) {
         val s = state(rule); val p = rule.params; val t = now() - s.entered
         if (p.actionMaximum != null && s.maximum.count >= p.actionMaximum!!) return false
         if (p.preKeys.isNotEmpty() && !ready(rule) && t >= p.matchDelay) return false
-        return (t < p.matchDelay || s.delayed != null || t < p.matchDelay + p.forcedTime) &&
+        // App startup can render its ad after the first event even when forcedTime=0.
+        // GKD's application-change follow-up lasts three seconds.
+        val startup = s.maximum.count == 0 && t < 3000L
+        return (startup || t < p.matchDelay || s.delayed != null || t < p.matchDelay + p.forcedTime) &&
             (p.matchTime == null || t <= p.matchDelay + p.matchTime!!)
     }
     fun priority(rule: SkipRule): Boolean = ready(rule) && rule.params.priorityTime > 0 &&

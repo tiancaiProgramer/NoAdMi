@@ -30,3 +30,7 @@ Subscription rules are separate works with their own licenses. No third-party su
 ## Shizuku API
 
 Shizuku API / provider / aidl / shared 13.1.5, MIT License, copyright Rikka. Source: https://github.com/RikkaApps/Shizuku-API . Unmodified Maven binaries and SHA-256 values are retained in `third_party/shizuku/`; the full license is also embedded in the APK as `licenses/Shizuku-MIT.txt`. Shizuku controls the module's own accessibility service; no generic command execution IPC is exposed.
+
+## GKD Android runtime reference
+
+Android execution adaptation additionally references installed GKD 1.12.1 / 92, upstream commit `5a00f844989471458e4cf4601acb3f4710438f9a`, GPL-3.0-only. Unmodified reference files and original paths are recorded in [third_party/gkd-runtime/UPSTREAM.md](third_party/gkd-runtime/UPSTREAM.md). These files are review material and are not compiled as a second service. No third-party subscriptions are distributed.

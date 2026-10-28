@@ -1,0 +1,167 @@
+{
+  "date": "2026-10-28",
+  "round": 2,
+  "device": {
+    "model": "24129PN74G",
+    "android": 16,
+    "system": "OS3.0.307.0.WOCCNXM"
+  },
+  "module": "0.12.6-preview / 72",
+  "gkdKeptOff": true,
+  "gkdAutomatorOff": true,
+  "caseCount": 11,
+  "confirmedAdSkipApps": 3,
+  "unverifiedAdSkipApps": 8,
+  "settingsPreserved": {
+    "files": true,
+    "frameworkPreferences": true,
+    "frameworkState": true,
+    "scope": true,
+    "selectedServices": true,
+    "gkdEnableAutomator": true,
+    "NoAdMiBound": true,
+    "GkdServiceOff": true,
+    "crashedEmpty": true
+  },
+  "cases": [
+    {
+      "app": "拍机堂",
+      "package": "com.aihuishou.opt",
+      "versionName": "3.48.1",
+      "versionCode": 3048001,
+      "mode": "cold",
+      "actionCount": 1,
+      "status": "ad_skip_observed",
+      "confirmedByVideoAndAction": true,
+      "observation": "开屏出现“3 跳过”，动作后提前进入首页；本机两轮均观察到提前跳过。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "京东",
+      "package": "com.jingdong.app.mall",
+      "versionName": "16.0.50",
+      "versionCode": 102810,
+      "mode": "cold",
+      "actionCount": 1,
+      "status": "ad_skip_observed",
+      "confirmedByVideoAndAction": true,
+      "observation": "细查录像可见“3 跳过”短暂出现后进入首页，与本轮执行记录一致。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "哔哩哔哩",
+      "package": "tv.danmaku.bili",
+      "versionName": "8.90.2",
+      "versionCode": 8902100,
+      "mode": "cold",
+      "actionCount": 1,
+      "status": "ad_skip_observed",
+      "confirmedByVideoAndAction": true,
+      "observation": "底部“跳过 5”出现后进入首页，与本轮执行记录一致。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "淘宝",
+      "package": "com.taobao.taobao",
+      "versionName": "10.60.0.603",
+      "versionCode": 782,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮为双11品牌启动图，未见跳过控件；本轮首页未出现上一轮的活动弹窗。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "闲鱼",
+      "package": "com.taobao.idlefish",
+      "versionName": "7.21.50",
+      "versionCode": 443,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "拼多多",
+      "package": "com.xunmeng.pinduoduo",
+      "versionName": "7.83.0",
+      "versionCode": 78300,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "美团",
+      "package": "com.sankuai.meituan",
+      "versionName": "12.63.473",
+      "versionCode": 1200630473,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "淘宝闪购",
+      "package": "me.ele",
+      "versionName": "12.5.88",
+      "versionCode": 1542,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "高德地图",
+      "package": "com.autonavi.minimap",
+      "versionName": "12.03.3.2006",
+      "versionCode": 120301,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "品牌启动图后进入地图，本轮未出现电话权限提示，测试未进行任何授权。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "百度地图",
+      "package": "com.baidu.BaiduMap",
+      "versionName": "10.21.0",
+      "versionCode": 955,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    },
+    {
+      "app": "小红书",
+      "package": "com.xingin.xhs",
+      "versionName": "9.38.0",
+      "versionCode": 9380802,
+      "mode": "cold",
+      "actionCount": 0,
+      "status": "no_visible_skip_affordance",
+      "confirmedByVideoAndAction": false,
+      "observation": "本轮未见可跳过的开屏广告/跳过控件，进入应用主页；尚不能证明广告跳过兼容。",
+      "rawEvidenceKeptPrivate": true
+    }
+  ],
+  "method": "Normal MAIN/LAUNCHER cold starts, target process force-stop only; 11-second recording, action delta, activity transitions; no UiAutomation during tests.",
+  "limits": [
+    "One cold launch per app in this repeat round.",
+    "No-ad observations are unverified, not compatibility passes.",
+    "No settings, subscription, rule-scope or permission changes.",
+    "Bilibili remains in the same Activity; visual home transition and skip control, not Activity change alone, support acceptance."
+  ]
+}

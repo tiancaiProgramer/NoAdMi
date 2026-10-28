@@ -16,6 +16,6 @@ compiler=sorted(a.kotlin_compiler_dir.glob('*.jar'))
 if not java.is_file() or not a.module_jar.is_file() or not a.subscription.is_file():p.error('JDK, compiled module JAR or subscription file is missing')
 if not any(x.name.startswith('kotlin-compiler-embeddable-2.4.21') for x in compiler):p.error('Kotlin 2.4.21 compiler dependencies are required')
 cp=os.pathsep.join(map(str,[a.module_jar,*runtime]));out=a.output_dir/'probe.jar'
-subprocess.run([str(java),'-cp',os.pathsep.join(map(str,compiler)),'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-jvm-target','11','-classpath',cp,'-d',str(out),str(Path(__file__).with_name('CompatibilityProbe.kt'))],check=True)
-result=subprocess.check_output([str(java),'-cp',str(out)+os.pathsep+cp,'audit.CompatibilityProbeKt',str(a.subscription)],text=True)
+subprocess.run([str(java),'-Dfile.encoding=UTF-8','-cp',os.pathsep.join(map(str,compiler)),'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler','-no-stdlib','-no-reflect','-jvm-target','11','-classpath',cp,'-d',str(out),str(Path(__file__).with_name('CompatibilityProbe.kt'))],check=True)
+result=subprocess.check_output([str(java),'-Dfile.encoding=UTF-8','-cp',str(out)+os.pathsep+cp,'audit.CompatibilityProbeKt',str(a.subscription)],text=True,encoding='utf-8')
 (a.output_dir/'result.txt').write_text(result,encoding='utf-8');print(result,end='')

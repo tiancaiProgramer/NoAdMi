@@ -4,11 +4,15 @@
 
 米家、小米运动健康、小米浏览器、应用商店与系统应用广告的 libxposed API 102 精简模块。首页分为“广告管理”“程序管理”和“关于”；广告与功能入口分开设置，保留 Play 版中国大陆兼容实验开关。
 
-> **智能跳过已知问题：** 用户实测淘宝、闲鱼未跳过且执行记录为空。本预发布尚未修复启动补检、节点读取中断和诊断信息不足等执行器差异；服务连接与简单测试页通过不代表这些 App 已验证。详见 [已知问题](KNOWN_ISSUES.md) 和 [开发交接](CONTINUE_SMART_SKIP.md)。
+> **当前预发布：0.12.6-preview / 72。** 已在原测试机完成拍机堂 3 次正常冷启动提前跳过及独立 GKD / 总开关关闭对照；第二台手机两轮各测 11 个 App，第二轮确认拍机堂、京东、哔哩哔哩提前跳过，其余 8 个本轮未出现可验证的跳过控件。淘宝、闲鱼的历史问题仍未完成有广告场景验收，不能视为已解决。原签名覆盖升级并保留设置；画面停留与延迟仍有波动。见 [验证记录](SMART_SKIP_VERIFICATION.md) 与 [已知问题](KNOWN_ISSUES.md)。
 
 [下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [最新验证记录](SMART_SKIP_VERIFICATION.md) · [原有 Hook 验证](verification.json)
 
-## 智能跳过（0.12.5-preview）
+## 智能跳过（0.12.6-preview）
+
+运行适配参考 GKD 1.12.1 / 92：事件节点优先，按需读取窗口根节点，先匹配目标再检查排除条件；应用或动作变化后的 3 秒内每 300ms 补检，并继续遵守规则的强制检查、延迟、冷却和次数限制。Android 原生节点调用采用有界等待，迟到结果释放；本机诊断只保存原因与计数。原生点击优先、失败再转中心手势，`clickCenter` 直接使用中心手势。Shizuku 仍只控制自身无障碍服务，未新增特权触摸接口。
+
+本版未增加拍机堂专用规则或修改原订阅。第二台手机复测结果与逐项边界见验证记录；画面停留和复杂页面读取性能仍需继续观察。
 
 订阅开关按 ID 保持控件稳定，保存独立于下载任务；快速切换以最后一次选择为准，不再因整组刷新闪烁或保存时禁用而无法点击。
 
@@ -201,7 +205,7 @@ python3 build.py \
   --keystore /private/path/NoAdMi-original.p12 \
   --store-pass-file /private/path/password.txt \
   --key-alias miclean-preview \
-  --output NoAdMi-0.12.5-preview.apk
+  --output NoAdMi-0.12.6-preview.apk
 ```
 
 API 仅用于编译，不打包框架实现。APK 包含官方 `service` / `interface` Binder 客户端；见 THIRD_PARTY_NOTICES.txt。原有外部 JKS / PKCS12 签名参数和 Windows 工具链支持保留。升级必须沿用原密钥，私钥和密码不得放入源码包或 GitHub。

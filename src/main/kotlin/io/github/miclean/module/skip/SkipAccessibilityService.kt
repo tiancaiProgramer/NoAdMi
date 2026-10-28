@@ -14,65 +14,206 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import li.gkd.app.subscription.RawSubscription
 import li.gkd.app.subscription.RuleBounds
+import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 class SkipAccessibilityService : AccessibilityService() {
     private lateinit var thread: HandlerThread
     private lateinit var worker: Handler
     private lateinit var repository: SkipRepository
-    private var activity: String? = null; private var eventApp = ""
+    private lateinit var diagnostics: SkipDiagnostics
+    @Volatile private var activity: String? = null
+    @Volatile private var eventApp = ""
+    @Volatile private var appChangeTime = 0L
+    private var lastTriggerTime = 0L
+    private var lastEventTime = 0L
+    private var lastEventDiagnostic = 0L
+    private val stateEpoch = java.util.concurrent.atomic.AtomicLong()
+    private lateinit var eventThread: HandlerThread
+    private lateinit var eventWorker: Handler
+    @Volatile private var screenInteractive = true
+    private var screenReceiverRegistered = false
+    private var aliveView: android.view.View? = null
+    private fun removeAliveView() {
+        aliveView?.let { view -> runCatching { getSystemService(android.view.WindowManager::class.java).removeView(view) } }
+        aliveView = null
+    }
+    private fun addAliveView() {
+        // GKD A11yService.useAliveOverlayView: visible process priority without
+        // a touch target, focus, screenshot or extra overlay permission.
+        removeAliveView()
+        val view = android.view.View(this)
+        val params = android.view.WindowManager.LayoutParams().apply {
+            type = android.view.WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+            format = android.graphics.PixelFormat.TRANSLUCENT
+            flags = flags or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            gravity = android.view.Gravity.START or android.view.Gravity.TOP
+            width = 1; height = 1; packageName = this@SkipAccessibilityService.packageName
+        }
+        try { getSystemService(android.view.WindowManager::class.java).addView(view, params); aliveView = view }
+        catch (_: Exception) { android.util.Log.w("NoAdMiSkip", "accessibility keep-alive window unavailable") }
+    }
+    private val screenReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: Intent?) {
+            screenInteractive = when (intent?.action) {
+                Intent.ACTION_SCREEN_OFF -> false
+                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> true
+                else -> screenInteractive
+            }
+            if (screenInteractive && ::worker.isInitialized) worker.post {
+                appChangeTime = SystemClock.elapsedRealtime(); requestCheck(0)
+            }
+        }
+    }
     private var lastAttempt = 0L; private var revision = -1L
     private var rules = emptyList<SkipRule>()
     private var session = SkipSession { SystemClock.elapsedRealtime() }
     private var gesturePending = false
-    private val check = Runnable { inspect() }
+    private val schedule = SkipCheckSchedule()
+    private var retryRules = emptyList<SkipRule>()
+    private data class NodeEvent(val app: String, val name: String, val type: Int, val copy: AccessibilityEvent) {
+        fun same(other: NodeEvent) = app == other.app && name == other.name && type == other.type
+    }
+    private val eventLock = Any()
+    private val incomingEvents = mutableListOf<NodeEvent>()
+    private val queryEvents = mutableListOf<NodeEvent>()
+    private val eventCheck = Runnable {
+        val events = synchronized(eventLock) { incomingEvents.toList().also { incomingEvents.clear() } }
+        if (events.isNotEmpty()) {
+            val latest = events.last()
+            val root = if (latest.app == eventApp) null else try { currentRoot(100) } catch (_: Exception) { null }
+            val rootApp = root?.packageName?.toString()
+            val activeEvent = if (rootApp == latest.app || latest.app == eventApp) false else try {
+                nativeReader.read(100) { windows.any { it.isActive && it.id == latest.copy.windowId } }
+            } catch (_: Exception) { false }
+            val rightApp = if (latest.app == eventApp || activeEvent) latest.app else rootApp
+            root?.recycle()
+            if (rightApp == latest.app) {
+                if (eventApp != rightApp) {
+                    activity = null; appChangeTime = SystemClock.elapsedRealtime()
+                    discardQueryEvents()
+                }
+                eventApp = rightApp
+                if (latest.type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && try {
+                    packageManager.getActivityInfo(ComponentName(latest.app, latest.name), 0); true
+                } catch (_: android.content.pm.PackageManager.NameNotFoundException) { false }) activity = latest.name
+                synchronized(eventLock) {
+                    queryEvents.addAll(events)
+                    while (queryEvents.size > 32) queryEvents.removeAt(0).copy.recycle()
+                }
+                worker.post { requestCheck(0) }
+            } else events.forEach { it.copy.recycle() }
+        }
+    }
+    private val check = Runnable {
+        schedule.consume()
+        try { inspect() }
+        catch (e: Exception) { diagnostics.record(eventApp, (e as? SkipReadFailure)?.reason ?: "scan_error") }
+        finally { retry() }
+    }
+    private val nativeReader = SkipReadExecutor()
+    private fun requestCheck(delay: Long) {
+        if (schedule.request(SystemClock.elapsedRealtime(), delay)) {
+            worker.removeCallbacks(check); worker.postDelayed(check, delay.coerceAtLeast(0))
+        }
+    }
+    private fun retry() {
+        val time = SystemClock.elapsedRealtime()
+        // GKD checkFutureStartJob: 300 ms during the first 3 s after an app
+        // change/action; thereafter only a rule's forced/delay window continues.
+        if (repository.enabled && !gesturePending && (time - appChangeTime < 3000 ||
+            time - lastTriggerTime < 3000 || retryRules.any { session.needsPoll(it) })) requestCheck(300)
+    }
     private val preferenceListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
-        if (::worker.isInitialized) { worker.removeCallbacks(check); worker.post(check) }
+        if (::worker.isInitialized) worker.post { appChangeTime = SystemClock.elapsedRealtime(); requestCheck(0) }
     }
     override fun onServiceConnected() {
         super.onServiceConnected()
         if (::repository.isInitialized) repository.preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); thread.quitSafely() }
         repository = SkipRepository.get(this)
+        diagnostics = SkipDiagnostics(File(filesDir, "smart_skip/diagnostics.json"))
+        schedule.consume(); retryRules = emptyList(); clearEvents()
         thread = HandlerThread("NoAdMi-matcher"); thread.start(); worker = Handler(thread.looper)
+        if (::eventWorker.isInitialized) { eventWorker.removeCallbacksAndMessages(null); eventThread.quitSafely() }
+        eventThread = HandlerThread("NoAdMi-events"); eventThread.start(); eventWorker = Handler(eventThread.looper)
         repository.preferences.registerOnSharedPreferenceChangeListener(preferenceListener)
+        if (!screenReceiverRegistered) {
+            val filter = android.content.IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_USER_PRESENT)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(screenReceiver, filter, android.content.Context.RECEIVER_EXPORTED)
+            else registerReceiver(screenReceiver, filter)
+            screenReceiverRegistered = true
+        }
         connectionChanged(this, true)
+        addAliveView()
+        worker.post { appChangeTime = SystemClock.elapsedRealtime(); requestCheck(0) }
     }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!::worker.isInitialized || event == null) return
-        val pkg = event.packageName?.toString() ?: return
-        val candidate = event.className?.toString()
-        val transition = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-        val windowId = event.windowId
-        worker.post {
-            if (transition) {
-                val foreground = currentRoot()
-                val same = foreground?.windowId == windowId && foreground.packageName?.toString() == pkg
-                foreground?.recycle()
-                if (same) {
-                    if (eventApp != pkg) activity = null
-                    eventApp = pkg
-                    if (candidate != null && try {
-                        packageManager.getActivityInfo(ComponentName(pkg, candidate), 0); true
-                    } catch (e: android.content.pm.PackageManager.NameNotFoundException) { false }) activity = candidate
-                }
-            }
-            worker.removeCallbacks(check)
-            worker.postDelayed(check, (lastAttempt + 120L - SystemClock.elapsedRealtime()).coerceAtLeast(0))
+        if (!::worker.isInitialized || event == null || !repository.enabled) return
+        val diagnosticTime = SystemClock.elapsedRealtime()
+        if (diagnosticTime - lastEventDiagnostic >= 1000) {
+            lastEventDiagnostic = diagnosticTime
+            android.util.Log.i("NoAdMiSkip", "event app=${event.packageName} type=${event.eventType} display=${if (android.os.Build.VERSION.SDK_INT >= 33) event.displayId else 0} time=${event.eventTime} previous=$lastEventTime interactive=$screenInteractive")
         }
+        // GKD accepts only state/content events on the default display.
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) return
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED && !screenInteractive) return
+        if (android.os.Build.VERSION.SDK_INT >= 33 && event.displayId != android.view.Display.DEFAULT_DISPLAY) return
+        val pkg = event.packageName?.toString() ?: return
+        val name = event.className?.toString() ?: return
+        if (event.eventTime < lastEventTime) return
+        lastEventTime = event.eventTime
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) stateEpoch.incrementAndGet()
+        synchronized(eventLock) {
+            incomingEvents.add(NodeEvent(pkg, name, event.eventType, AccessibilityEvent.obtain(event)))
+            while (incomingEvents.size > 32) incomingEvents.removeAt(0).copy.recycle()
+        }
+        eventWorker.removeCallbacks(eventCheck); eventWorker.post(eventCheck)
+    }
+    private fun clearEvents() = synchronized(eventLock) {
+        incomingEvents.forEach { it.copy.recycle() }; incomingEvents.clear()
+        queryEvents.forEach { it.copy.recycle() }; queryEvents.clear()
+    }
+    private fun discardQueryEvents() = synchronized(eventLock) {
+        queryEvents.forEach { it.copy.recycle() }; queryEvents.clear()
+    }
+    private fun eventSource(): AccessibilityNodeInfo? {
+        val events = synchronized(eventLock) { queryEvents.toList().also { queryEvents.clear() } }
+        if (events.isEmpty()) return null
+        try {
+            // GKD uses the latest event node only when events describe the same
+            // source; mixed events fall back to the active-window root.
+            if (events.any { !it.same(events.last()) }) return null
+            val latest = events.last().copy.source ?: return null
+            if (events.size > 1) {
+                val previous = events[events.size - 2].copy.source
+                val same = previous == null || previous == latest
+                previous?.recycle()
+                if (!same) { latest.recycle(); return null }
+            }
+            return latest
+        } finally { events.forEach { it.copy.recycle() } }
     }
     private fun inspect() {
         if (!repository.enabled || gesturePending) return
-        if (getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked ||
-            !getSystemService(android.os.PowerManager::class.java).isInteractive) return
-        lastAttempt = SystemClock.elapsedRealtime()
-        val root = currentRoot() ?: return
-        val app = root.packageName?.toString().orEmpty()
-        // The module and permission/lock/system surfaces are never automated by subscriptions.
-        if (app == packageName || app in setOf("android", "com.android.systemui", "com.android.permissioncontroller", "com.google.android.permissioncontroller", "com.lbe.security.miui", "com.android.packageinstaller", "com.google.android.packageinstaller", "com.miui.packageinstaller")) {
-            session.transition(app, null, emptyList())
-            root.recycle(); return
+        if (!screenInteractive) { diagnostics.record(eventApp, "screen_paused"); return }
+        if (getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked) {
+            diagnostics.record(eventApp, "screen_locked"); return
         }
-        if (app != eventApp) { eventApp = app; activity = null }
+        val epoch = stateEpoch.get()
+        var app = eventApp
+        if (app.isEmpty()) {
+            val first = try { currentRoot() } catch (_: SkipReadFailure) { null } ?: return
+            app = first.packageName?.toString().orEmpty(); first.recycle()
+            eventApp = app; activity = null; appChangeTime = SystemClock.elapsedRealtime()
+        }
+        if (app == packageName || app in setOf("android", "com.android.systemui", "com.android.permissioncontroller", "com.google.android.permissioncontroller", "com.lbe.security.miui", "com.android.packageinstaller", "com.google.android.packageinstaller", "com.miui.packageinstaller")) {
+            session.transition(app, null, emptyList()); retryRules = emptyList(); discardQueryEvents(); return
+        }
         val info = try { packageManager.getPackageInfo(app, 0) } catch (e: android.content.pm.PackageManager.NameNotFoundException) { null }
         val system = info?.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != 0
         val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName == app
@@ -93,72 +234,62 @@ class SkipAccessibilityService : AccessibilityService() {
         for (rule in rules) if ((rule.app == "*" || rule.app == app) && SkipScope.applicable(rule.source, rule.group, rule.raw,
                 app, activity, info?.let { if (android.os.Build.VERSION.SDK_INT >= 28) it.longVersionCode.toInt() else it.versionCode }, info?.versionName, system, launcher)) available.add(rule)
         session.transition(app, activity, available)
-        if (available.isEmpty()) { root.recycle(); return }
-        val handles = mutableListOf<AccessibilityNodeInfo>()
-        try {
-            val started = SystemClock.elapsedRealtime()
-            fun snapshot(node: AccessibilityNodeInfo, depth: Int, index: Int): SkipNode {
-                handles.add(node)
-                check(handles.size <= 2500 && depth <= 80 && SystemClock.elapsedRealtime() - started < 300) { "节点树过大，本轮跳过" }
-                val rect = Rect(); node.getBoundsInScreen(rect)
-                val id = node.viewIdResourceName
-                val result = SkipNode(mapOf(
-                    "id" to id, "vid" to id?.substringAfter(":id/", ""), "name" to node.className?.toString(),
-                    "text" to node.text?.toString(), "desc" to node.contentDescription?.toString(),
-                    "clickable" to node.isClickable, "focusable" to node.isFocusable, "checkable" to node.isCheckable,
-                    "checked" to node.isChecked, "editable" to node.isEditable, "longClickable" to node.isLongClickable,
-                    "visibleToUser" to node.isVisibleToUser, "left" to rect.left, "top" to rect.top,
-                    "right" to rect.right, "bottom" to rect.bottom, "width" to rect.width(), "height" to rect.height(),
-                    "depth" to depth, "index" to index), node)
-                repeat(node.childCount) { childIndex ->
-                    // Missing children make exclusion selectors ambiguous: don't click from a partial tree.
-                    val child = node.getChild(childIndex) ?: error("节点树已变化，本轮跳过")
-                    result.add(snapshot(child, depth + 1, childIndex))
-                }
-                return result
+        retryRules = available
+        // GKD checks eligible rules before resolving event nodes. Never fetch an
+        // entire active window before trying a valid current event source.
+        if (available.isEmpty()) { diagnostics.record(app, "no_candidates"); discardQueryEvents(); return }
+        if (available.none { session.ready(it) }) { discardQueryEvents(); return }
+        val source = eventSource()
+        val fromEvent = source != null && source.packageName?.toString() == app
+        val start = if (fromEvent) source!! else {
+            source?.recycle()
+            try { currentRoot() } catch (e: SkipReadFailure) { diagnostics.record(app, e.reason); return }
+                ?: run { diagnostics.record(app, "root_unavailable"); return }
+        }
+        if (start.packageName?.toString() != app || stateEpoch.get() != epoch) {
+            val rightApp = start.packageName?.toString().orEmpty(); start.recycle()
+            if (rightApp.isNotEmpty() && rightApp != app) {
+                eventApp = rightApp; activity = null; appChangeTime = SystemClock.elapsedRealtime()
             }
-            val tree = snapshot(root, 0, 0)
+            return
+        }
+        val nodes = AndroidSkipTree(start, nativeReader, rootIsWindow = !fromEvent) { stateEpoch.get() != epoch }
+        val started = SystemClock.elapsedRealtime()
+        var stage = "root"
+        fun detail() = "window=${start.windowId} display=0 origin=${if (fromEvent) "event" else "root"} stage=$stage fastCounts=${nodes.queryCounts}"
+        try {
+            val tree = nodes.root()
+            var outcome = "unmatched"
             for (rule in available.sortedWith(compareBy<SkipRule> { !session.priority(it) }.thenBy { it.params.order }.thenBy { it.index })) {
+                if (stateEpoch.get() != epoch || eventApp != app) { outcome = "event_changed"; break }
                 if (!session.ready(rule)) continue
-                val target = rule.query(tree)
+                val target = rule.query(tree, excluded = { outcome = "excluded" }, adapter = nodes.adapter,
+                    stage = { stage = "${rule.identity}/$it" }, windowRootProvider = { nodes.windowRoot { currentRoot() } })
                 if (target == null) { session.missed(rule); continue }
                 if (!session.matched(rule)) continue
-                // Recheck master switch and foreground window immediately before any action.
-                if (!repository.enabled || repository.sources.revision != revision) break
-                val fresh = currentRoot()
-                val sameWindow = fresh != null && fresh.windowId == root.windowId && fresh.packageName?.toString() == app
-                fresh?.recycle(); if (!sameWindow) break
-                if (perform(rule, target, app)) break
+                // GKD checks current event/app/rule state before action. A new
+                // root RPC here would discard the benefit of event-node queries.
+                if (!repository.enabled || repository.sources.revision != revision ||
+                    stateEpoch.get() != epoch || eventApp != app || !session.ready(rule)) break
+                if (perform(rule, target, app)) { outcome = "action_accepted"; break }
+                outcome = "action_rejected"
             }
-            if (!gesturePending && available.any { session.needsPoll(it) }) worker.postDelayed(check, 200)
+            diagnostics.record(app, outcome, available.size, nodes.count, SystemClock.elapsedRealtime() - started, detail())
         } catch (e: Exception) {
-            android.util.Log.d("NoAdMiSkip", e.message ?: "本轮节点读取失败")
-        } finally { if (handles.isEmpty()) root.recycle() else handles.forEach { it.recycle() } }
+            diagnostics.record(app, (e as? SkipReadFailure)?.reason ?: "scan_error", available.size, nodes.count, SystemClock.elapsedRealtime() - started, detail())
+        } finally { nodes.close() }
     }
-    /** Foldables can keep an old focused window on the powered-off logical display. */
-    private fun currentRoot(): AccessibilityNodeInfo? {
-        if (android.os.Build.VERSION.SDK_INT < 30) return rootInActiveWindow
-        val displays = windowsOnAllDisplays
-        val manager = getSystemService(android.hardware.display.DisplayManager::class.java)
-        val candidates = mutableListOf<android.view.accessibility.AccessibilityWindowInfo>()
-        for (index in 0 until displays.size()) {
-            val display = manager.getDisplay(displays.keyAt(index)) ?: continue
-            if (display.state != android.view.Display.STATE_ON) continue
-            candidates.addAll(displays.valueAt(index).filter { it.isActive || it.isFocused })
-        }
-        val ordered = candidates.sortedWith(compareByDescending<android.view.accessibility.AccessibilityWindowInfo> { it.isFocused }.thenByDescending { it.layer })
-        return ordered.firstNotNullOfOrNull { it.root }
-    }
+    /** GKD A11yService.windowNodeInfo is rootInActiveWindow (default display). */
+    private fun currentRoot(timeoutMs: Long = 500): AccessibilityNodeInfo? =
+        nativeReader.read(timeoutMs, discard = { it?.recycle() }) { rootInActiveWindow }
     private fun perform(rule: SkipRule, target: SkipNode, app: String): Boolean {
         val node = target.handle as? AccessibilityNodeInfo ?: return false
-        if (!node.refresh() || !node.isVisibleToUser) return false
-        if (node.packageName?.toString() != app || node.text?.toString() != target.attrs["text"] ||
-            node.contentDescription?.toString() != target.attrs["desc"] || node.viewIdResourceName != target.attrs["id"] ||
-            node.className?.toString() != target.attrs["name"]) return false
+        if (!node.isVisibleToUser) return false
+        if (node.packageName?.toString() != app) return false
         val rect = Rect(); node.getBoundsInScreen(rect)
         val raw = rule.raw
-        val action = raw.action ?: if (raw.swipeArg != null) "swipe" else if (raw.position != null) "clickCenter" else "click"
-        fun success() { session.success(rule); repository.record(rule, app, "已执行 $action") }
+        val action = raw.action ?: if (raw.position != null) "clickCenter" else if (raw.swipeArg != null) "swipe" else "click"
+        fun success() { session.success(rule); lastTriggerTime = SystemClock.elapsedRealtime(); repository.record(rule, app, "已执行 $action") }
         if (action == "none") { success(); return true }
         if (action == "back") return performGlobalAction(GLOBAL_ACTION_BACK).also { if (it) success() }
         if (action in listOf("click", "clickNode", "longClick", "longClickNode")) {
@@ -168,7 +299,7 @@ class SkipAccessibilityService : AccessibilityService() {
             if (action.endsWith("Node")) return false
         }
         if (action !in listOf("click", "clickCenter", "longClick", "longClickCenter", "swipe")) return false
-        val displayId = if (android.os.Build.VERSION.SDK_INT >= 30) node.window?.displayId ?: android.view.Display.DEFAULT_DISPLAY else android.view.Display.DEFAULT_DISPLAY
+        val displayId = android.view.Display.DEFAULT_DISPLAY
         val display = getSystemService(android.hardware.display.DisplayManager::class.java).getDisplay(displayId) ?: return false
         val metrics = android.util.DisplayMetrics(); display.getRealMetrics(metrics)
         val bounds = RuleBounds(rect.left, rect.top, rect.right, rect.bottom)
@@ -181,24 +312,28 @@ class SkipAccessibilityService : AccessibilityService() {
             p.first < metrics.widthPixels && p.second < metrics.heightPixels
         if (!inside(start) || !inside(end)) return false
         val path = Path().apply { moveTo(start.first, start.second); if (action == "swipe") lineTo(end.first, end.second) }
-        val duration = if (action == "swipe") raw.swipeArg!!.duration else if (action.startsWith("long")) 400L else 40L
+        val duration = if (action == "swipe") raw.swipeArg!!.duration else if (action.startsWith("long")) 500L else android.view.ViewConfiguration.getTapTimeout().toLong()
         if (duration !in 1..60000L) return false
         val builder = GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, duration))
         if (android.os.Build.VERSION.SDK_INT >= 30) builder.setDisplayId(displayId)
         val gesture = builder.build()
         gesturePending = true
         val accepted = dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(gesture: GestureDescription?) { worker.post { gesturePending = false; success(); worker.postDelayed(check, 160) } }
-            override fun onCancelled(gesture: GestureDescription?) { worker.post { gesturePending = false; repository.record(rule, app, "手势已取消") } }
+            override fun onCompleted(gesture: GestureDescription?) { worker.post { gesturePending = false; success(); requestCheck(300) } }
+            override fun onCancelled(gesture: GestureDescription?) { worker.post { gesturePending = false; repository.record(rule, app, "手势已取消"); retry() } }
         }, Handler(mainLooper))
         if (!accepted) gesturePending = false
         return accepted
     }
-    override fun onInterrupt() { if (::worker.isInitialized) worker.removeCallbacksAndMessages(null) }
+    override fun onInterrupt() { if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); schedule.consume(); clearEvents() } }
     override fun onDestroy() {
+        removeAliveView()
         connectionChanged(this, false)
         if (::repository.isInitialized) repository.preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); thread.quitSafely() }
+        if (::eventWorker.isInitialized) { eventWorker.removeCallbacksAndMessages(null); eventThread.quitSafely() }
+        if (screenReceiverRegistered) { unregisterReceiver(screenReceiver); screenReceiverRegistered = false }
+        clearEvents(); nativeReader.close()
         super.onDestroy()
     }
     override fun onUnbind(intent: Intent?): Boolean { connectionChanged(this, false); return super.onUnbind(intent) }
