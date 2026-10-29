@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /** Read-only acknowledgement of our component in the current user's manager state. */
 final class AccessibilityBindingPolicy {
     private static final Pattern USER=Pattern.compile("\\bid=(\\d+)\\b");
-    private static final Pattern OWN=Pattern.compile("(?:"+Pattern.quote(AccessibilityListPolicy.COMPONENT)+"|"+Pattern.quote(AccessibilityListPolicy.PACKAGE+"/.skip.SkipAccessibilityService")+")(?=[\\s}\\],]|$)");
+    private static final Pattern OWN=Pattern.compile("(?:"+Pattern.quote(AccessibilityListPolicy.COMPONENT)+"|"+Pattern.quote(AccessibilityListPolicy.LEGACY_COMPONENT)+"|"+Pattern.quote(AccessibilityListPolicy.PACKAGE+"/.skip.SkipAccessibilityService")+")(?=[\\s}\\],]|$)");
     static Boolean selected(String dump,int user){
         Integer section=null;boolean inUser=false;
         for(String raw:dump.split("\\n")){

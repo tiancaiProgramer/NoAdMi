@@ -146,7 +146,9 @@ final class SystemAdHooks {
             if (name.equals("com.miui.networkassistant.ui.view.MainToolbarItemView")
                     || name.equals("com.miui.networkassistant.ui.view.EnhancedToolbarItemView")
                     || name.equals("com.miui.networkassistant.ui.view.EnhancedBannerItemView")) {
-                int id = view.getResources().getIdentifier("name", "id", Rules.SECURITY_CENTER);
+                String titleId = name.endsWith("EnhancedToolbarItemView") ? "tv_tab_title"
+                    : name.endsWith("EnhancedBannerItemView") ? "tv_title" : "name";
+                int id = view.getResources().getIdentifier(titleId, "id", Rules.SECURITY_CENTER);
                 View title = id == 0 ? null : view.findViewById(id);
                 int item = title instanceof TextView ? Rules.networkItem(((TextView) title).getText().toString()) : -1;
                 if (item >= 0 && selected[item]) {

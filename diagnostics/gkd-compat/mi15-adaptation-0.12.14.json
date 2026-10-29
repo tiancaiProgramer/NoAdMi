@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-29",
+  "status": "original-signed-installed-github-prerelease",
+  "device": {
+    "name": "Xiaomi 15",
+    "model": "24129PN74C",
+    "android": 16,
+    "api": 36,
+    "hyperOS": "OS3.0.307.0.WOCCNXM",
+    "framework": "LSPosed 2.2.1 (7912), API 102"
+  },
+  "module": {
+    "version": "0.12.14-preview",
+    "versionCode": 96,
+    "sha256": "474238cee29ff883b7f747c6d9145d389f13a67a9dcc9c60702f808dabe54650",
+    "signerSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+    "originalSignature": true,
+    "upgradePreservesData": true,
+    "newDeviceOrVersionRestrictions": false
+  },
+  "fixes": [
+    {
+      "target": "Mi Home 11.6.705",
+      "change": "Verified current preference getter and banner callback; prioritize exact native ItemOptionView titles over obsolete resource IDs; observe view creation and resume.",
+      "evidence": "Splash/banner hooks executed. All selected present menus hidden. With only Help & feedback selected, that row was hidden, nine other present menu titles and the disabled banner remained visible.",
+      "limits": "Three original menu options were natively absent, so their visual hiding was not accepted as tested. Current code retains older ID/name fallbacks."
+    },
+    {
+      "target": "Network assistant / Security center 12.8.1-260816.0.1",
+      "change": "Resolve name, tv_tab_title and tv_title only within the three verified toolbar/banner classes.",
+      "evidence": "Traffic recharge and phone recharge entries hidden; network management and traffic ranking retained; corresponding hooks executed.",
+      "limits": "The other two promotional entries were not returned in the tested scene."
+    },
+    {
+      "target": "Browser 20.24.1010720",
+      "change": "Add verified requestAd and canShowSplashAd aliases while retaining old method signatures and switch scope.",
+      "evidence": "All three current splash hooks loaded and executed without signature errors.",
+      "limits": "No eligible splash ad in baseline; interception execution is not a real-ad visual A/B result."
+    },
+    {
+      "target": "App Market 4.124.s.00",
+      "change": "Resolve current recommendation method signatures and native class paths; filter only typed recommendation components passed to DetailDirectFragment.bindRecommendData(List); retain basic information, comments and normal callbacks.",
+      "evidence": "First/recall recommendation and splash interception executed. Final code96 native recommendation binding and homepage filter installed. Kuaishou detail and comment pages remained readable.",
+      "limits": "No nonempty native recommendation list was observed in the final scene; real recommendation-ad removal remains unverified on this version."
+    },
+    {
+      "target": "Xiaomi Account R-26.06.08.00",
+      "change": "Derive callback and result types from the fixed task constructor/method, enforcing unique signature and status-field contracts.",
+      "evidence": "Official bridge writable, server-confirmed disable, readback and original enabled-state restore passed."
+    },
+    {
+      "target": "Weather 17.1.0.26-R",
+      "change": "Accept the verified Flutter DE preference file only when its existing Boolean keys and bounded Dart platform-channel declarations match.",
+      "evidence": "Official UI and persisted values matched: content disabled, video enabled. Both switches changed, read back and restored successfully."
+    },
+    {
+      "target": "System personalized advertising",
+      "change": "Apply verified official missing-value default of 1, preserve other bits, and retain nullable raw key snapshots for exact restoration.",
+      "evidence": "Missing enabled/time keys read as effective enabled. Disable/readback passed; restore deleted both originally absent keys and returned effective enabled."
+    }
+  ],
+  "validation": {
+    "fullBuildAndJavaRegression": "passed",
+    "apkSignatureVerification": "v2 and v3 passed; original signer matched",
+    "nativeBulk": {
+      "total": 11,
+      "disabled": 11,
+      "changed": 4,
+      "alreadyDisabled": 7,
+      "unhandled": 0,
+      "restored": 11
+    },
+    "finalSmartSkipSmoke": {
+      "app": "WeChat 8.0.79 clone / 提取下载",
+      "rounds": 1,
+      "observedEarlyDismissal": 1,
+      "evidence": "Video shows countdown 5 then 3 before transition to homepage; accepted clickCenter accessibility-gesture records present.",
+      "delay": "variable; not claimed identical timing on all devices",
+      "gkdServiceEnabled": false
+    }
+  },
+  "restoration": {
+    "remotePreferencesEqual": true,
+    "smartPreferencesEqual": true,
+    "localPreferencesRestoredFromBaseline": true,
+    "uiFoldsRestored": true,
+    "subscriptionBytesUnchanged": true,
+    "officialStatesAndRawValuesRestored": 11,
+    "systemOriginallyAbsentKeysRemainAbsent": true,
+    "temporaryDiagnosticPackageRemoved": true,
+    "noadmiMasterEnabled": true,
+    "noadmiAccessibilityConnected": true,
+    "shizukuWorkerConnected": true,
+    "gkdServiceEnabled": false
+  },
+  "remaining": [
+    "Framework HyperOS Runtime native-injection warning persists; Java module loading was observed and is verified separately.",
+    "Browser and Market real-ad A/B scenes, natively absent Home items and unreturned network promotions are not counted as fully visually verified.",
+    "Historical failures on other phones and Play-region experiments remain separate pending verification."
+  ],
+  "privacy": "No device serial, account identifiers, user preferences, screenshots, subscription contents, APK extracts or signing material included.",
+  "release": {
+    "tag": "v0.12.14-preview",
+    "url": "https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.14-preview"
+  }
+}

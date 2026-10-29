@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
+import android.widget.TextView;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -22,40 +23,86 @@ public final class HomeMineHooks {
             final Map<View, Boolean> watched = new WeakHashMap<>();
             final AtomicBoolean logged = new AtomicBoolean();
             final AtomicBoolean resourceRejected = new AtomicBoolean();
-            Reflect.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
-                loader, "onViewCreated", View.class, Bundle.class, new MethodHook() {
-                    @Override protected void afterHookedMethod(Param p) {
-                        if (p.hasThrowable() || !(p.args[0] instanceof View)) return;
-                        View root = (View) p.args[0];
-                        // Resolve each distribution independently: integer IDs overlap.
-                        final boolean play;
-                        try {
-                            if (matches(root, Rules.HOME_MINE_VIEWS, Rules.HOME_MINE_RESOURCE_NAMES)) {
-                                play = false;
-                            } else if (matches(root, Rules.HOME_PLAY_MINE_VIEWS, Rules.HOME_PLAY_MINE_RESOURCE_NAMES)) {
-                                play = true;
-                            } else {
-                                if (resourceRejected.compareAndSet(false, true))
-                                    HookEntry.report("skip home.mine.items: resource map changed");
-                                return;
-                            }
-                        } catch (android.content.res.Resources.NotFoundException e) {
-                            if (resourceRejected.compareAndSet(false, true))
-                                HookEntry.report("skip home.mine.items: resources unavailable");
+            final AtomicBoolean lifecycle = new AtomicBoolean();
+            java.util.function.Consumer<View> attach=root->{
+                // Resolve each distribution independently: integer IDs overlap.
+                final Set<Integer> selected;
+                try {
+                    Set<Integer> byTitle=new HashSet<>();
+                    resolveRows(root,hidden,byTitle);
+                    if(!byTitle.isEmpty()){
+                        selected=byTitle;
+                    } else if (matches(root, Rules.HOME_MINE_VIEWS, Rules.HOME_MINE_RESOURCE_NAMES)) {
+                        selected = Rules.homeMineViews(hidden, false);
+                    } else if (matches(root, Rules.HOME_PLAY_MINE_VIEWS, Rules.HOME_PLAY_MINE_RESOURCE_NAMES)) {
+                        selected = Rules.homeMineViews(hidden, true);
+                    } else {
+                        // Obfuscated IDs change between builds. Restrict this fallback
+                        // to this fragment's native ItemOptionView and exact menu title.
+                        selected = new HashSet<>();
+                        resolveRows(root,hidden,selected);
+                        if(selected.isEmpty()){
+                            if(resourceRejected.compareAndSet(false,true))
+                                HookEntry.report("skip home.mine.items: no verified menu rows");
                             return;
                         }
-                        if (watched.containsKey(root)) return;
-                        watched.put(root, Boolean.TRUE);
-                        Watcher watcher = new Watcher(root, Rules.homeMineViews(hidden, play), logged);
-                        root.addOnAttachStateChangeListener(watcher);
-                        watcher.observe();
-                        watcher.apply();
+                    }
+                } catch (android.content.res.Resources.NotFoundException e) {
+                    if (resourceRejected.compareAndSet(false, true))
+                        HookEntry.report("skip home.mine.items: resources unavailable");
+                    return;
+                }
+                if (watched.containsKey(root)) return;
+                watched.put(root, Boolean.TRUE);
+                Watcher watcher = new Watcher(root, selected, logged);
+                root.addOnAttachStateChangeListener(watcher);
+                watcher.observe();
+                watcher.apply();
+            };
+            Reflect.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
+                loader,"onViewCreated",View.class,Bundle.class,new MethodHook(){
+                    @Override protected void afterHookedMethod(Param p){
+                        if(!p.hasThrowable()&&p.args[0] instanceof View)attach.accept((View)p.args[0]);
                     }
                 });
-            HookEntry.report("installed home.mine.items count=" + hidden.size());
+            Reflect.findAndHookMethod("com.xiaomi.smarthome.miio.page.SettingMainPageV2",
+                loader,"onResume",new MethodHook(){
+                    @Override protected void afterHookedMethod(Param p){
+                        if(p.hasThrowable())return;
+                        Object root=Reflect.getObjectField(p.thisObject,"mRootView");
+                        if(lifecycle.compareAndSet(false,true))HookEntry.report("hit home.mine.resume root="+(root==null?"null":root.getClass().getName()));
+                        if(root instanceof View)attach.accept((View)root);
+                    }
+                });
+            HookEntry.report("installed home.mine.items lifecycle=view+resume count=" + hidden.size());
         } catch (Throwable e) {
             HookEntry.report("skip home.mine.items: " + e.getClass().getSimpleName());
         }
+    }
+
+    private static void resolveRows(View view,Set<Integer> hidden,Set<Integer> result){
+        if(isItem(view)){
+            for(int i=0;i<Rules.HOME_MINE_VIEWS.length;i++)
+                if(hidden.contains(Rules.HOME_MINE_VIEWS[i])&&hasTitle(view,Rules.HOME_MINE_TITLES[i])&&view.getId()!=View.NO_ID)
+                    result.add(view.getId());
+            return;
+        }
+        if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++)resolveRows(group.getChildAt(i),hidden,result);
+        }
+    }
+    private static boolean hasTitle(View view,String title){
+        if(view instanceof TextView&&title.contentEquals(((TextView)view).getText()))return true;
+        if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++)if(hasTitle(group.getChildAt(i),title))return true;
+        }
+        return false;
+    }
+    private static boolean isItem(View view){
+        if(view==null)return false;
+        for(Class<?> type=view.getClass();type!=null;type=type.getSuperclass())
+            if(ITEM.equals(type.getName()))return true;
+        return false;
     }
 
     private static boolean matches(View root, int[] ids, String[] names) {
@@ -101,13 +148,14 @@ public final class HomeMineHooks {
                 Set<View> groups = new HashSet<>();
                 for (Integer id : hidden) {
                     View row = root.findViewById(id);
-                    if (row == null || !ITEM.equals(row.getClass().getName())) continue;
+                    if (!isItem(row)) continue;
                     matched++;
                     if (row.getVisibility() != View.GONE) row.setVisibility(View.GONE);
                     ViewParent parent = row.getParent();
                     while (parent instanceof View && parent != root) {
                         View group = (View) parent;
-                        if ("miuix.smooth.SmoothFrameLayout".equals(group.getClass().getName())) {
+                        if ("miuix.smooth.SmoothFrameLayout".equals(group.getClass().getName())
+                                || "miuix.smooth.SmoothFrameLayout2".equals(group.getClass().getName())) {
                             groups.add(group);
                             break;
                         }
@@ -132,7 +180,7 @@ public final class HomeMineHooks {
             } finally { applying = false; }
         }
         boolean hasVisibleItem(View view) {
-            if (ITEM.equals(view.getClass().getName())) return view.getVisibility() == View.VISIBLE;
+            if (isItem(view)) return view.getVisibility() == View.VISIBLE;
             if (view instanceof ViewGroup) {
                 ViewGroup group = (ViewGroup) view;
                 for (int i = 0; i < group.getChildCount(); i++) {

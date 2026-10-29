@@ -1,0 +1,576 @@
+{
+  "date": "2026-10-29",
+  "conclusion": "not_all_features_usable_in_current_environment",
+  "device": {
+    "name": "Xiaomi 15",
+    "model": "24129PN74C",
+    "android": 16,
+    "system": "OS3.0.307.0.WOCCNXM"
+  },
+  "NoAdMi": {
+    "version": "0.12.13-preview",
+    "code": 91,
+    "changedThisAudit": false
+  },
+  "framework": {
+    "name": "LSPosed",
+    "version": "2.0.0",
+    "build": 7607,
+    "api": 101,
+    "requiredApi": 102,
+    "managerRejectsActivation": true,
+    "configurationChanged": false
+  },
+  "root": {
+    "manager": "KernelSU",
+    "managerVersion": "v3.3.1 / 32680-5",
+    "NoAdMiGranted": false,
+    "NoAdMiModuleUnmount": true,
+    "configurationChanged": false
+  },
+  "scope": {
+    "advertising": 19,
+    "program": 29,
+    "programInstalled": 28,
+    "programNotApplicable": 1,
+    "official": 11,
+    "officialReadable": 0,
+    "officialBulkChanged": 0,
+    "officialBulkUnhandled": 11,
+    "hookRuntimeAcceptance": "blocked_before_hook_load"
+  },
+  "featureInventory": [
+    {
+      "category": "App广告",
+      "app": "米家",
+      "feature": "隐藏/过滤启动页广告",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "米家",
+      "feature": "隐藏/过滤我的页商城活动横幅",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤启动页广告与素材预取",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤健康页底部推广横幅",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤设备页推广横幅",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤运动页活动推荐",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤运动页底部横幅",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤我的页活动横幅",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米运动健康",
+      "feature": "隐藏/过滤会员、支付与问诊推广",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米浏览器",
+      "feature": "隐藏/过滤主动与第三方唤起开屏广告",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "小米浏览器",
+      "feature": "隐藏/过滤信息流广告卡片",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "应用商店",
+      "feature": "隐藏/过滤开屏广告",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "应用商店",
+      "feature": "隐藏/过滤应用内推荐",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "网络助手",
+      "feature": "隐藏/过滤流量充值入口",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "网络助手",
+      "feature": "隐藏/过滤话费充值入口",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "网络助手",
+      "feature": "隐藏/过滤1元/天任性用",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "网络助手",
+      "feature": "隐藏/过滤0元领通用大流量卡",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "游戏助手",
+      "feature": "隐藏/过滤游戏推荐与推广卡片",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "App广告",
+      "app": "游戏助手",
+      "feature": "隐藏/过滤迅游新人加速推广弹窗",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "中国大陆兼容（实验）",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏底栏：米家",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏底栏：智能",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏底栏：产品",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏底栏：商城",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏底栏：我的",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：设备耗材",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：语音控制",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：语音助手",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：多端管理",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：智能家庭中控",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：家庭网络",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：中枢与网关",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：连接三方平台",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：更多设置",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：商城中心",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：全屋智能",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：小米服务",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "米家",
+      "feature": "隐藏我的：帮助与反馈",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "Play版中国大陆兼容（实验）",
+      "status": "not_applicable_play_app_not_installed"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏运动团",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：我的活动",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：我的课程",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：小习惯",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：周报",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：活力竞赛",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：我的亲友",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：我的订单",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "程序管理",
+      "app": "小米运动健康",
+      "feature": "隐藏我的：我的资产",
+      "status": "blocked_framework_api_101"
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.xiaomi.account",
+      "id": "system_tools",
+      "feature": "系统工具广告",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": true
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.settings",
+      "id": "system_personal",
+      "feature": "系统 · 个性化广告推荐",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.miui.weather2",
+      "id": "weather_content",
+      "feature": "天气 · 内容推广",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.miui.weather2",
+      "id": "weather_video",
+      "feature": "天气 · 天气视频卡片",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.miui.cleanmaster",
+      "id": "cleaner_content",
+      "feature": "垃圾清理 · 推荐内容",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.xiaomi.market",
+      "id": "market_personal",
+      "feature": "应用商店 · 个性化服务",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.browser",
+      "id": "browser_ad",
+      "feature": "浏览器 · 个性化广告推荐",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.browser",
+      "id": "browser_content",
+      "feature": "浏览器 · 个性化内容推荐",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.providers.downloads.ui",
+      "id": "downloads_content",
+      "feature": "下载管理 · 资源推荐",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.providers.downloads.ui",
+      "id": "downloads_rank",
+      "feature": "下载管理 · 热榜推荐",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    },
+    {
+      "category": "官方广告设置",
+      "app": "com.android.calendar",
+      "id": "calendar_content",
+      "feature": "日历 · 内容推广",
+      "status": "unreadable_su_permission_denied",
+      "frameworkAccountHookAlsoRequired": false
+    }
+  ],
+  "smartSkip": {
+    "mode": "Shizuku",
+    "serviceBound": true,
+    "GkdOff": true,
+    "newColdStarts": [
+      {
+        "app": "com.jingdong.app.mall",
+        "case": "jd",
+        "NoAdMiActions": 0,
+        "GkdOff": true,
+        "videoSha256": "768bfbe44ee2d9c36eb45bcb61ab404039ddb89171819f807fee400f3ddb1ee5",
+        "outcome": "no_verifiable_splash_skip_control_home_coupon_seen"
+      },
+      {
+        "app": "com.taobao.taobao",
+        "case": "taobao",
+        "NoAdMiActions": 0,
+        "GkdOff": true,
+        "videoSha256": "f91f8c9b904d1acd9d37212150b5ce53a70297ed7f1ced82811098c062e34223",
+        "outcome": "no_verifiable_splash_skip_control_home_coupon_remained"
+      },
+      {
+        "app": "com.taobao.idlefish",
+        "case": "idlefish",
+        "NoAdMiActions": 1,
+        "GkdOff": true,
+        "videoSha256": "824360a9dc96e66ad3ee7917f29f9d4a82c817d700dd44f9951fb76efbb105af",
+        "outcome": "verified_ad_skip_5s_counter_closed_early"
+      }
+    ],
+    "priorSamePhoneWechatVerification": {
+      "extractDownload": "3/3 early skip",
+      "hyperosUpdate": "3/3 early skip",
+      "record": "wechat-service-compat-0.12.13.json"
+    },
+    "limits": "Sampled actual ad scenes only; no claim that every subscription rule is supported."
+  },
+  "about": {
+    "launcherHideAndShow": "PASS",
+    "launcherComponentRestoredToDefault": true,
+    "checkUpdate": "PASS browser loaded official GitHub releases page",
+    "otherAboutSections": "display inspected; no exhaustive action acceptance claimed"
+  },
+  "preservation": {
+    "NoFrameworkUpgradeOrReboot": true,
+    "NoRootGrantChanges": true,
+    "moduleRuleSwitchesUnchanged": true,
+    "subscriptionSameBytes": true,
+    "sourceSha256": "b872fb142af819d5be7e14c0bfde818d7cf0c8ad46b53951a09099fa18014f54",
+    "knownFoldStatesRestored": true,
+    "temporaryHelperRemoved": true,
+    "NoAdMiMasterOn": true,
+    "NoAdMiServiceBound": true
+  },
+  "installedTargets": [
+    {
+      "package": "io.github.miclean.module",
+      "version": [
+        "versionCode=91 minSdk=26 targetSdk=35",
+        "versionName=0.12.13-preview"
+      ]
+    },
+    {
+      "package": "com.xiaomi.smarthome",
+      "version": [
+        "versionCode=110617051 minSdk=24 targetSdk=35",
+        "versionName=11.6.705"
+      ]
+    },
+    {
+      "package": "com.mi.health",
+      "version": [
+        "versionCode=359001 minSdk=26 targetSdk=35",
+        "versionName=3.59.1"
+      ]
+    },
+    {
+      "package": "com.xiaomi.wearable",
+      "version": []
+    },
+    {
+      "package": "com.android.browser",
+      "version": [
+        "versionCode=202410100 minSdk=28 targetSdk=35",
+        "versionName=20.24.1010720"
+      ]
+    },
+    {
+      "package": "com.xiaomi.market",
+      "version": [
+        "versionCode=40007560 minSdk=24 targetSdk=35",
+        "versionName=4.124.s.00"
+      ]
+    },
+    {
+      "package": "com.miui.securitycenter",
+      "version": [
+        "versionCode=40001281 minSdk=26 targetSdk=35",
+        "versionName=12.8.1-260816.0.1"
+      ]
+    },
+    {
+      "package": "com.miui.securityadd",
+      "version": [
+        "versionCode=91240 minSdk=23 targetSdk=35",
+        "versionName=9.12.40-260707.0.1"
+      ]
+    },
+    {
+      "package": "com.android.settings",
+      "version": [
+        "versionCode=36 minSdk=36 targetSdk=36",
+        "versionName=16"
+      ]
+    },
+    {
+      "package": "com.xiaomi.account",
+      "version": [
+        "versionCode=326060800 minSdk=28 targetSdk=36",
+        "versionName=R-26.06.08.00"
+      ]
+    },
+    {
+      "package": "com.miui.weather2",
+      "version": [
+        "versionCode=17010026 minSdk=24 targetSdk=35",
+        "versionName=17.1.0.26-R"
+      ]
+    },
+    {
+      "package": "com.miui.cleanmaster",
+      "version": [
+        "versionCode=101038 minSdk=26 targetSdk=35",
+        "versionName=1038.0.260629.release"
+      ]
+    },
+    {
+      "package": "com.android.providers.downloads.ui",
+      "version": [
+        "versionCode=1260324606 minSdk=26 targetSdk=35",
+        "versionName=126.03.24.806006"
+      ]
+    },
+    {
+      "package": "com.android.calendar",
+      "version": [
+        "versionCode=171008190 minSdk=26 targetSdk=36",
+        "versionName=17.10.8.19"
+      ]
+    }
+  ],
+  "remainingAcceptance": [
+    "Use an API 102 compatible framework, activate NoAdMi and select target scopes before Hook runtime tests.",
+    "Grant NoAdMi Root before official toggle read/write roundtrip tests; account setting also needs its Hook.",
+    "Repeat target effect verification on this phone after prerequisites are satisfied; do not infer current app-version compatibility."
+  ]
+}

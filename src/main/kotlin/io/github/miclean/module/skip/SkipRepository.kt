@@ -78,7 +78,7 @@ class SkipRepository private constructor(context: Context) {
     }
     fun serviceEnabled(): Boolean {
         if (Settings.Secure.getInt(app.contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) != 1) return false
-        val expected = ComponentName(app, SkipAccessibilityService::class.java)
+        val expected = ComponentName(app.packageName, "com.google.android.accessibility.selecttospeak.SelectToSpeakService")
         val enabled = Settings.Secure.getString(app.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == expected }
     }

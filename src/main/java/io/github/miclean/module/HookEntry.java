@@ -91,7 +91,7 @@ public final class HookEntry extends XposedModule {
             // Preserve all other shared preferences. This particular file controls opening ads.
             try {
                 Method m = homeMethod(loader, new String[][]{{"_m_j.uf1", "OoooOOO"},
-                    {"_m_j.l22", "OooOooo"}}, boolean.class, true,
+                    {"_m_j.l22", "OooOooo"}, {"_m_j.sse", "OooOOoo"}}, boolean.class, true,
                     Context.class, String.class, String.class, boolean.class);
                 HookRuntime.hookMethod(m, new MethodHook() {
                     private final AtomicBoolean splashLogged = new AtomicBoolean();
@@ -208,16 +208,23 @@ public final class HookEntry extends XposedModule {
 
     private static void homeBannerList(ClassLoader loader) {
         try {
-            Method method = homeMethod(loader, new String[][]{
+            Method method;
+            int list;
+            try { method = homeMethod(loader, new String[][]{
                 {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo000"},
                 {"com.xiaomi.smarthome.miio.page.SettingMainPageV2", "Oooo0"}},
-                void.class, false, android.view.View.class, ArrayList.class, boolean.class);
+                void.class, false, android.view.View.class, ArrayList.class, boolean.class); list=1;
+            } catch (NoSuchMethodException previous) {
+                method=homeMethod(loader,new String[][]{{"com.xiaomi.smarthome.miio.page.SettingMainPageV2","OooOooO"}},
+                    void.class,false,ArrayList.class,android.view.View.class,boolean.class); list=0;
+            }
+            final int listIndex=list;
             HookRuntime.hookMethod(method,
                 new MethodHook() {
                     private final AtomicBoolean logged = new AtomicBoolean();
                     @Override protected void beforeHookedMethod(Param p) {
                         // Existing empty-data branch collapses the whole ad container.
-                        p.args[1] = new ArrayList<Object>();
+                        p.args[listIndex] = new ArrayList<Object>();
                         p.args[2] = Boolean.TRUE;
                         if (logged.compareAndSet(false, true)) report("hit home.mine.banner-list");
                     }

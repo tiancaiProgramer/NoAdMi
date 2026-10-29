@@ -14,16 +14,23 @@ final class PromotionRules {
     static final class Call {
         final String pkg,key,owner,name,result;
         final String[] args;
+        Call fallback;
         Call(String pkg,String key,String owner,String name,String result,String...args){this.pkg=pkg;this.key=key;this.owner=owner;this.name=name;this.result=result;this.args=args;}
+        Call or(String owner,String name,String...args){fallback=new Call(pkg,key,owner,name,result,args);return this;}
     }
     static final Call[] CALLS={
-        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.SplashActiveAdManager","m","void","int"),
-        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.b","e","boolean"),
-        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.b","f","boolean","java.lang.String"),
+        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.SplashActiveAdManager","m","void","int")
+            .or("com.android.browser.splash.SplashActiveAdManager","requestAd","int"),
+        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.b","e","boolean")
+            .or("com.android.browser.splash.SplashAdManager","canShowSplashAd"),
+        new Call(Rules.BROWSER,BROWSER_SPLASH,"com.android.browser.splash.b","f","boolean","java.lang.String")
+            .or("com.android.browser.splash.SplashAdManager","canShowSplashAd","java.lang.String"),
         new Call(Rules.MARKET,MARKET_SPLASH,"com.xiaomi.market.ui.BaseActivity","needShowSplash","boolean"),
         new Call(Rules.MARKET,MARKET_SPLASH,"com.xiaomi.market.ui.splash.SplashManager","needShowSplash","boolean","android.app.Activity"),
-        new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.RecommendPageController","needShowFirstRecommend","boolean","android.app.Activity"),
-        new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.RecommendPageController","needShowRecallRecommend","boolean","android.app.Activity"),
+        new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.RecommendPageController","needShowFirstRecommend","boolean","android.app.Activity")
+            .or("com.xiaomi.market.model.RecommendPageController","needShowFirstRecommend"),
+        new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.RecommendPageController","needShowRecallRecommend","boolean","android.app.Activity")
+            .or("com.xiaomi.market.model.RecommendPageController","needShowRecallRecommend","android.content.Context"),
         new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.AdSwitch","isDownloadRecommendSupported","boolean"),
         new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.AdSwitch","isUpdateAppRelatedRecommendSupported","boolean"),
         new Call(Rules.MARKET,MARKET_RECOMMEND,"com.xiaomi.market.model.AdSwitch","isUpdateGridRecommendSupported","boolean"),

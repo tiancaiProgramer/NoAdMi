@@ -9,10 +9,20 @@ public final class AccessibilityListPolicyTest {
         for(int mask=0;mask<8;mask++){
             String raw="";for(int i=0;i<3;i++)if((mask&(1<<i))!=0)raw+=(raw.isEmpty()?"":":")+other[i];
             String added=AccessibilityListPolicy.change(raw,true);check(AccessibilityListPolicy.enabled(added));check(AccessibilityListPolicy.change(added,true).equals(added));check(AccessibilityListPolicy.change(added,false).equals(raw));check(AccessibilityListPolicy.change(raw,false).equals(raw));
-            for(String alias:new String[]{own,shortName}){String mixed=alias+(raw.isEmpty()?"":":"+raw)+":"+own;check(AccessibilityListPolicy.change(mixed,false).equals(raw));check(AccessibilityListPolicy.enabled(mixed));}
+            for(String alias:new String[]{own,shortName,AccessibilityListPolicy.LEGACY_COMPONENT}){String mixed=alias+(raw.isEmpty()?"":":"+raw)+":"+own;check(AccessibilityListPolicy.change(mixed,false).equals(raw));check(AccessibilityListPolicy.enabled(mixed));}
         }
         for(String empty:new String[]{null,"","null"}){check(AccessibilityListPolicy.change(empty,true).equals(own));check(AccessibilityListPolicy.change(empty,false).isEmpty());check(!AccessibilityListPolicy.enabled(empty));}
         check(!AccessibilityListPolicy.enabled(own+"Other"));check(AccessibilityListPolicy.change("x.app/.Service",true).equals("x.app/.Service:"+own));
+        String gkd="li.songe.gkd/"+AccessibilityListPolicy.SERVICE_CLASS;
+        for(String legacy:new String[]{shortName,AccessibilityListPolicy.LEGACY_COMPONENT}){
+            String before="a.app/.Reader:"+legacy+":"+gkd+":"+own+":b.app/.Helper:"+legacy;
+            String migrated="a.app/.Reader:"+own+":"+gkd+":b.app/.Helper";
+            check(AccessibilityListPolicy.change(before,true).equals(migrated));
+            check(AccessibilityListPolicy.change(migrated,true).equals(migrated));
+            check(AccessibilityListPolicy.change(before,false).equals("a.app/.Reader:"+gkd+":b.app/.Helper"));
+        }
+        check(!AccessibilityListPolicy.enabled(gkd));
+        check(AccessibilityListPolicy.change(gkd,false).equals(gkd));
         System.out.println("PASS: "+count+" own-component accessibility edits, alias/idempotence and other-service preservation checks");
     }
 }

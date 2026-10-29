@@ -20,7 +20,7 @@ final class NativeAdRules {
         new Entry("system_tools", "account", "com.xiaomi.account", "系统工具广告", "",
             "account_settings_system_ad_preference", "pref_system_ad_checkbox", ACCOUNT, "passport_ad_status"),
         new Entry("system_personal", "system", "com.android.settings", "系统 · 个性化广告推荐", "",
-            "ad_service_settings", "personalized_ad_switch", PERSONAL),
+            "ad_service_settings", "personalized_ad_switch", PERSONAL, "personalized_ad_enabled", "personalized_ad_time"),
         new Entry("weather_content", "weather", "com.miui.weather2", "天气 · 内容推广", "com.miui.weather2.information",
             "preference_weather_experinece_plan", "key_information_settings", PREFS, "agree_to_have_information"),
         new Entry("weather_video", "weather", "com.miui.weather2", "天气 · 天气视频卡片", "com.miui.weather2.information",

@@ -7,6 +7,8 @@ public final class AccessibilityBindingPolicyTest {
         check(Boolean.TRUE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{{"+AccessibilityListPolicy.COMPONENT+"}}",0)));
         check(Boolean.FALSE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{}",0)));
         check(Boolean.TRUE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{{io.github.miclean.module/.skip.SkipAccessibilityService}}",0)));
+        check(Boolean.TRUE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{{"+AccessibilityListPolicy.LEGACY_COMPONENT+"}}",0)));
+        check(Boolean.FALSE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{{li.songe.gkd/"+AccessibilityListPolicy.SERVICE_CLASS+"}}",0)));
         check(Boolean.FALSE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{{"+AccessibilityListPolicy.COMPONENT+"Other}}",0)));
         check(AccessibilityBindingPolicy.selected(head+" Enabled services:{}",10)==null);
         check(Boolean.FALSE.equals(AccessibilityBindingPolicy.selected(head+" Enabled services:{}\nUser state[\n attributes:{id=10}\nEnabled services:{{"+AccessibilityListPolicy.COMPONENT+"}}",0)));

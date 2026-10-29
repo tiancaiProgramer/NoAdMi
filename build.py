@@ -46,7 +46,7 @@ def main():
     p.add_argument('--keystore', help='Existing JKS or PKCS12 signing keystore')
     p.add_argument('--store-pass-file', help='Password file for --keystore; the password is never printed')
     p.add_argument('--key-alias', default='miclean-preview')
-    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.12.12-preview.apk'))
+    p.add_argument('--output', default=str(ROOT.parent / 'NoAdMi-0.12.14-preview.apk'))
     a = p.parse_args()
     if bool(a.keystore) != bool(a.store_pass_file):
         p.error('--keystore and --store-pass-file must be supplied together.')

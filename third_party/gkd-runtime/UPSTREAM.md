@@ -4,6 +4,18 @@ Source: https://github.com/gkd-kit/gkd
 Commit: 5a00f844989471458e4cf4601acb3f4710438f9a (installed GKD 1.12.1 / 92)
 License: GPL-3.0-only; see the project LICENSE and THIRD_PARTY_NOTICES.md.
 
+0.12.13 additionally follows the service component class declared in the pinned
+[upstream manifest](https://github.com/gkd-kit/gkd/blob/5a00f844989471458e4cf4601acb3f4710438f9a/app/src/main/AndroidManifest.xml):
+`com.google.android.accessibility.selecttospeak.SelectToSpeakService`.
+NoAdMi registers this class under its own application package and label and
+delegates to its existing engine. The former NoAdMi component is recognized only
+for own-setting cleanup/migration; no second engine is registered. GKD's own
+component remains a different package and must never be removed by this migration.
+The [upstream author's explanation](https://github.com/orgs/gkd-kit/discussions/1338)
+describes WeChat's accessibility-node obfuscation when its expected service is
+absent. Device comparison and scope are documented in
+[the 0.12.13 verification](../../docs/wechat-service-compat-0.12.13.md).
+
 Unmodified source files in reference/ are supplied for review, not compiled as a second service.
 Original paths: app/src/main/kotlin/li/songe/gkd/{a11y,service,data,shizuku}/.
 

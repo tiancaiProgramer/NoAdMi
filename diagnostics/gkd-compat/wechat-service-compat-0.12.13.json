@@ -1,0 +1,179 @@
+{
+  "date": "2026-10-29",
+  "status": "local_verified_not_published",
+  "version": "0.12.13-preview",
+  "versionCode": 91,
+  "device": {
+    "model": "24129PN74C",
+    "android": 16,
+    "system": "OS3.0.307.0.WOCCNXM",
+    "wechat": "8.0.79 / 3182",
+    "wechatClone": true,
+    "gkd": "1.12.1 / 92"
+  },
+  "subscription": {
+    "id": 667,
+    "version": 620,
+    "wechatGroupKey": 10,
+    "gkdMatchedRuleKey": 0,
+    "originalSubscriptionUnmodified": true
+  },
+  "comparison": {
+    "gkd": {
+      "extract": "2/2",
+      "hyperos": "1/1"
+    },
+    "noadmi": {
+      "extract": "3/3",
+      "hyperos": "3/3"
+    },
+    "masterOff": {
+      "extract": "1 natural countdown, 0 actions",
+      "hyperos": "1 natural countdown, 0 actions"
+    }
+  },
+  "rounds": [
+    {
+      "case": "gkd-extract-1",
+      "engine": "gkd",
+      "target": "提取下载",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": null,
+      "videoSha256": "4c82831e842275c6f2b4a60b1aa91bd9d4e2535b6690aaed1dd58c449eb0a83c"
+    },
+    {
+      "case": "gkd-extract-2",
+      "engine": "gkd",
+      "target": "提取下载",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": null,
+      "videoSha256": "47e83c22b93d2c87cd917fdbd7f91bffc31a4689b1926f02ee7e3dfef297771e"
+    },
+    {
+      "case": "gkd-hyperos-1",
+      "engine": "gkd",
+      "target": "澎湃更新",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": null,
+      "videoSha256": "e7257a4f5356f6043bd9922f33ca030d9519800261e30935d4d3cfa8a63feecb"
+    },
+    {
+      "case": "noadmi91-extract-1",
+      "engine": "noadmi",
+      "target": "提取下载",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 1,
+      "videoSha256": "a7bb0f319f6618ad7b4eaabcee8f0075fde5098bde7580374279772e4cf5889e"
+    },
+    {
+      "case": "noadmi91-extract-2",
+      "engine": "noadmi",
+      "target": "提取下载",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 1,
+      "videoSha256": "1a8b25ff14e3900dd2eecbeb0e97625a1503f2cf27aa1fbfda02e9d13d0a58a5"
+    },
+    {
+      "case": "noadmi91-extract-3",
+      "engine": "noadmi",
+      "target": "提取下载",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 1,
+      "videoSha256": "47b7bebaf9966c4ff4bf091a1e8b0f5e9cb09b665965473c5c59eadb3bd96522"
+    },
+    {
+      "case": "noadmi91-hyperos-1",
+      "engine": "noadmi",
+      "target": "澎湃更新",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 2,
+      "videoSha256": "ef82ebfd6174c8817a5b533a3a6b089d5f6e334b1231adcbd32c9abe47526e92"
+    },
+    {
+      "case": "noadmi91-hyperos-2",
+      "engine": "noadmi",
+      "target": "澎湃更新",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 2,
+      "videoSha256": "9cf5f01eff64d9a3b36fe38404d03d973cc0d37bddd878d536142d58541699a5"
+    },
+    {
+      "case": "noadmi91-hyperos-3",
+      "engine": "noadmi",
+      "target": "澎湃更新",
+      "masterEnabled": true,
+      "engineIsolationVerified": true,
+      "actualOutcome": "splash_closed_before_countdown_finished",
+      "NoAdMiCompletedGestures": 1,
+      "videoSha256": "d237a14230f8e2fca7e1086c2cc67b4a30a41a5c77459274629ecc7a97a321cc"
+    },
+    {
+      "case": "noadmi91-off-extract",
+      "engine": "noadmi",
+      "target": "提取下载",
+      "masterEnabled": false,
+      "engineIsolationVerified": true,
+      "actualOutcome": "natural_countdown_no_action",
+      "NoAdMiCompletedGestures": 0,
+      "videoSha256": "e803abb5edf8b50d26bc043c6bfadae80ee67588bc8bc399250eeb341ebed1b0"
+    },
+    {
+      "case": "noadmi91-off-hyperos",
+      "engine": "noadmi",
+      "target": "澎湃更新",
+      "masterEnabled": false,
+      "engineIsolationVerified": true,
+      "actualOutcome": "natural_countdown_no_action",
+      "NoAdMiCompletedGestures": 0,
+      "videoSha256": "8c124f11859420c797702ef2218421a806fc117d2e1b9d96b961277d67f4ff25"
+    }
+  ],
+  "actionAccounting": {
+    "NoAdMiRecordedTrialGestures": 8,
+    "NoAdMiDatabaseActions": 9,
+    "outsideTrialPreparationActionsExcluded": 1
+  },
+  "preservation": {
+    "NoAdMiSettingsSameBytes": true,
+    "NoAdMiSubscriptionSameBytes": true,
+    "GkdStoreAndConfigTablesUnchanged": true,
+    "GkdSubscriptionSameBytes": true,
+    "NoAdMiMasterRestored": true,
+    "NoAdMiBound": true,
+    "GkdServiceRestoredOff": true,
+    "temporaryDiagnosticPackageRemoved": true
+  },
+  "apkSha256": "aae329c44faed3ff19b4409fb234c25c6390d25d9a307f7d0bc98adb472c0fbc",
+  "signerSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "limitations": [
+    "Only the two specified miniapps on this phone were accepted.",
+    "Some rounds required a second action after the original cooldown, including GKD.",
+    "Home-page popup and feed advertisements remain under original scope.",
+    "Other-phone input failures and other-app acceptance remain historical/open."
+  ],
+  "privateMaterialExcluded": [
+    "screenshots",
+    "videos",
+    "node text/tree",
+    "device identifiers",
+    "preferences",
+    "subscription documents",
+    "signing secrets"
+  ]
+}

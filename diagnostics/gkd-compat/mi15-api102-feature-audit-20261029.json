@@ -1,0 +1,541 @@
+{
+  "date": "2026-10-29",
+  "device": {
+    "name": "Xiaomi 15",
+    "model": "24129PN74C",
+    "android": 16,
+    "api": 36,
+    "hyperOS": "OS3.0.307.0.WOCCNXM"
+  },
+  "module": {
+    "name": "NoAdMi",
+    "version": "0.12.13-preview",
+    "versionCode": 91,
+    "sha256": "aae329c44faed3ff19b4409fb234c25c6390d25d9a307f7d0bc98adb472c0fbc",
+    "productionApkChanged": false
+  },
+  "framework": {
+    "name": "LSPosed",
+    "version": "2.2.1 (7912)",
+    "api": 102,
+    "serviceConnected": true,
+    "moduleWasDisabled": true,
+    "moduleEnabledForTestingAndKeptEnabled": true,
+    "staticScopesRetained": true,
+    "runtimeWarning": "HyperOS Runtime 原生注入失败，Zygisk Next API 不可用；Java 模块已在目标进程加载，不将告警等同于全部 Hook 失败"
+  },
+  "controls": {
+    "total": 48,
+    "available": 47,
+    "unavailable": 1,
+    "roundtripsPassed": 47,
+    "appAdCount": 19,
+    "bulkResults": [
+      {
+        "desired": true,
+        "available": 19,
+        "on": 19,
+        "summary": "全部开启 · 已启用广告隐藏 19/19 项"
+      },
+      {
+        "desired": false,
+        "available": 19,
+        "on": 0,
+        "summary": "全部关闭 · 已启用广告隐藏 0/19 项"
+      },
+      {
+        "desired": true,
+        "available": 19,
+        "on": 19,
+        "summary": "全部开启 · 已启用广告隐藏 19/19 项"
+      },
+      {
+        "partial": "部分开启 · 已启用广告隐藏 18/19 项",
+        "masterChecked": false
+      }
+    ],
+    "effectMatrix": [
+      {
+        "key": "home_splash",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "适配失败",
+        "evidence": "启动偏好拦截方法 NoSuchMethodException；关闭过滤时有真实开屏广告，开启组未再次取得同一广告对照"
+      },
+      {
+        "key": "home_banner",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "广告过滤开启后“我的”轮播广告仍显示；偏好和 banner-list 方法均未匹配"
+      },
+      {
+        "key": "health_splash",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "规则命中，缺少真实广告对照",
+        "evidence": "原生拦截方法安装并命中；关闭组本轮未获得对应真实广告，不能声称完整广告 A/B 通过"
+      },
+      {
+        "key": "health_home_banner",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "规则命中，缺少真实广告对照",
+        "evidence": "原生拦截方法安装并命中；关闭组本轮未获得对应真实广告，不能声称完整广告 A/B 通过"
+      },
+      {
+        "key": "health_device_banner",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "仅确认加载",
+        "evidence": "原生方法已安装，未取得设备页对应推广的前后对照"
+      },
+      {
+        "key": "health_sport_activity",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "bundle 已应用，缺少对应推广对照",
+        "evidence": "目标页面加载命中，未逐项取得真实活动/轮播推广基线"
+      },
+      {
+        "key": "health_sport_banner",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "bundle 已应用，缺少对应推广对照",
+        "evidence": "目标页面加载命中，未逐项取得真实活动/轮播推广基线"
+      },
+      {
+        "key": "health_banner",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "bundle 已应用，缺少对应推广对照",
+        "evidence": "目标页面加载命中，未逐项取得真实活动/轮播推广基线"
+      },
+      {
+        "key": "health_member_promo",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组会员和问诊推广可见，开启组消失；bundle 命中"
+      },
+      {
+        "key": "browser_splash",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "适配失败",
+        "evidence": "SplashActiveAdManager.m、splash.b.e/f 均 NoSuchMethodException"
+      },
+      {
+        "key": "browser_feed_ads",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "仅确认加载",
+        "evidence": "信息流响应过滤器安装；本轮未取得带广告标记的信息流卡片前后对照"
+      },
+      {
+        "key": "market_splash",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "规则命中，缺少真实广告对照",
+        "evidence": "SplashManager.needShowSplash 安装并命中；本轮关闭组无开屏广告"
+      },
+      {
+        "key": "market_recommend",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "部分适配失败",
+        "evidence": "下载/更新/迷你卡7个决策方法安装；首次/召回推荐2方法未匹配；详情原生、详情网页、首页 banner 适配报 IllegalArgumentException；快手详情基线无相应推荐，不能认定详情过滤通过"
+      },
+      {
+        "key": "system_network_traffic_recharge",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "开启四项并冷启网络助手后，流量充值和话费充值仍可见；Hook 安装但无隐藏命中"
+      },
+      {
+        "key": "system_network_phone_recharge",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "开启四项并冷启网络助手后，流量充值和话费充值仍可见；Hook 安装但无隐藏命中"
+      },
+      {
+        "key": "system_network_daily_offer",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "无对应场景",
+        "evidence": "1元/天和0元流量卡在关闭组没有出现；不以缺席计通过"
+      },
+      {
+        "key": "system_network_sim_offer",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "无对应场景",
+        "evidence": "1元/天和0元流量卡在关闭组没有出现；不以缺席计通过"
+      },
+      {
+        "key": "system_game_recommend",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "规则命中，缺少推广对照",
+        "evidence": "推荐布局、空推荐观察器和迅游新用户规则安装且命中；开关两组均未遇到推广/弹窗，未证明可见广告 A/B"
+      },
+      {
+        "key": "system_game_xunyou_popup",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "规则命中，缺少推广对照",
+        "evidence": "推荐布局、空推荐观察器和迅游新用户规则安装且命中；开关两组均未遇到推广/弹窗，未证明可见广告 A/B"
+      },
+      {
+        "key": "home_play_mainland",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未验证适用场景",
+        "evidence": "未改变账户地区或启动 Play 地区迁移流程；仅验证开关写入"
+      },
+      {
+        "key": "home_hide_tab_DeviceMain",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "两组实机：仅保留“我的”，以及单独隐藏“我的”；五个原生栏目均按设置变化"
+      },
+      {
+        "key": "home_hide_tab_Scene",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "两组实机：仅保留“我的”，以及单独隐藏“我的”；五个原生栏目均按设置变化"
+      },
+      {
+        "key": "home_product_tab",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "两组实机：仅保留“我的”，以及单独隐藏“我的”；五个原生栏目均按设置变化"
+      },
+      {
+        "key": "home_hide_tab_ShopYouPin",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "两组实机：仅保留“我的”，以及单独隐藏“我的”；五个原生栏目均按设置变化"
+      },
+      {
+        "key": "home_hide_tab_Setting",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "两组实机：仅保留“我的”，以及单独隐藏“我的”；五个原生栏目均按设置变化"
+      },
+      {
+        "key": "home_hide_mine_device_consumables",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_voice_control",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_voice_assistant",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_multi_device_management",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_smart_home_central_control",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_home_network",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_hub_and_gateway",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_third_party_platforms",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_more_settings",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "失败",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_mall_center",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_whole_home_smart",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_xiaomi_services",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "home_hide_mine_help_feedback",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "未完整验证",
+        "evidence": "选中13个入口后，上半部6个目标入口仍显示；Hook 安装但没有隐藏命中。其余入口不能逐项判为通过"
+      },
+      {
+        "key": "health_play_mainland",
+        "uiAvailable": false,
+        "uiRoundtrip": null,
+        "effectStatus": "不适用",
+        "evidence": "运动健康 Play 版未安装"
+      },
+      {
+        "key": "health_sport_group",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "运动团在关闭组可见，开启组被隐藏；bundle 命中"
+      },
+      {
+        "key": "health_mine_hide_activity",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_course",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_habit",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_weekly",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_competition",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_friend",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_order",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      },
+      {
+        "key": "health_mine_hide_assets",
+        "uiAvailable": true,
+        "uiRoundtrip": true,
+        "effectStatus": "通过",
+        "evidence": "关闭组显示八个入口；开启组全部隐藏，基础设置和路线库保留；bundle 命中列出八项"
+      }
+    ]
+  },
+  "officialAds": {
+    "total": 11,
+    "readable": 8,
+    "writeRoundtripPassed": 7,
+    "items": [
+      {
+        "id": "system_tools",
+        "readable": true,
+        "roundtripPassed": false,
+        "restored": true,
+        "limitation": "后台接口 ClassNotFoundException，可读不可写"
+      },
+      {
+        "id": "system_personal",
+        "readable": false,
+        "roundtripPassed": false,
+        "restored": null,
+        "limitation": "系统广告状态未初始化，保留原状态"
+      },
+      {
+        "id": "weather_content",
+        "readable": false,
+        "roundtripPassed": false,
+        "restored": null,
+        "limitation": "此应用版本未识别到官方开关"
+      },
+      {
+        "id": "weather_video",
+        "readable": false,
+        "roundtripPassed": false,
+        "restored": null,
+        "limitation": "此应用版本未识别到官方开关"
+      },
+      {
+        "id": "cleaner_content",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "market_personal",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "browser_ad",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "browser_content",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "downloads_content",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "downloads_rank",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      },
+      {
+        "id": "calendar_content",
+        "readable": true,
+        "roundtripPassed": true,
+        "restored": true,
+        "limitation": null
+      }
+    ],
+    "bulkSummary": "已关闭 1 项，原已关闭 6 项，未处理 4 项\n未处理：系统工具广告（请打开官方设置）、系统 · 个性化广告推荐、天气 · 内容推广、天气 · 天气视频卡片",
+    "bulkState": "已关闭 7/11 项 · 仍开启 1 项 · 未确认 3 项",
+    "bulkCompletedSwitch": false,
+    "allOriginalStatesRestored": true,
+    "rawPreferenceValuesRestoredIncludingAbsentKeys": true,
+    "notes": "初次临时工具对下载双键快照的参数传递失败，已改为正确引用快照并单独回读恢复；这是测试工具问题，未修改生产控制器"
+  },
+  "smartSkip": {
+    "gkdEnabled": false,
+    "masterEnabled": true,
+    "methodRetained": "shizuku",
+    "shizukuRestartedViaOfficialRootButton": true,
+    "serviceConnected": true,
+    "enhancedConnected": true,
+    "eligibleAds": 3,
+    "earlyDismissals": 3,
+    "trials": [
+      {
+        "app": "闲鱼",
+        "count": 1,
+        "result": "通过",
+        "evidence": "20fps逐帧出现真实广告“跳过广告5”，紧接进入主页；07:31:00.939 clickNode"
+      },
+      {
+        "app": "澎湃更新",
+        "count": 1,
+        "result": "通过",
+        "evidence": "倒计时未结束即进入内容页；07:33:03.617 clickCenter 无障碍手势完成"
+      },
+      {
+        "app": "提取下载",
+        "count": 1,
+        "result": "通过",
+        "evidence": "倒计时未结束即进入解析主页；07:34:16.893 clickCenter 无障碍手势完成"
+      }
+    ],
+    "sourceSha256": "b872fb142af819d5be7e14c0bfde818d7cf0c8ad46b53951a09099fa18014f54",
+    "sourceUnchanged": true,
+    "limits": "每个场景仅补测1轮，不代表全部 App 和所有广告可跳过；本轮未重跑总开关关闭对照，前一轮同硬件、同 APK 已完成"
+  },
+  "restoration": {
+    "remotePreferencesExact": true,
+    "smartPreferencesExact": true,
+    "officialStatesExact": true,
+    "sourceBytesUnchanged": true,
+    "temporaryDiagnosticUninstalled": true,
+    "smartFoldRestored": true,
+    "targetProcessesStoppedAfterPreferenceRestore": true,
+    "gkdKeptOff": true,
+    "healthVersionRetained": "3.59.1",
+    "changesKept": [
+      "按用户升级后的条件启用 NoAdMi 模块",
+      "恢复智能跳过无障碍连接",
+      "通过官方按钮启动 Shizuku"
+    ]
+  },
+  "priorSameApkAudit": {
+    "launcherHideShow": "前一轮小米15同版本验证通过并恢复 DEFAULT",
+    "releaseUpdateLink": "前一轮小米15同版本可打开 GitHub 更新页",
+    "playHealth": "未安装，不适用"
+  },
+  "conclusion": "API102 与 Root 可用，设置链路正常；存在米家、浏览器、应用商店、网络助手和小米账号的版本适配问题，不能认定全部功能可用。没有新增版本或机型限制。"
+}

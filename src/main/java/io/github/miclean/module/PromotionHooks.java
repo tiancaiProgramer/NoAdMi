@@ -10,18 +10,26 @@ final class PromotionHooks {
         for(PromotionRules.Call call:PromotionRules.CALLS){
             if(!call.pkg.equals(pkg)||!(PromotionRules.MARKET_RECOMMEND.equals(call.key)?PromotionSettings.recommendations(prefs):prefs.getBoolean(call.key,false)))continue;
             try{
-                Class<?> owner=Reflect.findClass(call.owner,loader);Class<?>[] args=new Class<?>[call.args.length];
-                for(int i=0;i<args.length;i++)args[i]=type(call.args[i],loader);
-                Method method=owner.getDeclaredMethod(call.name,args);
-                if(method.getReturnType()!=type(call.result,loader))throw new NoSuchMethodException("advertising return contract");
+                Method method=null;PromotionRules.Call selected=null;
+                for(PromotionRules.Call variant=call;variant!=null;variant=variant.fallback){
+                    try{
+                        Class<?> owner=Reflect.findClass(variant.owner,loader);Class<?>[] args=new Class<?>[variant.args.length];
+                        for(int i=0;i<args.length;i++)args[i]=type(variant.args[i],loader);
+                        Method candidate=owner.getDeclaredMethod(variant.name,args);
+                        if(candidate.getReturnType()!=type(variant.result,loader))continue;
+                        method=candidate;selected=variant;break;
+                    }catch(IllegalArgumentException|NoSuchMethodException absent){ }
+                }
+                if(method==null)throw new NoSuchMethodException("advertising return contract");
+                final PromotionRules.Call resolved=selected;
                 HookRuntime.hookMethod(method,new MethodHook(){
                     final AtomicBoolean logged=new AtomicBoolean();
                     @Override protected void beforeHookedMethod(Param p){
                         p.setResult(call.result.equals("boolean")?Boolean.FALSE:null);
-                        if(logged.compareAndSet(false,true))HookEntry.report("hit "+call.key+" "+call.owner+"."+call.name);
+                        if(logged.compareAndSet(false,true))HookEntry.report("hit "+call.key+" "+resolved.owner+"."+resolved.name);
                     }
                 });
-                HookEntry.report("installed "+call.key+" "+call.owner+"."+call.name);
+                HookEntry.report("installed "+call.key+" "+resolved.owner+"."+resolved.name);
             }catch(Throwable e){HookEntry.report("skip "+call.key+" "+call.owner+"."+call.name+": "+e.getClass().getSimpleName());}
         }
         if(Rules.MARKET.equals(pkg))MarketPageHooks.install(loader,prefs);

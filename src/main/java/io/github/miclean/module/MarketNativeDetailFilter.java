@@ -10,7 +10,7 @@ final class MarketNativeDetailFilter {
     private final List<WeakReference<Object>> responses=new ArrayList<>();
 
     synchronized void remember(String api,Object response){
-        if(!"app/directScreenFeeds4Pad/{appId}".equals(api)||response==null)return;
+        if(!("app/directScreenFeeds4Pad/{appId}".equals(api)||"app/directScreenFeeds".equals(api))||response==null)return;
         for(Iterator<WeakReference<Object>> i=responses.iterator();i.hasNext();){
             Object existing=i.next().get();
             if(existing==null)i.remove();
@@ -26,7 +26,11 @@ final class MarketNativeDetailFilter {
             if(existing==null)i.remove();
             else if(existing==response)matched=true;
         }
-        if(!matched||!(result instanceof List<?>)||component==null)return result;
+        return matched?withoutRecommendations(result,component):result;
+    }
+
+    static Object withoutRecommendations(Object result,Class<?> component){
+        if(!(result instanceof List<?>)||component==null)return result;
         List<?> list=(List<?>)result;
         if(list.isEmpty())return result;
         for(Object item:list)if(!component.isInstance(item))return result;

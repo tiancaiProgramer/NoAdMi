@@ -72,11 +72,19 @@ final class AccountAdHost {
         final Field code,status;
         Binding(ClassLoader loader)throws Exception{
             Class<?> task=Class.forName("com.xiaomi.account.settings.SystemAdFragment$c",false,loader);
-            Class<?> callback=Class.forName("f6.m",false,loader);
-            Class<?> result=Class.forName("t4.r",false,loader);
-            constructor=task.getDeclaredConstructor(Context.class,callback,String.class);constructor.setAccessible(true);
+            Constructor<?> selected=null;
+            for(Constructor<?> candidate:task.getDeclaredConstructors()){
+                Class<?>[] args=candidate.getParameterTypes();
+                if(args.length==3&&args[0]==Context.class&&args[1].isInterface()&&args[2]==String.class){
+                    if(selected!=null)throw new NoSuchMethodException("ambiguous account ad worker");
+                    selected=candidate;
+                }
+            }
+            if(selected==null)throw new NoSuchMethodException("account ad worker constructor");
+            constructor=selected;constructor.setAccessible(true);
             background=task.getDeclaredMethod("b",Void[].class);background.setAccessible(true);
-            if(background.getReturnType()!=result)throw new NoSuchMethodException("account ad result");
+            Class<?> result=background.getReturnType();
+            if(result==Object.class||result.isPrimitive())throw new NoSuchMethodException("account ad result");
             code=result.getDeclaredField("a");status=result.getDeclaredField("c");
             if(code.getType()!=int.class||status.getType()!=String.class)throw new NoSuchFieldException("account ad status");
             code.setAccessible(true);status.setAccessible(true);

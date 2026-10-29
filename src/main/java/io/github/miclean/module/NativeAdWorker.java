@@ -42,13 +42,16 @@ public final class NativeAdWorker {
                 if (!args[2].equals("true") && !args[2].equals("false")) throw new IllegalArgumentException("无效开关值");
                 desired = Boolean.parseBoolean(args[2]);
             } else if (action.equals("restore")) {
-                if (selected.kind != NativeAdRules.PREFS && selected.kind != NativeAdRules.MMKV)
+                if (selected.kind != NativeAdRules.PREFS && selected.kind != NativeAdRules.MMKV && selected.kind != NativeAdRules.PERSONAL)
                     throw new IllegalArgumentException("此开关不支持配置快照恢复");
                 restore = new JSONObject(args[2]);
                 if (restore.length() != selected.keys.length) throw new IllegalArgumentException("无效快照");
                 for (String key : selected.keys) {
                     Object value = restore.get(key);
-                    if (value != JSONObject.NULL && !(value instanceof Boolean)) throw new IllegalArgumentException("无效快照值");
+                    boolean valid=selected.kind==NativeAdRules.PERSONAL
+                        ?value instanceof String&&((String)value).matches("-?[0-9]{1,19}")
+                        :value instanceof Boolean;
+                    if (value != JSONObject.NULL && !valid) throw new IllegalArgumentException("无效快照值");
                 }
             }
             Looper.prepareMainLooper();
@@ -122,15 +125,26 @@ public final class NativeAdWorker {
                 try {
                     schema(target, e);
                     boolean before = specialRead(system, e);
-                    if (selected != null && before != desired) {
-                        int old = personalBits();
-                        command("settings", "put", "global", "personalized_ad_enabled", String.valueOf(NativeAdRules.personalizedBits(old, desired)));
-                        command("settings", "put", "global", "personalized_ad_time", String.valueOf(System.currentTimeMillis()));
+                    if (restore != null) {
+                        for(String key:e.keys){
+                            if(restore.isNull(key))command("settings","delete","global",key);
+                            else command("settings","put","global",key,restore.getString(key));
+                        }
+                    } else if (selected != null && before != desired) {
+                        command("settings","put","global","personalized_ad_enabled",String.valueOf(NativeAdRules.personalizedBits(personalBits(),desired)));
+                        command("settings","put","global","personalized_ad_time",String.valueOf(System.currentTimeMillis()));
                     }
                     boolean after = specialRead(system, e);
-                    if (selected != null && after != desired) throw new IllegalStateException("官方设置未确认成功");
-                    results.put(new JSONObject().put("id", e.id).put("ok", true).put("enabled", after)
-                        .put("changed", selected != null && before != after));
+                    if (selected != null && restore==null && after != desired) throw new IllegalStateException("官方设置未确认成功");
+                    JSONObject row=new JSONObject().put("id", e.id).put("ok", true).put("enabled", after)
+                        .put("changed", selected != null && before != after);
+                    if(e.kind==NativeAdRules.PERSONAL){
+                        JSONObject snapshot=new JSONObject();
+                        for(String key:e.keys){String value=command("settings","get","global",key).trim();
+                            snapshot.put(key,"null".equals(value)?JSONObject.NULL:value);}
+                        row.put("values",snapshot);
+                    }
+                    results.put(row);
                 } catch (Throwable error) { results.put(failed(e.id, error)); }
             }
             answer.put("results", results);
@@ -174,16 +188,23 @@ public final class NativeAdWorker {
                 throw new IllegalStateException("账号广告状态未初始化，暂无法读取");
             return "ON".equals(value);
         }
-        return (personalBits() & 1) != 0;
+        return (personalBits()&1)!=0;
     }
-    private static int personalBits() throws Exception {
-        String value = command("settings", "get", "global", "personalized_ad_enabled").trim();
-        if (!value.matches("[0-9]{1,10}")) throw new IllegalStateException("系统广告状态未初始化，保留原状态");
+    private static int personalBits()throws Exception{
+        // MiuiSettings.Ad uses Global.getInt(key, 1). Use its verified default
+        // and preserve the other bits. cmd settings avoids attributing this Root
+        // subprocess to the system Context's different UID on Android 16.
+        String value=command("settings","get","global","personalized_ad_enabled").trim();
+        if("null".equals(value))return 1;
+        if(!value.matches("-?[0-9]{1,10}"))throw new IllegalStateException("系统广告配置格式未识别，保留原状态");
         return Integer.parseInt(value);
     }
     private static void schema(Context target, NativeAdRules.Entry e) throws Exception {
         int id = target.getResources().getIdentifier(e.xml, "xml", e.pkg);
-        if (id == 0) throw new IllegalStateException("此应用版本未识别到官方开关");
+        if (id == 0) {
+            if ("weather".equals(e.group) && flutterWeather(target,e)) return;
+            throw new IllegalStateException("此应用版本未识别到官方开关");
+        }
         try (XmlResourceParser xml = target.getResources().getXml(id)) {
             while (xml.next() != XmlPullParser.END_DOCUMENT) {
                 if (xml.getEventType() != XmlPullParser.START_TAG) continue;
@@ -196,6 +217,32 @@ public final class NativeAdWorker {
             }
         }
         throw new IllegalStateException("未匹配官方开关，保留原状态");
+    }
+
+    private static boolean flutterWeather(Context target,NativeAdRules.Entry e)throws Exception {
+        // Flutter weather removed its preference XML. Its platform channel still
+        // uses the same device-protected file and boolean keys. Require both the
+        // compiled Dart declarations and existing typed values; never invent defaults.
+        if(!new File(target.getDataDir(),"shared_prefs/"+e.file+".xml").isFile())return false;
+        SharedPreferences prefs=target.getSharedPreferences(e.file,Context.MODE_PRIVATE);
+        for(String key:e.keys)if(!(prefs.getAll().get(key) instanceof Boolean))return false;
+        try(java.util.zip.ZipFile apk=new java.util.zip.ZipFile(target.getApplicationInfo().sourceDir)){
+            for(String abi:android.os.Build.SUPPORTED_ABIS){
+                java.util.zip.ZipEntry entry=apk.getEntry("lib/"+abi+"/libapp.so");
+                if(entry==null)continue;
+                if(entry.getSize()<=0||entry.getSize()>64*1024*1024)return false;
+                ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+                try(java.io.InputStream in=apk.getInputStream(entry)){
+                    byte[] buffer=new byte[8192];int n;
+                    while((n=in.read(buffer))!=-1){if(bytes.size()+n>64*1024*1024)return false;bytes.write(buffer,0,n);}
+                }
+                String code=bytes.toString("ISO-8859-1");
+                if(!code.contains("hyperos/shared_preferences")||!code.contains(e.file))return false;
+                for(String key:e.keys)if(!code.contains(key))return false;
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String command(String... args) throws Exception {

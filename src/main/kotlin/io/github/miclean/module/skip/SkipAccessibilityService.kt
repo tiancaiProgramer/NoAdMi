@@ -17,7 +17,7 @@ import li.gkd.app.subscription.RuleBounds
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
-class SkipAccessibilityService : AccessibilityService() {
+open class SkipAccessibilityService : AccessibilityService() {
     private lateinit var thread: HandlerThread
     private lateinit var worker: Handler
     private lateinit var repository: SkipRepository

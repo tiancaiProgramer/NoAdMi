@@ -19,6 +19,8 @@ public final class MarketNativeDetailFilterTest {
         filter.remember("app/tabs/basicInfo/{appId}",basic);
         filter.remember("app/directScreenFeeds4Pad/{appId}",recommend);
         check(filter.filter(comment,cards,Component.class)==cards);
+        check(((List<?>)MarketNativeDetailFilter.withoutRecommendations(cards,Component.class)).isEmpty());
+        check(MarketNativeDetailFilter.withoutRecommendations(Arrays.asList(new Component(),"unknown"),Component.class) instanceof List<?>);
         check(filter.filter(basic,cards,Component.class)==cards);
         check(filter.filter(new EqualResponse(),cards,Component.class)==cards);
         Object removed=filter.filter(recommend,cards,Component.class);
@@ -31,6 +33,9 @@ public final class MarketNativeDetailFilterTest {
         check(threaded[0] instanceof List<?> && ((List<?>)threaded[0]).isEmpty());
         check(((List<?>)filter.filter(recommend,cards,Component.class)).isEmpty());
         List<?> unknown=Arrays.asList(new Component(),"unknown");
+        check(MarketNativeDetailFilter.withoutRecommendations(unknown,Component.class)==unknown);
+        check(MarketNativeDetailFilter.withoutRecommendations(null,Component.class)==null);
+        check(MarketNativeDetailFilter.withoutRecommendations(cards,null)==cards);
         List<?> nullable=Arrays.asList(new Component(),null);
         check(filter.filter(recommend,unknown,Component.class)==unknown);
         check(filter.filter(recommend,nullable,Component.class)==nullable);
@@ -40,6 +45,10 @@ public final class MarketNativeDetailFilterTest {
         List<?> empty=Collections.emptyList();
         check(filter.filter(recommend,empty,Component.class)==empty);
         check(filter.filter(null,cards,Component.class)==cards);
+        Object currentRecommend=new Object();
+        filter.remember("app/directScreenFeeds",currentRecommend);
+        check(((List<?>)filter.filter(currentRecommend,cards,Component.class)).isEmpty());
+        check(filter.filter(comment,cards,Component.class)==cards);
         for(String api:new String[]{null,"","app/directScreenFeeds4Pad/123","app/directScreenFeeds4Pad/{appId}/","app/tabs/recommend/{appId}","app/directScreenFeeds/{appId}"}){
             Object response=new Object();filter.remember(api,response);
             check(filter.filter(response,cards,Component.class)==cards);
