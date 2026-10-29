@@ -12,6 +12,7 @@ data class SkipRuntimeScene(val app: String, val activity: String, val task: Int
 class SkipRuntimeClient(private val context: Context, private val onScene: (SkipRuntimeScene) -> Unit) : AutoCloseable {
     private val main = Handler(Looper.getMainLooper())
     private val io = SkipReadExecutor()
+    private val handshake = SkipReadExecutor()
     private val control = java.util.concurrent.Executors.newSingleThreadExecutor { Thread(it, "NoAdMi-runtime-connect") }
     @Volatile private var binder: IBinder? = null
     @Volatile var scene: SkipRuntimeScene? = null
@@ -21,23 +22,42 @@ class SkipRuntimeClient(private val context: Context, private val onScene: (Skip
     private var selected = false
     private var connection: ServiceConnection? = null
     private var args: Shizuku.UserServiceArgs? = null
-    private val received = Shizuku.OnBinderReceivedListener { main.post { refresh() } }
-    private val died = Shizuku.OnBinderDeadListener { main.post { unbind(); status = "Shizuku 已断开" } }
-    private val permission = Shizuku.OnRequestPermissionResultListener { _, _ -> main.post { refresh() } }
-    private val retry = Runnable { if (!closed) { unbind(); status = "Shizuku 增强连接超时，请重启 Shizuku；使用无障碍输入" } }
+    private var death: IBinder.DeathRecipient? = null
+    private val recovery = SkipRuntimeRecovery { SystemClock.elapsedRealtime() }
+    private var acceptedGeneration = Long.MIN_VALUE
+    @Volatile var connectionGeneration = 0L
+        private set
+    private val received = Shizuku.OnBinderReceivedListener { main.post { if (!closed) { recovery.reset(); refresh() } } }
+    private val died = Shizuku.OnBinderDeadListener { main.post { if (!closed) { unbind(); status = "Shizuku 已断开，等待服务恢复；使用无障碍输入" } } }
+    private val permission = Shizuku.OnRequestPermissionResultListener { _, _ -> main.post { if (!closed) { recovery.reset(); refresh() } } }
+    private val retry = Runnable { if (!closed && selected) refresh() }
+    private val timeout = Runnable { if (!closed && selected && connection != null) failed(epoch, "Shizuku 增强连接超时") }
     init { Shizuku.addBinderReceivedListenerSticky(received); Shizuku.addBinderDeadListener(died); Shizuku.addRequestPermissionResultListener(permission) }
-    fun enabled(value: Boolean) { main.post { if (!closed) { selected = value; refresh() } } }
-    private fun readScene(reply: Parcel): SkipRuntimeScene? {
+    fun enabled(value: Boolean) { main.post { if (!closed) { if (selected != value) recovery.reset(); selected = value; refresh() } } }
+    private data class Snapshot(val scene: SkipRuntimeScene?, val listening: Boolean, val generation: Long)
+    private fun readScene(reply: Parcel): Snapshot {
         val app = reply.readString(); val activity = reply.readString(); val task = reply.readInt(); val generation = reply.readLong(); val listener = reply.readInt() != 0
-        return if (app.isNullOrEmpty() || activity.isNullOrEmpty() || task < 0) null else SkipRuntimeScene(app, activity, task, generation, listener)
+        return Snapshot(if (app.isNullOrEmpty() || activity.isNullOrEmpty() || task < 0) null else SkipRuntimeScene(app, activity, task, generation, listener), listener, generation)
     }
-    private fun accept(token: Long, next: SkipRuntimeScene?) {
-        if (closed || !selected || token != epoch || next == null) return
+    private fun accept(token: Long, snapshot: Snapshot) {
+        if (closed || !selected || token != epoch) return
+        if (snapshot.generation < acceptedGeneration) return
+        acceptedGeneration = snapshot.generation
+        val next = snapshot.scene
         val previous = scene
-        if (previous != null && next.generation < previous.generation) return
         scene = next
-        status = if (next.listening) "Shizuku 增强已连接" else "Shizuku 输入已连接；前台监听不可用"
-        if (next != previous) onScene(next)
+        status = if (snapshot.listening) "Shizuku 增强已连接" else "Shizuku 输入已连接；前台监听不可用"
+        // An empty foreground snapshot is a successful connection, not an
+        // indefinitely pending bind. Never retain an old privileged target.
+        if (next != null && next != previous) onScene(next)
+    }
+    private fun failed(token: Long, reason: String) {
+        if (closed || !selected || token != epoch) return
+        unbind()
+        val delay = recovery.failed()
+        status = if (delay == null) "$reason，自动重连已暂停；请切换方式重试，使用无障碍输入"
+            else "$reason，${delay / 1000}秒后自动重连；使用无障碍输入"
+        if (delay != null) main.postDelayed(retry, delay)
     }
     private fun refresh() {
         if (closed) return
@@ -45,6 +65,7 @@ class SkipRuntimeClient(private val context: Context, private val onScene: (Skip
         val granted = runCatching { Shizuku.pingBinder() && Shizuku.getVersion() >= 13 && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
         if (!granted) { unbind(); status = "Shizuku 未运行或未授权，使用无障碍输入"; return }
         if (connection != null) return
+        main.removeCallbacks(retry)
         val token = ++epoch
         val callback = object : Binder() {
             override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
@@ -58,24 +79,40 @@ class SkipRuntimeClient(private val context: Context, private val onScene: (Skip
         args = request
         connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, service: IBinder) {
-                if (closed || token != epoch) return
-                binder = service
-                control.execute {
+                main.post { connect(token, service, callback) }
+            }
+            override fun onServiceDisconnected(name: ComponentName) { main.post { failed(token, "Shizuku 增强已断开") } }
+            override fun onBindingDied(name: ComponentName) { main.post { failed(token, "Shizuku 增强绑定失效") } }
+            override fun onNullBinding(name: ComponentName) { main.post { failed(token, "Shizuku 增强服务不可用") } }
+        }
+        status = "正在连接 Shizuku 增强…"
+        try { Shizuku.bindUserService(request, connection!!); main.postDelayed(timeout, 25000) }
+        catch (_: Exception) { failed(token, "Shizuku 增强启动失败") }
+    }
+    private fun connect(token: Long, service: IBinder, callback: IBinder) {
+        if (closed || token != epoch) return
+        if (binder === service) return
+        binder = service
+        val recipient = IBinder.DeathRecipient { main.post { failed(token, "Shizuku 增强进程已退出") } }
+        death = recipient
+        try { service.linkToDeath(recipient, 0) }
+        catch (_: RemoteException) { failed(token, "Shizuku 增强进程已退出"); return }
+        control.execute {
+            try {
+                val next = handshake.read(2500) {
                     val data = Parcel.obtain(); val reply = Parcel.obtain()
                     try {
                         data.writeInterfaceToken(SkipRuntimeService.DESCRIPTOR); data.writeStrongBinder(callback)
                         if (!service.transact(SkipRuntimeService.CONNECT, data, reply, 0)) error("Worker unavailable")
-                        reply.readException(); val next = readScene(reply)
-                        main.post { if (token == epoch) { main.removeCallbacks(retry); accept(token, next) } }
-                    } catch (_: Exception) { main.post { if (token == epoch) { unbind(); status = "Shizuku 增强连接失败，使用无障碍输入" } } }
-                    finally { data.recycle(); reply.recycle() }
+                        reply.readException(); readScene(reply)
+                    } finally { data.recycle(); reply.recycle() }
                 }
-            }
-            override fun onServiceDisconnected(name: ComponentName) { if (token == epoch) { unbind(); status = "Shizuku 增强已断开"; main.postDelayed(retry, 5000) } }
+                main.post { if (!closed && selected && token == epoch) {
+                    main.removeCallbacks(timeout); recovery.connected(); connectionGeneration++
+                    accept(token, next)
+                } }
+            } catch (_: Exception) { main.post { failed(token, "Shizuku 增强握手失败") } }
         }
-        status = "正在连接 Shizuku 增强…"
-        try { Shizuku.bindUserService(request, connection!!); main.postDelayed(retry, 25000) }
-        catch (_: Exception) { unbind(); status = "Shizuku 增强启动失败，使用无障碍输入" }
     }
     /** 0 means no input started, 1 accepted, 2 delivery uncertain; never double-tap on uncertainty. */
     fun touch(expected: SkipRuntimeScene, x: Float, y: Float, endX: Float, endY: Float, duration: Long): Int {
@@ -97,12 +134,16 @@ class SkipRuntimeClient(private val context: Context, private val onScene: (Skip
         } catch (_: Exception) { 2 }
     }
     private fun unbind() {
-        epoch++; binder = null; scene = null; main.removeCallbacks(retry)
+        epoch++
+        val oldBinder = binder; val oldDeath = death
+        binder = null; death = null; scene = null; acceptedGeneration = Long.MIN_VALUE
+        if (oldBinder != null && oldDeath != null) runCatching { oldBinder.unlinkToDeath(oldDeath, 0) }
+        main.removeCallbacks(retry); main.removeCallbacks(timeout)
         val request = args; val prior = connection; args = null; connection = null
         if (request != null) runCatching { Shizuku.unbindUserService(request, prior, true) }
     }
     override fun close() {
-        closed = true; main.removeCallbacksAndMessages(null); unbind(); io.close(); control.shutdownNow()
+        closed = true; main.removeCallbacksAndMessages(null); unbind(); io.close(); handshake.close(); control.shutdownNow()
         Shizuku.removeBinderReceivedListener(received); Shizuku.removeBinderDeadListener(died); Shizuku.removeRequestPermissionResultListener(permission); status = ""
     }
     companion object { @JvmField @Volatile var status = "" }

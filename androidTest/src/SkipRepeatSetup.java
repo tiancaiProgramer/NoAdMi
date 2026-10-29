@@ -1,8 +1,8 @@
 package io.github.miclean.tests;
 import android.app.*;import android.content.*;import android.os.*;import java.io.*;import java.util.*;import org.json.*;import io.github.miclean.module.skip.*;
 public final class SkipRepeatSetup extends Instrumentation {
-    public static final long ID=-202610280129L;private String phase,mode;private int inputMode;
-    @Override public void onCreate(Bundle b){super.onCreate(b);phase=b==null?"setup":b.getString("phase","setup");mode=b==null?"node":b.getString("mode","node");inputMode=b==null?0:Integer.parseInt(b.getString("input_mode","0"));start();}
+    public static final long ID=-202610280129L;private String phase,mode,method;private int inputMode;
+    @Override public void onCreate(Bundle b){super.onCreate(b);phase=b==null?"setup":b.getString("phase","setup");mode=b==null?"node":b.getString("mode","node");method=b==null?null:b.getString("method");inputMode=b==null?0:Integer.parseInt(b.getString("input_mode","0"));start();}
     @Override public void onStart(){Bundle out=new Bundle();try{SkipRepository r=SkipRepository.get(getTargetContext());SharedPreferences p=r.getPreferences(),backup=getTargetContext().getSharedPreferences("repeat_test_backup",0);String[] keys={"enabled",SkipNotice.ENABLED,SkipNotice.TEXT,"access_method",SkipInputMode.KEY};
         if("cleanup".equals(phase)){
             if(!backup.contains("has_enabled"))throw new AssertionError("No prepared backup; refusing to alter user options");
@@ -16,7 +16,7 @@ public final class SkipRepeatSetup extends Instrumentation {
                 "{key:0,matches:'[text=\"链路第一步\"]',action:'clickNode'},{key:1,preKeys:0,matches:'[text=\"链路第二步\"]',action:'clickNode'}":
                 "{matches:'[text=\"重复场景目标\"]',action:'"+(mode.equals("center")?"clickCenter":"clickNode")+"',actionDelay:"+((mode.equals("delay")||mode.equals("center"))?800:0)+"}";
             r.getSources().add("{id:"+ID+",name:'重复场景隔离验证',version:1,apps:[{id:'io.github.miclean.skipfixture',groups:[{key:1,name:'仅测试重复场景',fastQuery:false,matchTime:1500,forcedTime:1500,actionMaximum:1,rules:["+rules+"]}]}]}","",true);
-            p.edit().putInt(SkipInputMode.KEY,SkipInputMode.normalize(inputMode)).putString("access_method",mode.equals("center")?"shizuku":"root").putBoolean("enabled",true).putBoolean(SkipNotice.ENABLED,true).putString(SkipNotice.TEXT,"跳过操作验证🙂").commit();out.putString("stream","PASS: isolated enabled fixture source and custom notice prepared; real subscriptions unchanged.\n");
+            p.edit().putInt(SkipInputMode.KEY,SkipInputMode.normalize(inputMode)).putString("access_method",method!=null?method:mode.equals("center")?"shizuku":"root").putBoolean("enabled",true).putBoolean(SkipNotice.ENABLED,true).putString(SkipNotice.TEXT,"跳过操作验证🙂").commit();out.putString("stream","PASS: isolated enabled fixture source and custom notice prepared; real subscriptions unchanged.\n");
         }
     }catch(Throwable e){out.putString("stream","FAIL: "+e+"\n");}finish(out.getString("stream","").startsWith("PASS:")?Activity.RESULT_OK:Activity.RESULT_CANCELED,out);}
 }

@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-29",
+  "version": "0.12.17-preview",
+  "versionCode": 101,
+  "apkSha256": "f0d64b5356ebfa26e7b8b6769de13c91e43bc9e6c139c47e6b73c02bd5d7211e",
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "wechat": "8.0.79/3200"
+  },
+  "isolation": {
+    "method": "Root",
+    "inputMode": 0,
+    "gkdDisabled": true,
+    "privilegedRuntimeSelected": false,
+    "ownPrivilegedRuntimeWorkerAbsent": true,
+    "temporaryNavigationUsed": "Gesture-only service, self-disables after tap; not a matcher or privileged-task observer."
+  },
+  "scope": {
+    "coldLaunches": 4,
+    "coldLaunchEarlyClosures": 4,
+    "regularWarmReopens": 4,
+    "regularWarmReopensWithTargetSplash": 0,
+    "officialMiniappReenters": 3,
+    "officialReenterEarlyClosures": 3,
+    "validSplashTrials": 7,
+    "actualEarlyClosures": 7
+  },
+  "trials": [
+    {
+      "id": "cold-extract-1",
+      "miniapp": "提取下载",
+      "route": "cold",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 56,
+        "delayLateMs": 62,
+        "inputMs": 1,
+        "gestureMs": 106
+      },
+      "excludedReason": null,
+      "videoSha256": "75d8d99027031aaf022b77d868b15ebb5f4a9ad1137bc1b0eb6752f08fb83b86"
+    },
+    {
+      "id": "warm-extract-1",
+      "miniapp": "提取下载",
+      "route": "warm",
+      "skippableSplashObserved": false,
+      "earlyClosureVisuallyVerified": null,
+      "actionCount": 0,
+      "timingMs": null,
+      "excludedReason": "No target splash/skip screen; direct home or home popup. Excluded from splash success/failure denominator.",
+      "videoSha256": "24b3af1e22a556b43e0f9d80d54fdfbc41687034e96add0ace9e0c590fa730c8"
+    },
+    {
+      "id": "warm-extract-2",
+      "miniapp": "提取下载",
+      "route": "warm",
+      "skippableSplashObserved": false,
+      "earlyClosureVisuallyVerified": null,
+      "actionCount": 0,
+      "timingMs": null,
+      "excludedReason": "No target splash/skip screen; direct home or home popup. Excluded from splash success/failure denominator.",
+      "videoSha256": "bbd2a79ce0dacf1768a9eccd3d5f20137cb78002ee0672caef44b4f658ab6ffd"
+    },
+    {
+      "id": "cold-hyper-1",
+      "miniapp": "澎湃更新",
+      "route": "cold",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 10,
+        "delayLateMs": 11,
+        "inputMs": 7,
+        "gestureMs": 112
+      },
+      "excludedReason": null,
+      "videoSha256": "43071a3caffbe61f43c97ebd16a04b9d0c898fd5f46e5ab8eb4558c213c7c66e"
+    },
+    {
+      "id": "warm-hyper-1",
+      "miniapp": "澎湃更新",
+      "route": "warm",
+      "skippableSplashObserved": false,
+      "earlyClosureVisuallyVerified": null,
+      "actionCount": 0,
+      "timingMs": null,
+      "excludedReason": "No target splash/skip screen; direct home or home popup. Excluded from splash success/failure denominator.",
+      "videoSha256": "1e912a3972e67f6c55b49f3ae28665c3954ba29fee8d20ec51733e8ee6e3e232"
+    },
+    {
+      "id": "warm-hyper-2",
+      "miniapp": "澎湃更新",
+      "route": "warm",
+      "skippableSplashObserved": false,
+      "earlyClosureVisuallyVerified": null,
+      "actionCount": 0,
+      "timingMs": null,
+      "excludedReason": "No target splash/skip screen; direct home or home popup. Excluded from splash success/failure denominator.",
+      "videoSha256": "0912a232e2bd2662264f170b4080f3291b660c496a7c8829ab0d3b3fa7c4b546"
+    },
+    {
+      "id": "cold-extract-2",
+      "miniapp": "提取下载",
+      "route": "cold",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 31,
+        "delayLateMs": 32,
+        "inputMs": 1,
+        "gestureMs": 104
+      },
+      "excludedReason": null,
+      "videoSha256": "50df3ca12c6a5f11b1cc842249f99491c803434cb8f2b48b3db46f7c3fc3ad13"
+    },
+    {
+      "id": "cold-hyper-2",
+      "miniapp": "澎湃更新",
+      "route": "cold",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 16,
+        "delayLateMs": 18,
+        "inputMs": 1,
+        "gestureMs": 117
+      },
+      "excludedReason": null,
+      "videoSha256": "57e41534d9f65842348fc890639c9984f066cbb3b7f1f1413d238aa07f2ce6fd"
+    },
+    {
+      "id": "reload-hyper-1",
+      "miniapp": "澎湃更新",
+      "route": "official-reenter",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 33,
+        "delayLateMs": 38,
+        "inputMs": 1,
+        "gestureMs": 107
+      },
+      "excludedReason": null,
+      "videoSha256": "16114260631d2f14eb76d0b05645f744629b99246019c36394283c75e9b16a10"
+    },
+    {
+      "id": "reload-hyper-2",
+      "miniapp": "澎湃更新",
+      "route": "official-reenter",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 14,
+        "delayLateMs": 9,
+        "inputMs": 2,
+        "gestureMs": 118
+      },
+      "excludedReason": null,
+      "videoSha256": "3ae1f97256ec24087f6ddb47470b2cd1758d81008e5aff2d3b923106050e2ce8"
+    },
+    {
+      "id": "reload-hyper-3",
+      "miniapp": "澎湃更新",
+      "route": "official-reenter",
+      "skippableSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "actionCount": 1,
+      "timingMs": {
+        "scanMs": 14,
+        "delayLateMs": 15,
+        "inputMs": 3,
+        "gestureMs": 104
+      },
+      "excludedReason": null,
+      "videoSha256": "1c8c9642cf0ad97568236a1e05c9644c00de8b8153cd900c77b100352dc36e94"
+    }
+  ],
+  "officialReenterSceneGenerations": [
+    30,
+    31,
+    32
+  ],
+  "officialReenterIntervalsSeconds": [
+    15.242,
+    15.128
+  ],
+  "originalRuleMatchTimeMs": 10000,
+  "originalRuleActionDelayMs": 800,
+  "perActionDelayLatenessMs": {
+    "minimum": 9,
+    "maximum": 62
+  },
+  "preservation": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged_except_own_migration": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code101": true,
+    "temporary_nav_removed": true,
+    "test_appop_restored": true,
+    "gkd_disabled_as_original": true
+  },
+  "scopeNote": "仅描述当前 MIX Fold 3 上的所列测试路径；普通热重开未出现目标开屏的四轮不计入成功或失败。",
+  "rawMaterialIncluded": false
+}

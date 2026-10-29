@@ -18,15 +18,16 @@ class SkipDiagnostics(private val file: File) {
     private var entries = try {
         if (file.exists()) json.decodeFromString<List<SkipDiagnostic>>(file.readText()).takeLast(100) else emptyList()
     } catch (_: Exception) { emptyList() }
+    private val writer = SkipLatestWriter<List<SkipDiagnostic>>(SkipRepository.persistence, { snapshot ->
+        file.parentFile?.mkdirs()
+        val atomic = AtomicFile(file); val stream = atomic.startWrite()
+        try { stream.write(json.encodeToString(snapshot).toByteArray()); atomic.finishWrite(stream) }
+        catch (e: Exception) { atomic.failWrite(stream); throw e }
+    }, { Log.w("NoAdMiSkip", "diagnostic storage unavailable", it) })
     fun record(app: String, reason: String, candidates: Int = 0, nodes: Int = 0, elapsedMs: Long = 0, detail: String = "") {
         if (!gate.claim()) return
         Log.i("NoAdMiSkip", "state=$reason app=$app candidates=$candidates nodes=$nodes elapsedMs=$elapsedMs detail=$detail")
         entries = (entries + SkipDiagnostic(System.currentTimeMillis(), app, reason, candidates, nodes, elapsedMs, detail)).takeLast(100)
-        try {
-            file.parentFile?.mkdirs()
-            val atomic = AtomicFile(file); val stream = atomic.startWrite()
-            try { stream.write(json.encodeToString(entries).toByteArray()); atomic.finishWrite(stream) }
-            catch (e: Exception) { atomic.failWrite(stream) }
-        } catch (_: Exception) { Log.w("NoAdMiSkip", "diagnostic storage unavailable") }
+        writer.submit(entries)
     }
 }

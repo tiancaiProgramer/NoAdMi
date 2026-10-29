@@ -1,0 +1,361 @@
+{
+  "version": "0.12.16-preview",
+  "versionCode": 99,
+  "date": "2026-10-29",
+  "published": false,
+  "baseVersion": "0.12.15-preview/98",
+  "githubBaseCommit": "f8a32a7001230391cbf8e72f5415fe150ac049d5",
+  "apkSha256": "fc204a6141cc171da1a8efb69801240341d580e6515e9a622a3a533cb5b35f6b",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "changes": [
+    "Inspection-local native text/id query result memoization (maximum 256 keys), including empty results; full selector predicates/options are still checked.",
+    "Share sibling loads and known index/parent relationships; do not prefetch unseen siblings.",
+    "Do not calculate unused ancestor depth during ordinary subtree traversal. Actual depth remains lazy; traversal visited/node budgets retained.",
+    "Native-read/parent/query-hit counters appended to bounded local diagnostic metadata; no screen text added."
+  ],
+  "nativeWorkloadComparison": {
+    "baselineChecks": 105,
+    "optimizedChecks": 408,
+    "repeatedQueryRpc": {
+      "before": 40,
+      "after": 1
+    },
+    "siblingChildRpc": {
+      "before": 820,
+      "after": 40
+    },
+    "unusedAncestorRpc": {
+      "before": 2,
+      "after": 0
+    },
+    "note": "Same counted JVM platform workload against production code98/code99 adapters; not a device or ad-closure speed measurement. Doubles are not in APK."
+  },
+  "tests": {
+    "fullBuildAndOriginalRegressions": "PASS",
+    "rootFixture": {
+      "rounds": 5,
+      "actualTouches": 5,
+      "actualCloses": 5,
+      "checks": 20,
+      "timings": [
+        {
+          "scanMs": 8,
+          "delayLateMs": 9,
+          "inputMs": 3,
+          "gestureMs": 109
+        },
+        {
+          "scanMs": 12,
+          "delayLateMs": 88,
+          "inputMs": 1,
+          "gestureMs": 104
+        },
+        {
+          "scanMs": 11,
+          "delayLateMs": 86,
+          "inputMs": 3,
+          "gestureMs": 105
+        },
+        {
+          "scanMs": 16,
+          "delayLateMs": 16,
+          "inputMs": 2,
+          "gestureMs": 106
+        },
+        {
+          "scanMs": 13,
+          "delayLateMs": 14,
+          "inputMs": 2,
+          "gestureMs": 108
+        }
+      ]
+    },
+    "shizukuFixtureAfterAuthorizedRestart": {
+      "rounds": 5,
+      "actualTouches": 5,
+      "actualCloses": 5,
+      "checks": 20,
+      "timings": [
+        {
+          "scanMs": 5,
+          "delayLateMs": 6,
+          "inputMs": 3,
+          "gestureMs": 108
+        },
+        {
+          "scanMs": 9,
+          "delayLateMs": 11,
+          "inputMs": 2,
+          "gestureMs": 106
+        },
+        {
+          "scanMs": 9,
+          "delayLateMs": 10,
+          "inputMs": 1,
+          "gestureMs": 106
+        },
+        {
+          "scanMs": 9,
+          "delayLateMs": 10,
+          "inputMs": 1,
+          "gestureMs": 104
+        },
+        {
+          "scanMs": 18,
+          "delayLateMs": 20,
+          "inputMs": 3,
+          "gestureMs": 114
+        }
+      ]
+    },
+    "shizukuFirstAttempt": {
+      "successfulRounds": 3,
+      "failedRound": 4,
+      "screenshot": "Fixture visible, no touch received",
+      "enhancementStatus": "connection pending; independent bridge test timed out",
+      "retained": true
+    },
+    "shizukuBridgeBeforeRestart": "FAIL: timed out",
+    "shizukuBridgeAfterRestart": "PASS: task metadata and listener connected",
+    "newWechatValidTrials": 7,
+    "newWechatEarlyCloses": 7,
+    "gkdValidTrials": 2,
+    "gkdEarlyCloses": 2
+  },
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "wechat": "8.0.79/3200",
+    "gkd": "1.12.1/92"
+  },
+  "rules": {
+    "sourceId": 667,
+    "NoAdMiVersion": 620,
+    "GkdUpdateDuringTest": {
+      "from": 619,
+      "to": 620,
+      "retained": true
+    },
+    "wechatGroupUnchangedAcrossGkdUpdate": true,
+    "actionDelayMs": 800,
+    "sourceDocumentsAndOverridesNotEdited": true
+  },
+  "measurement": "Video ad/skip UI to first visible collapse/home; approximately 0.1 s sampling (last post-restart sample 0.25 s). Includes media placeholders, excludes final shrinking tail. Timing fields are separate internal stage costs.",
+  "trials": [
+    {
+      "id": 1,
+      "version": "0.12.15/98",
+      "method": "Root",
+      "miniapp": "提取下载",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.888,
+      "closureStartPtsSeconds": 4.998,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "48281b67744e830e5e4a021f9c88a153802827c127d4e962ca3944739fee0888",
+      "timingMs": {
+        "scanMs": 28,
+        "delayLateMs": 29,
+        "inputMs": 3,
+        "gestureMs": 107
+      }
+    },
+    {
+      "id": 2,
+      "version": "0.12.15/98",
+      "method": "Root",
+      "miniapp": "澎湃更新",
+      "earlyClosure": false,
+      "adUiPtsSeconds": 3.744,
+      "closureStartPtsSeconds": 9.954,
+      "approximateVisibleSeconds": 6.2,
+      "videoSha256": "52040b280dc0964342ab885f742c885fe8e258c775ce835ab12068b50b59692f",
+      "note": "Visible skip/countdown, no NoAdMi action; closed after countdown reached zero. Retained as baseline failure. no_candidates appeared in the period; exact cause not established."
+    },
+    {
+      "id": 3,
+      "version": "0.12.16/99",
+      "method": "Root",
+      "miniapp": "提取下载",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.696,
+      "closureStartPtsSeconds": 4.689,
+      "approximateVisibleSeconds": 1.0,
+      "videoSha256": "31a33b387c39a35a3c42ab3483ae439a9837156dc227a206ab29dc85154724b8",
+      "timingMs": {
+        "scanMs": 24,
+        "delayLateMs": 24,
+        "inputMs": 3,
+        "gestureMs": 110
+      }
+    },
+    {
+      "id": 4,
+      "version": "0.12.16/99",
+      "method": "Root",
+      "miniapp": "澎湃更新",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.493,
+      "closureStartPtsSeconds": 4.593,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "1cc01442ce36be0df891b0f98353398df946f7af2d6e60c05f7f176db03f5238",
+      "timingMs": {
+        "scanMs": 27,
+        "delayLateMs": 28,
+        "inputMs": 3,
+        "gestureMs": 107
+      }
+    },
+    {
+      "id": 5,
+      "version": "0.12.16/99",
+      "method": "Root",
+      "miniapp": "提取下载",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.891,
+      "closureStartPtsSeconds": 4.992,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "10b91ff859b5e1dd59a02f8e4e1fa67492861afa9bdfc61e2649e046e5c50cf2",
+      "timingMs": {
+        "scanMs": 26,
+        "delayLateMs": 27,
+        "inputMs": 2,
+        "gestureMs": 108
+      }
+    },
+    {
+      "id": 6,
+      "version": "0.12.16/99",
+      "method": "Root",
+      "miniapp": "澎湃更新",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.595,
+      "closureStartPtsSeconds": 4.796,
+      "approximateVisibleSeconds": 1.2,
+      "videoSha256": "8ab4b8a6aeac89d683e657eaefb26003c50f516924c216b8ed17cb1158ace7f4",
+      "timingMs": {
+        "scanMs": 10,
+        "delayLateMs": 233,
+        "inputMs": 2,
+        "gestureMs": 104
+      }
+    },
+    {
+      "id": 7,
+      "version": "0.12.16/99",
+      "method": "Shizuku/gesture (enhancement pending)",
+      "miniapp": "提取下载",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.385,
+      "closureStartPtsSeconds": 4.487,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "a48ef4f1668b1eb8b06dc82cd67697940ea7ed1eec6d45e8c91220b82bc0164f",
+      "timingMs": {
+        "scanMs": 22,
+        "delayLateMs": 51,
+        "inputMs": 1,
+        "gestureMs": 109
+      }
+    },
+    {
+      "id": 8,
+      "version": "0.12.16/99",
+      "method": "Shizuku/gesture (enhancement pending)",
+      "miniapp": "澎湃更新",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.295,
+      "closureStartPtsSeconds": 4.396,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "5799bc00e8351bb51566b76e0c08c2b05d66ab482cf28d6d4a5e879d6da118cf",
+      "timingMs": {
+        "scanMs": 24,
+        "delayLateMs": 28,
+        "inputMs": 0,
+        "gestureMs": 110
+      }
+    },
+    {
+      "id": 9,
+      "version": "GKD 1.12.1/92",
+      "method": "GKD",
+      "miniapp": "提取下载",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.7,
+      "closureStartPtsSeconds": 4.793,
+      "approximateVisibleSeconds": 1.1,
+      "videoSha256": "85c2164ebaaf0186051ca3c27f5314f0bea4778523068f7ce038f236c3e6099a"
+    },
+    {
+      "id": 10,
+      "version": "GKD 1.12.1/92",
+      "method": "GKD",
+      "miniapp": "澎湃更新",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.887,
+      "closureStartPtsSeconds": 4.897,
+      "approximateVisibleSeconds": 1.0,
+      "videoSha256": "0661cdcf73dacf696fe3aad387020ef716b9ff98da22361ac2aff2769e2f51a4"
+    },
+    {
+      "id": 11,
+      "version": "0.12.16/99",
+      "method": "Shizuku/gesture (enhanced connected)",
+      "miniapp": "澎湃更新",
+      "earlyClosure": true,
+      "adUiPtsSeconds": 3.494,
+      "closureStartPtsSeconds": 4.496,
+      "approximateVisibleSeconds": 1.0,
+      "videoSha256": "8d778a72c829898e36574d0d9705281f7cd32938e3817094161e90143d772d1e",
+      "timingMs": {
+        "scanMs": 14,
+        "delayLateMs": 15,
+        "inputMs": 1,
+        "gestureMs": 110
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "case": "post-restart extract navigation",
+      "reason": "Recording switched to another app installation/file-manager UI; one callback exists but actual WeChat closure cannot be verified. Not counted as pass or speed sample."
+    },
+    {
+      "case": "initial baseline navigation attempt",
+      "reason": "Recent-miniapp list did not open; no target trial established."
+    }
+  ],
+  "preservation": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged_except_own_migration": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code99": true,
+    "gkd_user_options_unchanged": true,
+    "gkd_wechat_rules_unchanged": true,
+    "gkd_subs_config_unchanged": true,
+    "gkd_category_config_unchanged": true,
+    "gkd_app_config_unchanged": true,
+    "gkd_subscription_user_options_unchanged": true,
+    "gkd_original_actions_retained": true,
+    "temporary_nav_removed": true,
+    "test_appop_restored": true,
+    "gkd_disabled_as_original": true
+  },
+  "limits": [
+    "Normal new WeChat samples about 1.0–1.2 s; GKD about 1.0–1.1 s in this series. No statistically established speed advantage.",
+    "The old baseline includes one real miss. Cache optimization does not establish that missing scene transitions or failed enhancement are fixed.",
+    "Shizuku server was restarted with explicit user permission after connection failure; successful retry does not erase initial failure or prove every failure had the same cause.",
+    "Small sequential samples with changing creatives. Other devices and Shizuku/InputManager delivery remain unaccepted by these gesture-mode trials.",
+    "Cache expires each inspection/action; no node handles or empty-result negatives survive to another inspection. Native read timeout/scene guards/cooldowns/maxima retained.",
+    "No GitHub publication. Raw screenshots/videos, app databases/settings and signing material excluded from source archive."
+  ]
+}

@@ -13,7 +13,9 @@ import java.util.concurrent.Executors
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable data class SkipLog(val time: Long, val subscription: String, val app: String, val group: String, val rule: String, val result: String, val sourceId: Long? = null)
+@Serializable data class SkipActionTiming(val scanMs: Long, val delayLateMs: Long, val inputMs: Long, val gestureMs: Long)
+
+@Serializable data class SkipLog(val time: Long, val subscription: String, val app: String, val group: String, val rule: String, val result: String, val sourceId: Long? = null, val timing: SkipActionTiming? = null)
 
 class SkipRepository private constructor(context: Context) {
     private val app = context.applicationContext
@@ -29,15 +31,20 @@ class SkipRepository private constructor(context: Context) {
     val enabled: Boolean get() = preferences.getBoolean("enabled", false)
     fun setEnabled(value: Boolean) { preferences.edit().putBoolean("enabled", value).apply() }
     @Synchronized fun logs(): List<SkipLog> = logs.reversed()
-    @Synchronized fun clearLogs() { logFile.delete(); logs = emptyList() }
-    @Synchronized fun record(rule: SkipRule, app: String, result: String) {
-        logs = (logs + SkipLog(System.currentTimeMillis(), rule.source.name, app, rule.group.name,
-            rule.raw.name ?: "规则 ${rule.index + 1}", result, rule.source.id)).takeLast(200)
-        directory.mkdirs()
+    private val writer = SkipLatestWriter<List<SkipLog>>(persistence, { snapshot ->
         val atomic = android.util.AtomicFile(logFile)
-        val stream = atomic.startWrite()
-        try { stream.write(json.encodeToString(logs).toByteArray()); atomic.finishWrite(stream) }
-        catch (e: Exception) { atomic.failWrite(stream); android.util.Log.w("NoAdMiSkip", "执行记录保存失败", e) }
+        if (snapshot.isEmpty()) atomic.delete() else {
+            directory.mkdirs()
+            val stream = atomic.startWrite()
+            try { stream.write(json.encodeToString(snapshot).toByteArray()); atomic.finishWrite(stream) }
+            catch (e: Exception) { atomic.failWrite(stream); throw e }
+        }
+    }, { android.util.Log.w("NoAdMiSkip", "执行记录保存失败", it) })
+    @Synchronized fun clearLogs() { logs = emptyList(); writer.submit(logs) }
+    @Synchronized fun record(rule: SkipRule, app: String, result: String, timing: SkipActionTiming? = null) {
+        logs = (logs + SkipLog(System.currentTimeMillis(), rule.source.name, app, rule.group.name,
+            rule.raw.name ?: "规则 ${rule.index + 1}", result, rule.source.id, timing)).takeLast(200)
+        writer.submit(logs)
     }
     /** Package IDs and visit times only, observed on confirmed foreground transitions. */
     fun noteAppVisit(packageName: String) {
@@ -83,6 +90,7 @@ class SkipRepository private constructor(context: Context) {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == expected }
     }
     companion object {
+        val persistence = Executors.newSingleThreadExecutor { task -> Thread(task, "NoAdMi-records") }
         private const val JOB_ID = 0x4e41444d
         @Volatile private var instance: SkipRepository? = null
         @JvmStatic fun get(context: Context): SkipRepository = instance ?: synchronized(this) {

@@ -1,0 +1,164 @@
+{
+  "version": "0.12.15-preview",
+  "versionCode": 98,
+  "baseCommit": "f8a32a7001230391cbf8e72f5415fe150ac049d5",
+  "apkSha256": "89db67d77cffe953dc80cf2e86361f8950a12379e74d5c23f227757bb664b036",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "checks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged_except_own_migration": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code98": true,
+    "gkd-store.json_unchanged": true,
+    "gkd-667.json_unchanged": true,
+    "gkd_subs_item_unchanged": true,
+    "gkd_subs_config_unchanged": true,
+    "gkd_category_config_unchanged": true,
+    "gkd_app_config_unchanged": true,
+    "gkd_original_actions_retained": true,
+    "temporary_nav_service_not_registered": true,
+    "temporary_nav_service_not_enabled": true,
+    "gkd_disabled_as_original": true,
+    "test_appop_restored": true
+  },
+  "tests": {
+    "final_code98_offline_build_regressions": "PASS",
+    "latency_regression_assertions": 31,
+    "scene_notice_regression_assertions": 81,
+    "core_assertions": 66,
+    "delay_guard_assertions": 73,
+    "input_mode_assertions": 23,
+    "historical_code97_shared_ui_checks": {
+      "inputMode": 46,
+      "notice": 10,
+      "shizukuWorkerTaskListener": "PASS"
+    },
+    "code97_root_gesture_fixture": {
+      "actualCloses": 2,
+      "actualTouchReceived": 2,
+      "status": "INTERRUPTED before full five-round acceptance",
+      "thirdRoundFailureScreenshot": "HyperPriv visible instead of test fixture"
+    },
+    "final_code98_installation_service_and_preservation": "PASS",
+    "final_code98_five_round_fixtures": {
+      "Root": {
+        "rounds": 5,
+        "actualTouchDelivered": 5,
+        "actualPageCloses": 5,
+        "assertions": 20,
+        "timings": [
+          {
+            "scanMs": 7,
+            "delayLateMs": 8,
+            "inputMs": 3,
+            "gestureMs": 111
+          },
+          {
+            "scanMs": 10,
+            "delayLateMs": 73,
+            "inputMs": 2,
+            "gestureMs": 107
+          },
+          {
+            "scanMs": 14,
+            "delayLateMs": 81,
+            "inputMs": 2,
+            "gestureMs": 103
+          },
+          {
+            "scanMs": 12,
+            "delayLateMs": 14,
+            "inputMs": 1,
+            "gestureMs": 111
+          },
+          {
+            "scanMs": 15,
+            "delayLateMs": 16,
+            "inputMs": 1,
+            "gestureMs": 110
+          }
+        ],
+        "temporaryDataCleaned": true
+      },
+      "Shizuku/accessibility-gesture": {
+        "rounds": 5,
+        "actualTouchDelivered": 5,
+        "actualPageCloses": 5,
+        "assertions": 20,
+        "timings": [
+          {
+            "scanMs": 6,
+            "delayLateMs": 7,
+            "inputMs": 2,
+            "gestureMs": 105
+          },
+          {
+            "scanMs": 8,
+            "delayLateMs": 9,
+            "inputMs": 2,
+            "gestureMs": 105
+          },
+          {
+            "scanMs": 10,
+            "delayLateMs": 12,
+            "inputMs": 1,
+            "gestureMs": 112
+          },
+          {
+            "scanMs": 17,
+            "delayLateMs": 18,
+            "inputMs": 2,
+            "gestureMs": 104
+          },
+          {
+            "scanMs": 16,
+            "delayLateMs": 17,
+            "inputMs": 2,
+            "gestureMs": 107
+          }
+        ],
+        "temporaryDataCleaned": true
+      }
+    },
+    "final_code98_real_wechat": {
+      "NoAdMi": {
+        "rounds": 6,
+        "earlyCloses": 6
+      },
+      "GKD": {
+        "rounds": 6,
+        "earlyCloses": 6,
+        "twoActionSlowSamples": 1
+      },
+      "summary": "diagnostics/gkd-compat/wechat-latency-0.12.15.json"
+    }
+  },
+  "changes": [
+    "Action and diagnostic JSON serialization/fsync moved off matcher to ordered latest-snapshot writers; bounded pending snapshots and clear ordering.",
+    "Indexed candidate selection with app/activity/revision cache, package-event invalidation and 30-second expiry.",
+    "One targeted inspection per action-delay deadline, then normal candidates resume even if target disappears.",
+    "Immediate fresh inspection after completed accessibility gestures; original cooldown/maxima retained; stale callbacks cannot charge counters to new scenes.",
+    "Null native child ends its branch instead of aborting the whole pass; no cross-inspection native node reuse.",
+    "Optional per-action scanMs/delayLateMs/inputMs/gestureMs are stored locally; no screen text or ad-closure claim."
+  ],
+  "limits": [
+    "Small sequential sample with changing ad creatives; not a statistical benchmark or proof all intermittent delays are resolved.",
+    "No same-device code96 baseline in this series, so no measured before/after speedup claim.",
+    "GKD actual privileged input route was not conclusively identified; enabling Shizuku alone does not establish the route.",
+    "Shizuku/InputManager and other phones are not newly accepted by these gesture-mode trials.",
+    "Local scan/input timings are not ad-display-to-close timings.",
+    "Raw videos, screenshots, device configurations/databases and signing materials remain private and are not bundled.",
+    "No GitHub publication this turn."
+  ]
+}

@@ -8,9 +8,9 @@ import li.gkd.selector.Selector
 /** Stable snapshot: selector traversal never mixes nodes from different accessibility events. */
 class SkipNode(val attrs: Map<String, Any?>, val handle: Any? = null,
     private val childCountHint: Int? = null, private val parentLookup: (() -> SkipNode?)? = null,
-    private val childLookup: ((Int) -> SkipNode)? = null) {
+    private val childLookup: ((Int) -> SkipNode?)? = null) {
     val children = mutableListOf<SkipNode>()
-    private val loaded = mutableMapOf<Int, SkipNode>()
+    private val loaded = mutableMapOf<Int, SkipNode?>()
     private var parentRead = parentLookup == null
     private var parentValue: SkipNode? = null
     var parent: SkipNode?
@@ -22,7 +22,10 @@ class SkipNode(val attrs: Map<String, Any?>, val handle: Any? = null,
     fun add(child: SkipNode) { child.parent = this; children.add(child) }
     fun count(): Int = childCountHint ?: children.size
     fun child(index: Int): SkipNode? = if (childCountHint == null) children.getOrNull(index)
-        else if (index !in 0 until childCountHint) null else loaded.getOrPut(index) { childLookup!!(index) }
+        else if (index !in 0 until childCountHint) null else {
+            if (!loaded.containsKey(index)) loaded[index] = childLookup!!(index)
+            loaded[index]
+        }
 }
 
 open class SnapshotNodeAdapter : NodeAdapter<SkipNode>() {
@@ -50,7 +53,8 @@ open class SnapshotNodeAdapter : NodeAdapter<SkipNode>() {
         while (stack.isNotEmpty()) {
             val frame = stack.last()
             if (frame.next >= traversalChildCount(frame.node)) { stack.removeAt(stack.lastIndex); continue }
-            val child = frame.node.child(frame.next++) ?: continue
+            val child = frame.node.child(frame.next++)
+            if (child == null) { stack.removeAt(stack.lastIndex); continue }
             if (visited.add(child)) { yield(child); stack.add(Frame(child)) }
         }
     }
@@ -122,7 +126,7 @@ object SkipScope {
 /** Per-screen counters, delays and prerequisite chains survive repeated accessibility events. */
 class SkipSession(private val now: () -> Long) {
     private class Counter(var time: Long = Long.MIN_VALUE / 2, var count: Int = 0)
-    private class State(val entered: Long) { var delayed: Long? = null; var cooldown = Counter(); var maximum = Counter() }
+    private class State(val entered: Long) { var delayed: Long? = null; var deadlineInspected = false; var cooldown = Counter(); var maximum = Counter() }
     private val states = mutableMapOf<String, State>()
     private var last: SkipRule? = null
     private var app = ""; private var activity: String? = null
@@ -165,7 +169,7 @@ class SkipSession(private val now: () -> Long) {
     fun matched(rule: SkipRule): Boolean {
         val state = state(rule); val time = now()
         if (rule.params.actionDelay <= 0) return true
-        if (state.delayed == null) state.delayed = time
+        if (state.delayed == null) { state.delayed = time; state.deadlineInspected = false }
         return time - state.delayed!! >= rule.params.actionDelay
     }
     // GKD keeps actionTriggerTime across temporary nonmatches. A delayed job
@@ -174,9 +178,19 @@ class SkipSession(private val now: () -> Long) {
     fun delayRemaining(rule: SkipRule): Long? = state(rule).delayed?.let {
         (rule.params.actionDelay - (now() - it)).coerceAtLeast(0)
     }
+    fun delayLateness(rule: SkipRule): Long = state(rule).delayed?.let {
+        (now() - it - rule.params.actionDelay).coerceAtLeast(0)
+    } ?: 0
+    /** One targeted inspection per timer, like GKD byDelayRule. A disappeared
+     * target must not starve unrelated rules on subsequent event/follow-up passes. */
+    fun inspectionRules(rules: List<SkipRule>): List<SkipRule> {
+        val due = rules.filter { delayedDue(it) && !state(it).deadlineInspected }
+        due.forEach { state(it).deadlineInspected = true }
+        return due.ifEmpty { rules }
+    }
     fun delayedDue(rule: SkipRule): Boolean = delayRemaining(rule) == 0L && ready(rule)
     fun success(rule: SkipRule) {
-        val s = state(rule); s.cooldown.time = now(); s.maximum.count++; s.delayed = null; last = rule
+        val s = state(rule); s.cooldown.time = now(); s.maximum.count++; s.delayed = null; s.deadlineInspected = false; last = rule
     }
     fun needsPoll(rule: SkipRule): Boolean {
         val s = state(rule); val p = rule.params; val t = now() - s.entered

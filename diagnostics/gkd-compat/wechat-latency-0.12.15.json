@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-29",
+  "version": "0.12.15-preview",
+  "versionCode": 98,
+  "apkSha256": "89db67d77cffe953dc80cf2e86361f8950a12379e74d5c23f227757bb664b036",
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "wechat": "8.0.79/3200",
+    "gkd": "1.12.1/92"
+  },
+  "subscription": {
+    "id": 667,
+    "NoAdMiVersion": 620,
+    "GKDVersion": 619,
+    "wechatGroupExecutionSemanticallyEqual": true,
+    "originalActionDelayMs": 800,
+    "documentsAndOverridesUnmodified": true
+  },
+  "method": {
+    "metric": "Visible ad/skip UI to first visible collapse revealing miniapp home; excludes final animation tail.",
+    "samplingSeconds": 0.1,
+    "precision": "Approximate visual timing, about 0.1–0.2 s uncertainty.",
+    "isolation": "One skip engine at a time. NoAdMi selected Root/default input or Shizuku/gesture mode 3.",
+    "navigation": "Temporary gesture-only service for navigation; disabled before ad UI. No node-reading capability.",
+    "identity": "Classified by actual miniapp title in the result, since the recent list can reorder.",
+    "excluded": "One GKD warm reopening showed a home popup, not the target splash; failed navigation attempts excluded."
+  },
+  "trials": [
+    {
+      "id": 1,
+      "engine": "NoAdMi",
+      "method": "Root",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.492,
+      "closureStartPtsSeconds": 3.593,
+      "approximateVisibleSeconds": 1.1,
+      "earlyClosureObserved": true,
+      "videoSha256": "9cf9a1cff10bca7d7411b36cdc774f8a8cb16b6134cb10123dc240f56d47c933",
+      "localActionTimingMs": {
+        "scanMs": 27,
+        "delayLateMs": 93,
+        "inputMs": 2,
+        "gestureMs": 128
+      }
+    },
+    {
+      "id": 2,
+      "engine": "NoAdMi",
+      "method": "Root",
+      "miniapp": "澎湃更新",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.766,
+      "closureStartPtsSeconds": 3.892,
+      "approximateVisibleSeconds": 1.1,
+      "earlyClosureObserved": true,
+      "videoSha256": "1ca4512a3326ce48c3e259db4163daa54dbe7a6da4657f92ee5b4b5e30af90f6",
+      "localActionTimingMs": {
+        "scanMs": 11,
+        "delayLateMs": 12,
+        "inputMs": 1,
+        "gestureMs": 106
+      }
+    },
+    {
+      "id": 3,
+      "engine": "NoAdMi",
+      "method": "Root",
+      "miniapp": "澎湃更新",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.881,
+      "closureStartPtsSeconds": 3.998,
+      "approximateVisibleSeconds": 1.1,
+      "earlyClosureObserved": true,
+      "videoSha256": "a56ff64b457cca55c8ebe474fc2a5bb36f99c935f5f2c81ac273385d33203a0c",
+      "localActionTimingMs": {
+        "scanMs": 22,
+        "delayLateMs": 23,
+        "inputMs": 3,
+        "gestureMs": 113
+      }
+    },
+    {
+      "id": 4,
+      "engine": "NoAdMi",
+      "method": "Root",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 3.193,
+      "closureStartPtsSeconds": 4.393,
+      "approximateVisibleSeconds": 1.2,
+      "earlyClosureObserved": true,
+      "videoSha256": "2bee8fbbdc4e6d2e670d1efc0eb55040637c919360d5d446be80a5d719bb3fd0",
+      "localActionTimingMs": {
+        "scanMs": 28,
+        "delayLateMs": 164,
+        "inputMs": 4,
+        "gestureMs": 118
+      }
+    },
+    {
+      "id": 5,
+      "engine": "NoAdMi",
+      "method": "Shizuku/accessibility-gesture",
+      "miniapp": "澎湃更新",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.592,
+      "closureStartPtsSeconds": 3.792,
+      "approximateVisibleSeconds": 1.2,
+      "earlyClosureObserved": true,
+      "videoSha256": "ef6240ae11da0344fc747661bd689d244ba705ba7b98f3e1d8d4baa8f221cf9e",
+      "localActionTimingMs": {
+        "scanMs": 179,
+        "delayLateMs": 181,
+        "inputMs": 4,
+        "gestureMs": 112
+      }
+    },
+    {
+      "id": 6,
+      "engine": "NoAdMi",
+      "method": "Shizuku/accessibility-gesture",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.48,
+      "closureStartPtsSeconds": 3.698,
+      "approximateVisibleSeconds": 1.2,
+      "earlyClosureObserved": true,
+      "videoSha256": "c9ba0f0210173d9d47c5c6588c3725d5084505ee0aad78b40ed8ac2cc3290209",
+      "localActionTimingMs": {
+        "scanMs": 29,
+        "delayLateMs": 31,
+        "inputMs": 5,
+        "gestureMs": 117
+      }
+    },
+    {
+      "id": 7,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.497,
+      "closureStartPtsSeconds": 3.599,
+      "approximateVisibleSeconds": 1.1,
+      "earlyClosureObserved": true,
+      "videoSha256": "5e4790c42e3a82cef620f6249a9af961f7e1f8c4c3c4f613c203fad35484158a"
+    },
+    {
+      "id": 8,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.292,
+      "closureStartPtsSeconds": 3.584,
+      "approximateVisibleSeconds": 1.3,
+      "earlyClosureObserved": true,
+      "videoSha256": "e2701dc30e1c65846adde322551a81e65000d7bc9b1528868d483e1bbc957935"
+    },
+    {
+      "id": 9,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "提取下载",
+      "actionCount": 1,
+      "adUiPtsSeconds": 2.494,
+      "closureStartPtsSeconds": 3.695,
+      "approximateVisibleSeconds": 1.2,
+      "earlyClosureObserved": true,
+      "videoSha256": "97828be95633c50ddb9e515fde635a5a645078e0b20b0417f5ece728b6d24258"
+    },
+    {
+      "id": 10,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "提取下载",
+      "actionCount": 2,
+      "adUiPtsSeconds": 2.597,
+      "closureStartPtsSeconds": 5.494,
+      "approximateVisibleSeconds": 2.9,
+      "earlyClosureObserved": true,
+      "videoSha256": "f3ec253aa0f2606fb87224804ae45cce91219f84eebb6dd318109c552a356271",
+      "actionRecordGapMs": 1978,
+      "note": "First recorded action did not close the ad; closure followed the second. Slow sample retained."
+    },
+    {
+      "id": 11,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "澎湃更新",
+      "actionCount": 1,
+      "adUiPtsSeconds": 3.594,
+      "closureStartPtsSeconds": 4.496,
+      "approximateVisibleSeconds": 0.9,
+      "earlyClosureObserved": true,
+      "videoSha256": "435f0479daadc5d8aee2a3c6fe29b8993d8c899cfd5c52e8d56a31a500e61f0b"
+    },
+    {
+      "id": 12,
+      "engine": "GKD",
+      "method": "GKD",
+      "miniapp": "澎湃更新",
+      "actionCount": 1,
+      "adUiPtsSeconds": 3.559,
+      "closureStartPtsSeconds": 4.595,
+      "approximateVisibleSeconds": 1.0,
+      "earlyClosureObserved": true,
+      "videoSha256": "883806752f9bc7827013d168dbb575f6a72bda0b8319bccd496789d358172955"
+    }
+  ],
+  "fixtureTests": {
+    "Root": {
+      "rounds": 5,
+      "actualTouchDelivered": 5,
+      "actualPageCloses": 5,
+      "assertions": 20,
+      "timings": [
+        {
+          "scanMs": 7,
+          "delayLateMs": 8,
+          "inputMs": 3,
+          "gestureMs": 111
+        },
+        {
+          "scanMs": 10,
+          "delayLateMs": 73,
+          "inputMs": 2,
+          "gestureMs": 107
+        },
+        {
+          "scanMs": 14,
+          "delayLateMs": 81,
+          "inputMs": 2,
+          "gestureMs": 103
+        },
+        {
+          "scanMs": 12,
+          "delayLateMs": 14,
+          "inputMs": 1,
+          "gestureMs": 111
+        },
+        {
+          "scanMs": 15,
+          "delayLateMs": 16,
+          "inputMs": 1,
+          "gestureMs": 110
+        }
+      ],
+      "temporaryDataCleaned": true
+    },
+    "Shizuku/accessibility-gesture": {
+      "rounds": 5,
+      "actualTouchDelivered": 5,
+      "actualPageCloses": 5,
+      "assertions": 20,
+      "timings": [
+        {
+          "scanMs": 6,
+          "delayLateMs": 7,
+          "inputMs": 2,
+          "gestureMs": 105
+        },
+        {
+          "scanMs": 8,
+          "delayLateMs": 9,
+          "inputMs": 2,
+          "gestureMs": 105
+        },
+        {
+          "scanMs": 10,
+          "delayLateMs": 12,
+          "inputMs": 1,
+          "gestureMs": 112
+        },
+        {
+          "scanMs": 17,
+          "delayLateMs": 18,
+          "inputMs": 2,
+          "gestureMs": 104
+        },
+        {
+          "scanMs": 16,
+          "delayLateMs": 17,
+          "inputMs": 2,
+          "gestureMs": 107
+        }
+      ],
+      "temporaryDataCleaned": true
+    }
+  },
+  "preservationChecks": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged_except_own_migration": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code98": true,
+    "gkd-store.json_unchanged": true,
+    "gkd-667.json_unchanged": true,
+    "gkd_subs_item_unchanged": true,
+    "gkd_subs_config_unchanged": true,
+    "gkd_category_config_unchanged": true,
+    "gkd_app_config_unchanged": true,
+    "gkd_original_actions_retained": true,
+    "temporary_nav_service_not_registered": true,
+    "temporary_nav_service_not_enabled": true,
+    "gkd_disabled_as_original": true,
+    "test_appop_restored": true
+  },
+  "conclusion": "NoAdMi 6/6 early closures, about 1.1–1.2 s. GKD 6/6 eventual early closures, normal about 0.9–1.3 s, with one about 2.9 s/two-action sample. Normal samples are close.",
+  "limits": [
+    "Small sequential sample with changing ad creatives; not a statistical benchmark or proof all intermittent delays are resolved.",
+    "No same-device code96 baseline in this series, so no measured before/after speedup claim.",
+    "GKD actual privileged input route was not conclusively identified; enabling Shizuku alone does not establish the route.",
+    "Shizuku/InputManager and other phones are not newly accepted by these gesture-mode trials.",
+    "Local scan/input timings are not ad-display-to-close timings.",
+    "Raw videos, screenshots, device configurations/databases and signing materials remain private and are not bundled."
+  ]
+}

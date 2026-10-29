@@ -76,7 +76,14 @@ open class SkipAccessibilityService : AccessibilityService() {
         }
     }
     private var lastAttempt = 0L; private var revision = -1L
-    private var rules = emptyList<SkipRule>()
+    private var indexedRules = emptyMap<String, List<IndexedValue<SkipRule>>>()
+    private val candidateCache = SkipCandidateCache<List<SkipRule>>({ SystemClock.elapsedRealtime() })
+    private val packageReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: Intent?) {
+            if (::worker.isInitialized) worker.post { candidateCache.invalidate(); requestCheck(0) }
+        }
+    }
+    private var packageReceiverRegistered = false
     private var session = SkipSession { SystemClock.elapsedRealtime() }
     private var gesturePending = false
     private val schedule = SkipCheckSchedule()
@@ -198,6 +205,16 @@ open class SkipAccessibilityService : AccessibilityService() {
             else registerReceiver(screenReceiver, filter)
             screenReceiverRegistered = true
         }
+        if (!packageReceiverRegistered) {
+            val filter = android.content.IntentFilter().apply {
+                addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_REPLACED)
+                addDataScheme("package")
+            }
+            if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(packageReceiver, filter, android.content.Context.RECEIVER_EXPORTED)
+            else registerReceiver(packageReceiver, filter)
+            packageReceiverRegistered = true
+        }
+        candidateCache.invalidate()
         runtime?.close(); runtime = SkipRuntimeClient(this, ::taskScene); updateRuntime()
         connectionChanged(this, true)
         addAliveView()
@@ -261,6 +278,7 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (getSystemService(android.app.KeyguardManager::class.java).isKeyguardLocked) {
             diagnostics.record(eventApp, "screen_locked"); return
         }
+        val inspectionStarted = SystemClock.elapsedRealtime()
         val epoch = stateEpoch.get()
         var app = eventApp
         if (app.isEmpty()) {
@@ -271,10 +289,6 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (SkipRuntimePolicy.protected(app)) {
             session.transition(app, null, emptyList(), activityTracker.current.generation); retryRules = emptyList(); discardQueryEvents(); return
         }
-        val info = try { packageManager.getPackageInfo(app, 0) } catch (e: android.content.pm.PackageManager.NameNotFoundException) { null }
-        val system = info?.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != 0
-        val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName == app
-        val available = mutableListOf<SkipRule>()
         if (revision != repository.sources.revision) {
             val sourceSnapshot = repository.sources.snapshot()
             val compiled = mutableListOf<SkipRule>()
@@ -286,10 +300,19 @@ open class SkipAccessibilityService : AccessibilityService() {
                 source.subscription.apps.forEach { a -> a.groups.forEach { add(a.id, it) } }
                 source.subscription.globalGroups.forEach { add("*", it) }
             }
-            rules = compiled; revision = sourceSnapshot.revision; session = SkipSession { SystemClock.elapsedRealtime() }
+            indexedRules = compiled.withIndex().groupBy { it.value.app }
+            revision = sourceSnapshot.revision; session = SkipSession { SystemClock.elapsedRealtime() }
+            candidateCache.invalidate()
         }
-        for (rule in rules) if ((rule.app == "*" || rule.app == app) && SkipScope.applicable(rule.source, rule.group, rule.raw,
-                app, activity, info?.let { if (android.os.Build.VERSION.SDK_INT >= 28) it.longVersionCode.toInt() else it.versionCode }, info?.versionName, system, launcher)) available.add(rule)
+        val available = candidateCache.get(app, activity, revision) {
+            val info = try { packageManager.getPackageInfo(app, 0) } catch (_: android.content.pm.PackageManager.NameNotFoundException) { null }
+            val system = info?.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != 0
+            val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName == app
+            (indexedRules[app].orEmpty() + indexedRules["*"].orEmpty()).sortedBy { it.index }.map { it.value }.filter { rule ->
+                SkipScope.applicable(rule.source, rule.group, rule.raw, app, activity,
+                    info?.let { if (android.os.Build.VERSION.SDK_INT >= 28) it.longVersionCode.toInt() else it.versionCode }, info?.versionName, system, launcher)
+            }
+        }
         session.transition(app, activity, available, activityTracker.current.generation)
         retryRules = available
         // GKD checks eligible rules before resolving event nodes. Never fetch an
@@ -298,7 +321,8 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (available.none { session.ready(it) }) { discardQueryEvents(); return }
         // GKD byDelayRule queries the current whole window, never the noisy
         // event subtree that happened to arrive near the timer deadline.
-        val delayedInspection = available.any { session.delayedDue(it) }
+        val inspectionRules = session.inspectionRules(available)
+        val delayedInspection = inspectionRules.any { session.delayedDue(it) }
         if (delayedInspection || wholeWindow) discardQueryEvents()
         val source = if (delayedInspection || wholeWindow) null else eventSource()
         val fromEvent = source != null && source.packageName?.toString() == app
@@ -320,12 +344,12 @@ open class SkipAccessibilityService : AccessibilityService() {
         var inspectedWindow = start.windowId
         var origin = if (fromEvent) "event" else "root"
         var previousNodeCount = 0
-        fun detail() = "window=$inspectedWindow display=0 origin=$origin scene=${activityTracker.current.generation} activity=$activity stage=$stage runtime=${SkipRuntimeClient.status} fastCounts=${nodes.queryCounts}"
+        fun detail() = "window=$inspectedWindow display=0 origin=$origin scene=${activityTracker.current.generation} activity=$activity stage=$stage runtime=${SkipRuntimeClient.status} fastCounts=${nodes.queryCounts} reads=${nodes.nativeReads} parents=${nodes.parentReads} queryHits=${nodes.fastQueryHits}"
         try {
             var tree = nodes.root()
             var refreshAfterAction = false
             var outcome = "unmatched"
-            for (rule in available.sortedWith(compareBy<SkipRule> { !session.priority(it) }.thenBy { it.params.order }.thenBy { it.index })) {
+            for (rule in inspectionRules.sortedWith(compareBy<SkipRule> { !session.priority(it) }.thenBy { it.params.order }.thenBy { it.index })) {
                 if (stateEpoch.get() != epoch || eventApp != app || !repository.enabled || repository.sources.revision != revision) { outcome = "event_changed"; break }
                 if (!session.ready(rule)) continue
                 if (refreshAfterAction) {
@@ -348,7 +372,7 @@ open class SkipAccessibilityService : AccessibilityService() {
                 // root RPC here would discard the benefit of event-node queries.
                 if (!repository.enabled || repository.sources.revision != revision ||
                     stateEpoch.get() != epoch || eventApp != app || !session.ready(rule)) break
-                if (perform(rule, target, app)) {
+                if (perform(rule, target, app, SystemClock.elapsedRealtime() - inspectionStarted, session.delayLateness(rule))) {
                     outcome = "action_accepted"
                     // Gesture callbacks are asynchronous; wait for completion.
                     // Synchronous node / InputManager actions keep the ordered
@@ -372,7 +396,13 @@ open class SkipAccessibilityService : AccessibilityService() {
                 if (!refresh || node == null || node.refresh()) node else { node.recycle(); null }
             } catch (error: Exception) { node?.recycle(); throw error }
         }
-    private fun perform(rule: SkipRule, target: SkipNode, app: String): Boolean {
+    private fun perform(rule: SkipRule, target: SkipNode, app: String, scanMs: Long, delayLateMs: Long): Boolean {
+        val actionSession = session
+        val actionRevision = revision
+        val actionGeneration = activityTracker.current.generation
+        var inputMs = 0L
+        var gestureStarted: Long? = null
+        fun stillCurrent() = session === actionSession && eventApp == app && activityTracker.current.generation == actionGeneration && repository.sources.revision == actionRevision
         actionFailure = "unsupported"
         fun rejected(reason: String): Boolean { actionFailure = reason; return false }
         val node = target.handle as? AccessibilityNodeInfo ?: return rejected("missing_node")
@@ -382,11 +412,14 @@ open class SkipAccessibilityService : AccessibilityService() {
         val raw = rule.raw
         val action = raw.action ?: if (raw.position != null) "clickCenter" else if (raw.swipeArg != null) "swipe" else "click"
         fun success(actual: String = action, route: String = "") {
-            session.success(rule); lastTriggerTime = SystemClock.elapsedRealtime()
-            repository.record(rule, app, "已执行 $actual" + if (route.isEmpty()) "" else "（$route）")
+            if (stillCurrent()) { session.success(rule); lastTriggerTime = SystemClock.elapsedRealtime() }
+            val timing = SkipActionTiming(scanMs, delayLateMs, inputMs,
+                gestureStarted?.let { (SystemClock.elapsedRealtime() - it).coerceAtLeast(0) } ?: 0)
+            repository.record(rule, app, "已执行 $actual" + (if (route.isEmpty()) "" else "（$route）"), timing)
+            android.util.Log.i("NoAdMiSkip", "timing rule=${rule.identity} scanMs=${timing.scanMs} delayLateMs=${timing.delayLateMs} inputMs=${timing.inputMs} callbackMs=${timing.gestureMs}")
             android.util.Log.i("NoAdMiSkip", "action app=$app requested=$action actual=$actual route=$route accepted=true")
             if (actual != "none") noticeHandler.post {
-                if (connected && repository.preferences.getBoolean(SkipNotice.ENABLED, false)) {
+                if (connected && stillCurrent() && repository.preferences.getBoolean(SkipNotice.ENABLED, false)) {
                     val presenter = noticeOverlay ?: SkipNoticeOverlay(this).also { noticeOverlay = it }
                     presenter.show(SkipNotice.text(repository.preferences.getString(SkipNotice.TEXT, null)))
                 }
@@ -423,6 +456,7 @@ open class SkipAccessibilityService : AccessibilityService() {
             val inputStarted = SystemClock.elapsedRealtime()
             val result = runtime!!.touch(enhanced, start.first, start.second, end.first, end.second,
                 if (action == "swipe" || action.startsWith("long")) duration else 0L)
+            inputMs = SystemClock.elapsedRealtime() - inputStarted
             if (result in listOf(1,3,4,5)) {
                 val route = when(result) { 1 -> "InputManager"; 4 -> "GKD命令输入"; 5 -> "GKD虚拟触屏"; else -> "input命令后备" }
                 success(if (action == "swipe") "swipe" else if (action.startsWith("long")) "longClickCenter" else "clickCenter",
@@ -439,10 +473,12 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (android.os.Build.VERSION.SDK_INT >= 30) builder.setDisplayId(displayId)
         val gesture = builder.build()
         gesturePending = true
+        gestureStarted = SystemClock.elapsedRealtime()
         val accepted = dispatchGesture(gesture, object : GestureResultCallback() {
-            override fun onCompleted(gesture: GestureDescription?) { worker.post { gesturePending = false; success(if (action == "swipe") "swipe" else if (action.startsWith("long")) "longClickCenter" else "clickCenter", if (inputMode == SkipInputMode.ACCESSIBILITY) "无障碍手势完成 / 手势对照" else "无障碍手势完成"); requestCheck(300) } }
+            override fun onCompleted(gesture: GestureDescription?) { worker.post { gesturePending = false; success(if (action == "swipe") "swipe" else if (action.startsWith("long")) "longClickCenter" else "clickCenter", if (inputMode == SkipInputMode.ACCESSIBILITY) "无障碍手势完成 / 手势对照" else "无障碍手势完成"); requestCheck(0) } }
             override fun onCancelled(gesture: GestureDescription?) { worker.post { gesturePending = false; repository.record(rule, app, "手势已取消"); retry() } }
         }, Handler(mainLooper))
+        inputMs = SystemClock.elapsedRealtime() - gestureStarted!!
         if (!accepted) { gesturePending = false; actionFailure = "gesture_rejected" }
         return accepted
     }
@@ -456,6 +492,7 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); thread.quitSafely() }
         if (::eventWorker.isInitialized) { eventWorker.removeCallbacksAndMessages(null); eventThread.quitSafely() }
         if (screenReceiverRegistered) { unregisterReceiver(screenReceiver); screenReceiverRegistered = false }
+        if (packageReceiverRegistered) { unregisterReceiver(packageReceiver); packageReceiverRegistered = false }
         clearEvents(); nativeReader.close()
         super.onDestroy()
     }

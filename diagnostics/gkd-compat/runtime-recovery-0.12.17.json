@@ -1,0 +1,213 @@
+{
+  "version": "0.12.17-preview",
+  "versionCode": 101,
+  "date": "2026-10-29",
+  "published": true,
+  "basedOnLocalVersion": "0.12.16-preview/99",
+  "githubBaseCommit": "f8a32a7001230391cbf8e72f5415fe150ac049d5",
+  "apkSha256": "f0d64b5356ebfa26e7b8b6769de13c91e43bc9e6c139c47e6b73c02bd5d7211e",
+  "certificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "changes": [
+    "Replace cleanup-only disconnect timer with bounded reconnect attempts after 1, 3 and 8 seconds; no recurring polling after budget exhaustion. Stable 30-second operation resets outage budget; explicit mode/server/permission changes allow a fresh attempt.",
+    "Listen to own-worker Binder death and disconnected/binding-died/null-binding callbacks; coalesce stale callbacks by connection epoch.",
+    "Bound CONNECT handshake with a separate two-slot native-read executor (2500ms); late results cannot change a new or closed client.",
+    "Separate successful empty-foreground snapshot from pending connection; clear old target metadata. Track snapshot generation even after an empty scene so an older reply cannot restore it.",
+    "Worker clears invalid foreground task metadata and previous moved-to-front deduplication state. Matching delays, cooldown, maxima, input parameters and subscription documents unchanged."
+  ],
+  "offline": {
+    "fullBuildAndOriginalRegressions": "PASS",
+    "newRecoveryPolicyChecks": 113,
+    "retainedNativeAdapterChecks": 408
+  },
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "wechat": "8.0.79/3200"
+  },
+  "recoveryFaultInjection": {
+    "checks": 13,
+    "ownWorkerDeaths": 2,
+    "automaticRecovery": 2,
+    "externalRequestToReadyMs": [
+      2211,
+      3722
+    ],
+    "manualModeToggleRequired": false,
+    "globalShizukuRestarted": false,
+    "freshSceneAndTaskListenerVerified": true,
+    "emptySceneClearsOldTarget": true,
+    "olderSnapshotAfterEmptyRejected": true,
+    "lateCallbacksAfterCloseRejected": true,
+    "scope": "Only NoAdMi :skip_runtime root/shell worker was terminated. These are recovery times after deliberate process death, not normal ad-skip latency."
+  },
+  "finalCode101Fixtures": {
+    "rootgesture": {
+      "rounds": 5,
+      "actualTouches": 5,
+      "actualCloses": 5,
+      "checks": 20,
+      "timings": [
+        {
+          "scanMs": 6,
+          "delayLateMs": 7,
+          "inputMs": 2,
+          "gestureMs": 109
+        },
+        {
+          "scanMs": 17,
+          "delayLateMs": 82,
+          "inputMs": 2,
+          "gestureMs": 103
+        },
+        {
+          "scanMs": 8,
+          "delayLateMs": 71,
+          "inputMs": 1,
+          "gestureMs": 105
+        },
+        {
+          "scanMs": 26,
+          "delayLateMs": 28,
+          "inputMs": 2,
+          "gestureMs": 111
+        },
+        {
+          "scanMs": 13,
+          "delayLateMs": 14,
+          "inputMs": 1,
+          "gestureMs": 108
+        }
+      ]
+    },
+    "gesture": {
+      "rounds": 5,
+      "actualTouches": 5,
+      "actualCloses": 5,
+      "checks": 20,
+      "timings": [
+        {
+          "scanMs": 8,
+          "delayLateMs": 8,
+          "inputMs": 3,
+          "gestureMs": 110
+        },
+        {
+          "scanMs": 11,
+          "delayLateMs": 12,
+          "inputMs": 1,
+          "gestureMs": 104
+        },
+        {
+          "scanMs": 12,
+          "delayLateMs": 49,
+          "inputMs": 2,
+          "gestureMs": 111
+        },
+        {
+          "scanMs": 14,
+          "delayLateMs": 15,
+          "inputMs": 2,
+          "gestureMs": 111
+        },
+        {
+          "scanMs": 14,
+          "delayLateMs": 16,
+          "inputMs": 1,
+          "gestureMs": 104
+        }
+      ]
+    }
+  },
+  "wechatTrials": [
+    {
+      "mode": "Root",
+      "miniapp": "提取下载",
+      "actualEarlyClosureVisuallyObserved": true,
+      "actions": 1,
+      "localStageTimingMs": {
+        "scanMs": 28,
+        "delayLateMs": 32,
+        "inputMs": 1,
+        "gestureMs": 108
+      },
+      "videoSha256": "d829e365344ac9809398635b3d326160b5692fe6b41a47fa2e05e2e26ba01d64"
+    },
+    {
+      "mode": "Root",
+      "miniapp": "澎湃更新",
+      "actualEarlyClosureVisuallyObserved": true,
+      "actions": 1,
+      "localStageTimingMs": {
+        "scanMs": 28,
+        "delayLateMs": 30,
+        "inputMs": 2,
+        "gestureMs": 106
+      },
+      "videoSha256": "d123b0edab21199dbf7e060d2cb8c2b452ec6ece44679f031322130d46de2a47"
+    },
+    {
+      "mode": "Shizuku/accessibility-gesture",
+      "miniapp": "提取下载",
+      "actualEarlyClosureVisuallyObserved": true,
+      "actions": 1,
+      "localStageTimingMs": {
+        "scanMs": 52,
+        "delayLateMs": 62,
+        "inputMs": 1,
+        "gestureMs": 115
+      },
+      "videoSha256": "b6701e4d975ea49cd0cf2da57cf2bcd30c5a495ac9bc3f0ca6b30ad687b5d42c"
+    },
+    {
+      "mode": "Shizuku/accessibility-gesture",
+      "miniapp": "澎湃更新",
+      "actualEarlyClosureVisuallyObserved": true,
+      "actions": 1,
+      "localStageTimingMs": {
+        "scanMs": 19,
+        "delayLateMs": 19,
+        "inputMs": 0,
+        "gestureMs": 104
+      },
+      "videoSha256": "62920f258194e8ce5ddf9df2e0b41394c6179210e5246c31c6ecc64b3805c195"
+    }
+  ],
+  "preservation": {
+    "miclean_ui.xml_user_options_unchanged": true,
+    "smart_skip.xml_user_options_unchanged": true,
+    "original_subscription_options_unchanged": true,
+    "original_documents_unchanged": true,
+    "subscriptions_retained": 2,
+    "temporary_rules_removed": true,
+    "normal_subscription_updates": [],
+    "own_service_control_ok": true,
+    "normal_process_service_bound": true,
+    "own_service_crashed": false,
+    "service_list_unchanged_except_own_migration": true,
+    "original_actions_retained": true,
+    "temporary_actions_removed": true,
+    "installed_apk_matches_build": true,
+    "installed_code101": true,
+    "gkd_store_unchanged": true,
+    "gkd_subscription_unchanged": true,
+    "gkd_subs_item_unchanged": true,
+    "gkd_subs_config_unchanged": true,
+    "gkd_category_config_unchanged": true,
+    "gkd_app_config_unchanged": true,
+    "gkd_actions_unchanged": true,
+    "temporary_nav_removed": true,
+    "test_appop_restored": true,
+    "gkd_disabled_as_original": true
+  },
+  "limits": [
+    "This improves recovery from an unavailable NoAdMi runtime worker. It cannot repair a broken global Shizuku service or grant missing permission.",
+    "After three automatic retries, further retries pause and accessibility fallback remains available; no automatic global restart.",
+    "No claim of faster normal matching than GKD or universal miniapp reliability. Healthy WeChat playback still resembles previous about-one-second samples; only 0.25-second review used in this series.",
+    "Only the stated paths/device were covered; results do not establish all event sequences or other devices.",
+    "Intermediate code100 checks are retained locally as history; final acceptance here uses code101 only. Earlier failures remain in the bundled previous-version verification docs.",
+    "Source/archive publication excludes raw device material and signing files."
+  ],
+  "releaseTag": "v0.12.17-preview",
+  "rootSupplement": "diagnostics/gkd-compat/root-validation-0.12.17.json",
+  "pendingTests": "PENDING_TESTS.md"
+}

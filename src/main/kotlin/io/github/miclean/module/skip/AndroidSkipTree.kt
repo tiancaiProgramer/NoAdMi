@@ -1,7 +1,6 @@
 package io.github.miclean.module.skip
 
 import android.graphics.Rect
-import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.IdentityHashMap
 import li.gkd.selector.FastQuery
@@ -13,6 +12,15 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
     private var actualWindowRoot: AccessibilityNodeInfo? = nativeRoot.takeIf { rootIsWindow }
     private val owned = IdentityHashMap<AccessibilityNodeInfo, Boolean>()
     private val cache = mutableMapOf<AccessibilityNodeInfo, SkipNode>()
+    private val positions = mutableMapOf<AccessibilityNodeInfo, Int>()
+    private data class QueryKey(val node: AccessibilityNodeInfo, val kind: String, val value: String)
+    // Only native result lists are memoized. Every selector still validates its
+    // own predicates/options. The cache dies with this inspection, also after
+    // an action; it never retains a node across events or delay deadlines.
+    private val fastResults = mutableMapOf<QueryKey, List<AccessibilityNodeInfo>>()
+    var nativeReads = 0; private set
+    var parentReads = 0; private set
+    var fastQueryHits = 0; private set
     val count: Int get() = cache.size
     val queryCounts = mutableListOf<Int>()
     init { owned[nativeRoot] = true }
@@ -26,6 +34,7 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
     }
     private fun <T> read(node: AccessibilityNodeInfo, discard: (T) -> Unit, operation: (AccessibilityNodeInfo) -> T): T {
         budget()
+        nativeReads++
         // The background task owns its input copy even after the inspection closes.
         val copy = AccessibilityNodeInfo.obtain(node)
         var started = false
@@ -40,9 +49,14 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
         }
     }
     private fun child(node: AccessibilityNodeInfo, index: Int) = read(node, { it: AccessibilityNodeInfo? -> it?.recycle() }) { it.getChild(index) }
-    private fun parent(node: AccessibilityNodeInfo) = read(node, { it: AccessibilityNodeInfo? -> it?.recycle() }) { it.parent }
+    private fun parent(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        parentReads++
+        return read(node, { it: AccessibilityNodeInfo? -> it?.recycle() }) { it.parent }
+    }
     private fun wrap(node: AccessibilityNodeInfo, parent: SkipNode? = null, position: Int? = null): SkipNode {
-        own(node); cache[node]?.let { return it }
+        own(node)
+        if (position != null) positions[node] = position
+        cache[node]?.let { existing -> if (parent != null) existing.parent = parent; return existing }
         if (node.windowId != nativeRoot.windowId) throw SkipReadFailure("window_changed")
         val isRoot = node == actualWindowRoot
         lateinit var result: SkipNode
@@ -56,15 +70,16 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
             }
             value
         }
-        val index by lazy { if (isRoot) 0 else position ?: run {
-            val nativeParent = result.parent?.handle as? AccessibilityNodeInfo ?: return@lazy 0
+        val index by lazy { if (isRoot) 0 else positions[node] ?: run {
+            val parentNode = result.parent ?: return@lazy 0
             var found = -1
-            for (i in 0 until nativeParent.childCount) {
-                val child = own(child(nativeParent, i) ?: throw SkipReadFailure("tree_changed"))
-                if (child == node) { found = i; break }
+            // Reuse loaded siblings and establish their parent/index together.
+            // Native fast-query results often lack these relationships.
+            for (i in 0 until parentNode.count()) {
+                val sibling = parentNode.child(i) ?: break
+                if (sibling === result) { found = i; break }
             }
-            if (found < 0) throw SkipReadFailure("tree_changed")
-            found
+            if (found < 0) 0 else found
         } }
         val bounds = Rect(); node.getBoundsInScreen(bounds)
         val id = node.viewIdResourceName
@@ -89,8 +104,11 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
         result = SkipNode(attrs, node, childCount, parentLookup = {
             if (isRoot) null else parent ?: parent(node)?.let { wrap(own(it)) }
         }) { childIndex ->
-            budget(depth + 1)
-            wrap(own(child(node, childIndex) ?: throw SkipReadFailure("tree_changed")), result, childIndex)
+            // Traversal already has a visited set and the 4096-node budget.
+            // Do not fetch the entire ancestor chain merely to visit a child;
+            // the real depth remains lazy for selectors which request it.
+            budget()
+            child(node, childIndex)?.let { wrap(own(it), result, childIndex) }
         }
         cache[node] = result; budget()
         return result
@@ -118,6 +136,21 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
                     continue
                 }
                 val packageId = nativeRoot.packageName
+                val key = when (query) {
+                    is FastQuery.Id -> QueryKey(native, "id", query.value)
+                    is FastQuery.Vid -> QueryKey(native, "id", "$packageId:id/${query.value}")
+                    is FastQuery.Text -> QueryKey(native, "text", query.value)
+                }
+                val cached = fastResults[key]
+                if (cached != null) {
+                    fastQueryHits++
+                    for (handle in cached) {
+                        if (handle == native) continue
+                        val child = wrap(handle)
+                        if (seen.add(child)) yield(child)
+                    }
+                    continue
+                }
                 val found = read(native, { list: List<AccessibilityNodeInfo> -> list.forEach { it.recycle() } }) { input -> when (query) {
                     is FastQuery.Id -> input.findAccessibilityNodeInfosByViewId(query.value)
                     is FastQuery.Vid -> input.findAccessibilityNodeInfosByViewId("$packageId:id/${query.value}")
@@ -126,6 +159,8 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
                 }
                 if (queryCounts.size < 24) queryCounts.add(found.size)
                 found.forEach { owned[it] = true }; budget()
+                // Bound even negative lookups with many distinct selectors.
+                if (fastResults.size < 256) fastResults[key] = found
                 for (handle in found) {
                     if (handle == native) continue
                     val child = wrap(handle)
@@ -134,5 +169,5 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
             }
         }
     }
-    override fun close() { owned.keys.forEach { it.recycle() }; owned.clear(); cache.clear() }
+    override fun close() { owned.keys.forEach { it.recycle() }; owned.clear(); cache.clear(); positions.clear(); fastResults.clear() }
 }

@@ -1,14 +1,19 @@
 # NoAdMi
 
+> **当前预发布：[0.12.17-preview / code101](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.17-preview)。** 合入匹配线程、节点读取和 Shizuku 连接恢复优化；保留原签名与原设置。当前实测范围及限制见 [验证记录](SMART_SKIP_VERIFICATION.md)，后续项目见 [待测试清单](PENDING_TESTS.md)。
+
+
 <img src="assets/icon.png" width="96" alt="NoAdMi 图标">
 
 米家、小米运动健康、小米浏览器、应用商店与系统应用广告的 libxposed API 102 精简模块。首页分为“广告管理”“程序管理”和“关于”；广告与功能入口分开设置，保留 Play 版中国大陆兼容实验开关。
 
-> **当前预发布：[0.12.14-preview / 96](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.14-preview)。** 补齐当前小米 15 上米家、浏览器、商店、网络助手及官方广告设置的新版入口；米家菜单独立隐藏和充值入口隐藏完成实机对照，官方广告一键关闭 11/11 项并恢复原值。商店推荐绑定入口已加载、详情和评论正常，本轮未取得推荐广告前后对照；浏览器拦截已命中，但无广告样本对照。原签名覆盖安装，原开关、订阅保持，智能跳过服务已恢复。详见 [适配验证摘要](diagnostics/gkd-compat/mi15-adaptation-0.12.14.json)。
+> **历史预发布：[0.12.14-preview / 96](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.14-preview)。** 补齐当前小米 15 上米家、浏览器、商店、网络助手及官方广告设置的新版入口；米家菜单独立隐藏和充值入口隐藏完成实机对照，官方广告一键关闭 11/11 项并恢复原值。商店推荐绑定入口已加载、详情和评论正常，本轮未取得推荐广告前后对照；浏览器拦截已命中，但无广告样本对照。原签名覆盖安装，原开关、订阅保持，智能跳过服务已恢复。详见 [适配验证摘要](diagnostics/gkd-compat/mi15-adaptation-0.12.14.json)。
 
 0.12.13 补齐 GKD 无障碍兼容服务入口；当前手机微信分身“提取下载”“澎湃更新”各 3/3 轮提前跳过，总开关关闭对照均无动作。0.12.14 安装后另测“提取下载”1 轮，确认倒计时结束前关闭；其他应用和主页弹窗仍按原规则控制，延迟仍有波动。见 [微信实机记录](docs/wechat-service-compat-0.12.13.md)。
 
 > **历史预发布：0.12.12-preview / 90。** 该版是输入对照诊断包，发布时微信小程序仍待故障手机验收。执行器以 0.12.6 为基线；以下目标 App 效果为 0.12.6 的历史验证：已在原测试机完成拍机堂 3 次正常冷启动提前跳过及独立 GKD / 总开关关闭对照；第二台手机两轮各测 11 个 App，第二轮确认拍机堂、京东、哔哩哔哩提前跳过，其余 8 个本轮未出现可验证的跳过控件。淘宝、闲鱼的历史问题仍未完成有广告场景验收，不能视为已解决。原签名覆盖升级并保留设置；画面停留与延迟仍有波动。见 [验证记录](SMART_SKIP_VERIFICATION.md) 与 [已知问题](KNOWN_ISSUES.md)。
+
+待测：后台及锁屏恢复、开关联动与无目标时不误触、其他 App 实广告、CPU/内存/耗电对照。详见 [完整清单](PENDING_TESTS.md)。
 
 [下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [最新验证记录](SMART_SKIP_VERIFICATION.md) · [原有 Hook 验证](verification.json)
 

@@ -51,9 +51,9 @@ class SkipRuntimeService(private val context: Context) : Binder() {
         it.javaClass.getField("displayId").getInt(it) == Display.DEFAULT_DISPLAY && it.javaClass.getField("userId").getInt(it) == ownerUid / 100000 && it.topActivity != null
     }
     private fun refresh(force: Boolean = false) {
-        val current = foreground() ?: return
+        val current = foreground()
         synchronized(lock) {
-            if (force || top?.topActivity != current.topActivity || top?.taskId != current.taskId) generation++
+            if (force || top?.topActivity != current?.topActivity || top?.taskId != current?.taskId) generation++
             top = current
         }
     }
@@ -71,7 +71,8 @@ class SkipRuntimeService(private val context: Context) : Binder() {
                 // Read fresh default-display metadata instead of decoding API-specific task parcels.
                 if (code == stackChanged || code == movedToFront) handler.post {
                     runCatching {
-                        val cpn = foreground()?.topActivity ?: return@runCatching
+                        val cpn = foreground()?.topActivity
+                        if (cpn == null) { lastFront = null; refresh(); notifyObserver(); return@runCatching }
                         val now = SystemClock.elapsedRealtime()
                         if (code == movedToFront) { lastFront = now to cpn; refresh(true) }
                         else {
