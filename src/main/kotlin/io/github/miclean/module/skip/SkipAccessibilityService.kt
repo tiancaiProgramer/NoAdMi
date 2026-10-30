@@ -182,6 +182,7 @@ open class SkipAccessibilityService : AccessibilityService() {
         }
     }
     private val preferenceListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == SkipRepository.GLOBAL_WHITELIST) stateEpoch.incrementAndGet()
         if (key == "access_method" || key == "enabled") updateRuntime()
         if (key == SkipNotice.ENABLED && !repository.preferences.getBoolean(SkipNotice.ENABLED,false)) noticeHandler.post { noticeOverlay?.dismiss() }
         if (::worker.isInitialized) worker.post { appChangeTime = SystemClock.elapsedRealtime(); requestCheck(0) }
@@ -286,7 +287,7 @@ open class SkipAccessibilityService : AccessibilityService() {
             app = first.packageName?.toString().orEmpty(); first.recycle()
             eventApp = app; activityTracker.app(app); appChangeTime = SystemClock.elapsedRealtime()
         }
-        if (SkipRuntimePolicy.protected(app)) {
+        if (repository.isWhitelisted(app) || SkipRuntimePolicy.protected(app)) {
             session.transition(app, null, emptyList(), activityTracker.current.generation); retryRules = emptyList(); discardQueryEvents(); return
         }
         if (revision != repository.sources.revision) {
@@ -350,7 +351,7 @@ open class SkipAccessibilityService : AccessibilityService() {
             var refreshAfterAction = false
             var outcome = "unmatched"
             for (rule in inspectionRules.sortedWith(compareBy<SkipRule> { !session.priority(it) }.thenBy { it.params.order }.thenBy { it.index })) {
-                if (stateEpoch.get() != epoch || eventApp != app || !repository.enabled || repository.sources.revision != revision) { outcome = "event_changed"; break }
+                if (stateEpoch.get() != epoch || eventApp != app || !repository.enabled || repository.isWhitelisted(app) || repository.sources.revision != revision) { outcome = "event_changed"; break }
                 if (!session.ready(rule)) continue
                 if (refreshAfterAction) {
                     // GKD continues to other eligible rules after a synchronous
@@ -370,7 +371,7 @@ open class SkipAccessibilityService : AccessibilityService() {
                 if (!session.matched(rule)) continue
                 // GKD checks current event/app/rule state before action. A new
                 // root RPC here would discard the benefit of event-node queries.
-                if (!repository.enabled || repository.sources.revision != revision ||
+                if (!repository.enabled || repository.isWhitelisted(app) || repository.sources.revision != revision ||
                     stateEpoch.get() != epoch || eventApp != app || !session.ready(rule)) break
                 if (perform(rule, target, app, SystemClock.elapsedRealtime() - inspectionStarted, session.delayLateness(rule))) {
                     outcome = "action_accepted"
@@ -402,9 +403,10 @@ open class SkipAccessibilityService : AccessibilityService() {
         val actionGeneration = activityTracker.current.generation
         var inputMs = 0L
         var gestureStarted: Long? = null
-        fun stillCurrent() = session === actionSession && eventApp == app && activityTracker.current.generation == actionGeneration && repository.sources.revision == actionRevision
+        fun stillCurrent() = !repository.isWhitelisted(app) && session === actionSession && eventApp == app && activityTracker.current.generation == actionGeneration && repository.sources.revision == actionRevision
         actionFailure = "unsupported"
         fun rejected(reason: String): Boolean { actionFailure = reason; return false }
+        if (repository.isWhitelisted(app)) return rejected("whitelisted")
         val node = target.handle as? AccessibilityNodeInfo ?: return rejected("missing_node")
         if (!node.isVisibleToUser) return rejected("not_visible")
         if (node.packageName?.toString() != app) return rejected("foreign_node")

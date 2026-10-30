@@ -26,6 +26,8 @@ public final class SmartSkipActivity extends Activity {
     private SubscriptionActions actions;
     private LinearLayout body,root;
     private AppRulesPage appsPage;
+    private AppManagementPage managedPage;
+    private final AppManagementPage.State managedState=new AppManagementPage.State();
     private int pageGeneration;
     private final java.util.Map<Long,AppRulesPage.State> appStates=new java.util.HashMap<>();
     private TextView progress;
@@ -41,7 +43,7 @@ public final class SmartSkipActivity extends Activity {
         if(getIntent().hasExtra(SOURCE_ID)){long id=getIntent().getLongExtra(SOURCE_ID,0);page=()->details(id);}else page=this::sources;page.run();
     }
     @Override public void onBackPressed(){goBack();}
-    @Override public void onDestroy(){if(actions!=null)actions.close();if(appsPage!=null)appsPage.close();++pageGeneration;super.onDestroy();}
+    @Override public void onDestroy(){if(actions!=null)actions.close();if(appsPage!=null)appsPage.close();if(managedPage!=null)managedPage.close();++pageGeneration;super.onDestroy();}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(actions!=null)actions.onActivityResult(request,result,data);}
     private void refreshProgress(){if(progress!=null)progress.setText(actions.busy()?"正在处理，请稍候…":"");}
     private void goBack(){if(back.isEmpty())finish();else{page=back.pop();page.run();}}
@@ -49,19 +51,61 @@ public final class SmartSkipActivity extends Activity {
     private void start(String title,String description){start(title,description,false);}
     private void start(String title,String description,boolean listPage){
         ++pageGeneration;if(appsPage!=null){appsPage.close();appsPage=null;}
+        if(managedPage!=null){managedPage.close();managedPage=null;}
         getWindow().setStatusBarColor(Color.rgb(247,246,241));getWindow().setNavigationBarColor(Color.rgb(247,246,241));
         getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         ScrollView scroll=new ScrollView(this);scroll.setFitsSystemWindows(true);scroll.setBackgroundColor(Color.rgb(247,246,241));
         root=vertical();root.setPadding(dp(22),dp(16),dp(22),dp(28));
         if(listPage){FrameLayout host=new FrameLayout(this);host.setFitsSystemWindows(true);host.setBackgroundColor(Color.rgb(247,246,241));host.addView(root,new FrameLayout.LayoutParams(-1,-1));setContentView(host);}else{scroll.addView(root);setContentView(scroll);}
-        action(root,"‹  订阅管理",this::goBack);text(root,title,24,INK,true);text(root,description,13,MUTED,false);
+        action(root,"应用管理".equals(title)?"‹  详情与规则":"应用规则管理".equals(title)?"‹  应用管理":"‹  订阅管理",this::goBack);text(root,title,24,INK,true);text(root,description,13,MUTED,false);
         progress=text(root,"",12,ORANGE,false);refreshProgress();
         body=vertical();body.setPadding(dp(16),dp(9),dp(16),dp(9));GradientDrawable bg=new GradientDrawable();bg.setColor(Color.WHITE);bg.setCornerRadius(dp(16));body.setBackground(bg);root.addView(body);
     }
     private void sources(){
         start("详情与规则","点击订阅卡片展开详情与规则，再次点击收起。");body.setTag("skip_source_details");
+        TextView appManager=DialogUi.choice(body,"应用管理  ›\n已安装应用 · 跨订阅规则 · 全局白名单",()->navigate(this::managedApps));appManager.setTag("app_management_card");
+        android.text.SpannableString caption=new android.text.SpannableString(appManager.getText());int subtitle=caption.toString().indexOf('\n');caption.setSpan(new android.text.style.StyleSpan(Typeface.BOLD),0,subtitle,0);caption.setSpan(new android.text.style.AbsoluteSizeSpan(12,true),subtitle+1,caption.length(),0);appManager.setText(caption);
         List<SkipSource> list=repository.getSources().list();if(list.isEmpty())text(body,"暂无订阅，请返回订阅管理添加。",13,MUTED,false);
         for(SkipSource source:list)sourceCard(body,source);
+    }
+    private void managedApps(){
+        start("应用管理","关闭应用开关即加入全局白名单，停止所有订阅在该应用内匹配；各订阅的独立设置保持。",true);
+        managedPage=new AppManagementPage(this,repository,body,root,managedState,app->navigate(()->managedRules(app)));
+    }
+    private void managedRules(ManagedAppCatalog.App app){
+        start("应用规则管理",app.name+" · "+app.id);
+        Switch whitelist=toggle(body,"加入全局白名单",repository.isWhitelisted(app.id),value->mutate(()->repository.setWhitelisted(app.id,value)));whitelist.setTag("global_whitelist:"+app.id);
+        text(body,"加入后，全部订阅停止在此应用内匹配；移出后仍遵循各订阅、分类与规则组的独立开关。",12,MUTED,false);
+        TextView loading=text(body,"正在汇总各订阅规则…",13,MUTED,false);int token=pageGeneration;
+        AppRulesPage.loader.execute(()->{try{
+            List<SkipManagedGroup> groups=SkipAppRules.groups(repository.getSources().list(),app.id,app.code,app.version,app.system,app.launcher);
+            runOnUiThread(()->{if(isFinishing()||isDestroyed()||pageGeneration!=token)return;body.removeView(loading);
+                if(groups.isEmpty())text(body,"当前订阅没有此应用的专属规则或适用全局规则，仍可加入全局白名单。",13,MUTED,false);
+                java.util.Map<Long,LinearLayout> sections=new java.util.LinkedHashMap<>();
+                for(SkipManagedGroup entry:groups){
+                    LinearLayout area=sections.get(entry.getSource().getId());
+                    if(area==null){SkipSource source=entry.getSource();area=fold(body,source.getName()+(source.getEnabled()?"":" · 订阅已关闭"));sections.put(source.getId(),area);}
+                    managedGroup(area,entry);
+                }
+            });
+        }catch(Exception error){runOnUiThread(()->{if(!isDestroyed()&&pageGeneration==token)loading.setText("读取失败："+error.getMessage());});}});
+    }
+    private LinearLayout fold(LinearLayout parent,String title){
+        LinearLayout box=vertical();LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2);params.topMargin=UiSpacing.vertical(this,12);parent.addView(box,params);
+        LinearLayout area=vertical();area.setPadding(dp(10),UiSpacing.vertical(this,4),0,UiSpacing.vertical(this,4));
+        TextView heading=DialogUi.choice(box,title+"  ▾",()->{boolean show=area.getVisibility()!=android.view.View.VISIBLE;area.setVisibility(show?android.view.View.VISIBLE:android.view.View.GONE);});box.addView(area);return area;
+    }
+    private void managedGroup(LinearLayout parent,SkipManagedGroup entry){
+        RawSubscription.RawGroupProps group=entry.getGroup();SkipSource source=entry.getSource();String app=entry.getApp();
+        LinearLayout box=vertical();LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2);params.topMargin=UiSpacing.vertical(this,8);params.bottomMargin=UiSpacing.vertical(this,4);parent.addView(box,params);
+        Switch control=toggle(box,(entry.getGlobal()?"全局 · ":"专属 · ")+group.getName(),entry.getPreference(),value->mutate(()->{if(entry.getGlobal())repository.getSources().enableGlobalForApp(source.getId(),app,group.getKey(),value);else repository.getSources().enableGroup(source.getId(),app,group.getKey(),value);}));
+        control.setTag("managed_rule:"+source.getId()+":"+(entry.getGlobal()?"global":"app")+":"+group.getKey());
+        if(!group.getValid()||!entry.getCompatible()){control.setEnabled(false);text(box,!group.getValid()?"规则校验失败，停止执行":"当前应用版本不符合规则条件",12,ORANGE,false);}
+        if(!source.getEnabled())text(box,"订阅总开关已关闭，保存规则选择后需开启该订阅。",12,MUTED,false);
+        else if(Boolean.FALSE.equals(source.getApps().get(app)))text(box,"此应用已加入该订阅的白名单，需从订阅内移出后才能执行。",12,MUTED,false);
+        if(entry.getGlobal())text(box,"此开关只控制当前应用；仍受该订阅的全局规则组总开关控制。",12,MUTED,false);
+        if(group.getDesc()!=null)text(box,group.getDesc(),12,MUTED,false);
+        DialogUi.choice(box,group.getRules().size()+" 条规则 · 查看内容  ›",()->showText(group.getName(),group.getCacheStr()));
     }
     private void sourceCard(LinearLayout parent,SkipSource source){
         LinearLayout card=new LinearLayout(this);card.setTag("skip_source_card:"+source.getId());card.setOrientation(LinearLayout.HORIZONTAL);card.setGravity(Gravity.CENTER_VERTICAL);card.setPadding(dp(12),UiSpacing.vertical(this,12),dp(12),UiSpacing.vertical(this,12));card.setMinimumHeight(dp(52));card.setFocusable(true);card.setContentDescription(source.getName()+"，详情与规则");

@@ -1,0 +1,94 @@
+{
+  "version": "0.12.18-r2",
+  "versionCode": 103,
+  "published": true,
+  "baseCommit": "70a6f38d6363f457ff6b427f0cf6f909f24252d1",
+  "apkSha256": "0fc932fc54c081a0d523c8f398236fea8cd1670622c99f2a05c8fbfa4be424a4",
+  "signerCertificateSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+  "entry": "智能跳过 → 订阅管理 → 详情与规则 → 应用管理",
+  "behavior": {
+    "independentAppManagementCard": true,
+    "installedAppsAndCrossSubscriptionAppAndGlobalGroups": true,
+    "globalWhitelistIndependentOfSubscriptionWhitelists": true,
+    "onlyWhitelistFilterRetained": true,
+    "threeSortsRetained": true,
+    "gkdSystemOverlayAndNoActivityFiltering": true,
+    "perAppGlobalRuleDoesNotEditSharedGroupSwitch": true,
+    "originalDeclaredOnlySubscriptionUIModelTestsUnchanged": [
+      "src/main/java/io/github/miclean/module/AppRulesPage.java",
+      "src/main/java/io/github/miclean/module/AppRuleListModel.java",
+      "tests/AppRuleListModelTest.java",
+      "androidTest/src/AppRulesManagementSmoke.java"
+    ]
+  },
+  "validation": {
+    "fullBuildAndExistingRegressions": "passed",
+    "newScopePersistenceChecks": 23,
+    "visibilityCombinations": 8,
+    "nativeUi": {
+      "checks": 47,
+      "navigationMainThreadMs": 5,
+      "reportedApp": "com.privoce.vocechatclient.legacyui",
+      "visibleInstalledAppsOnTestPhone": 221,
+      "status": "passed"
+    },
+    "realFixtureCases": [
+      {
+        "phase": "global_block",
+        "expectedClick": false,
+        "actualFixtureClosed": false,
+        "newFixtureActionCount": 0,
+        "actualSourceId": null,
+        "probe": "PASS: actual fixture target remained untouched for 2 seconds"
+      },
+      {
+        "phase": "source_b",
+        "expectedClick": true,
+        "actualFixtureClosed": true,
+        "newFixtureActionCount": 1,
+        "actualSourceId": -202610300211,
+        "probe": "PASS: actual fixture target clicked and closed"
+      },
+      {
+        "phase": "both_blocked",
+        "expectedClick": false,
+        "actualFixtureClosed": false,
+        "newFixtureActionCount": 0,
+        "actualSourceId": null,
+        "probe": "PASS: actual fixture target remained untouched for 2 seconds"
+      },
+      {
+        "phase": "source_a",
+        "expectedClick": true,
+        "actualFixtureClosed": true,
+        "newFixtureActionCount": 1,
+        "actualSourceId": -202610300210,
+        "probe": "PASS: actual fixture target clicked and closed"
+      },
+      {
+        "phase": "global_block",
+        "expectedClick": false,
+        "actualFixtureClosed": false,
+        "newFixtureActionCount": 0,
+        "actualSourceId": null,
+        "probe": "PASS: actual fixture target remained untouched for 2 seconds"
+      }
+    ],
+    "devicePreservation": {
+      "originalSubscriptionsAndSelectionsPreserved": true,
+      "smartSkipSettingsPreserved": true,
+      "originalSubscriptionFiltersPreserved": true,
+      "originalActionHistoryPreserved": true,
+      "fixtureRecordsRemoved": true,
+      "accessibilityServiceBound": true,
+      "accessibilitySelectionPreserved": true,
+      "accessibilitySettingPreserved": true,
+      "noCrashedNoAdMi": true,
+      "installedApkMatchesTestedBuild": true
+    },
+    "limits": "隔离测试验证配置与真实动作。第三方广告效果仍受订阅内容、应用版本和界面条件影响。导航耗时不是应用目录完全加载时间或广告跳过耗时。"
+  },
+  "privacy": "原始截图、手机数据、日志及签名材料仅留本地，未包含在源码包。",
+  "releaseTag": "v0.12.18-r2",
+  "releaseUrl": "https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.18-r2"
+}

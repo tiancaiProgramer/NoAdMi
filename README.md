@@ -1,6 +1,9 @@
 # NoAdMi
 
-> **当前预发布：[0.12.17-preview / code101](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.17-preview)。** 合入匹配线程、节点读取和 Shizuku 连接恢复优化；保留原签名与原设置。当前实测范围及限制见 [验证记录](SMART_SKIP_VERIFICATION.md)，后续项目见 [待测试清单](PENDING_TESTS.md)。
+> **当前预发布：[0.12.18-r2 / code103](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.18-r2)。** “详情与规则”新增独立应用管理，支持跨订阅规则与全局白名单；原订阅列表及“只看白名单”保持。Fold 3 上 47 项界面检查、5 组真实动作对照通过。[验证摘要](diagnostics/gkd-compat/app-management-0.12.18-r2.json) · [待测试清单](PENDING_TESTS.md)。
+
+
+> **历史预发布：[0.12.17-preview / code101](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.17-preview)。** 合入匹配线程、节点读取和 Shizuku 连接恢复优化；保留原签名与原设置。当前实测范围及限制见 [验证记录](SMART_SKIP_VERIFICATION.md)，后续项目见 [待测试清单](PENDING_TESTS.md)。
 
 
 <img src="assets/icon.png" width="96" alt="NoAdMi 图标">
@@ -16,6 +19,18 @@
 待测：后台及锁屏恢复、开关联动与无目标时不误触、其他 App 实广告、CPU/内存/耗电对照。详见 [完整清单](PENDING_TESTS.md)。
 
 [下载安装包](https://github.com/tiancaiProgramer/NoAdMi/releases) · [更新记录](CHANGELOG.md) · [实现说明](docs/implementation.md) · [最新验证记录](SMART_SKIP_VERIFICATION.md) · [原有 Hook 验证](verification.json)
+
+## 应用管理（0.12.18-r2）
+
+入口：智能跳过 → 订阅管理 → 详情与规则 → **应用管理**。
+
+- 应用管理展示已安装应用，按订阅汇总专属规则和条件适用的全局规则；参考 GKD 过滤无界面的系统组件及系统覆盖包。
+- 关闭应用行开关或在详情中开启“加入全局白名单”，停止所有订阅在该应用内匹配。移出后仍遵循各订阅、分类及规则组的独立开关。
+- 从应用管理关闭一个全局规则组只影响当前应用；原订阅中的全局规则组总开关仍控制该组的整体启用状态。
+- 原订阅管理保留独立设置，订阅的应用规则只列该订阅声明的应用。“只看白名单”开启后仅显示相应管理范围的白名单应用。
+- 支持名称/包名搜索、按名称/最近使用/最近触发排序，以及系统/用户应用分组。全局白名单与各订阅白名单相互独立。
+
+原签名覆盖安装；新增的规则选择会保存并供后续启动使用。真实广告能否关闭仍取决于订阅内容与页面匹配条件。
 
 ## 小程序输入对照（0.12.12-preview，诊断预发布）
 

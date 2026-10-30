@@ -102,6 +102,18 @@ object SkipScope {
         app: String, current: String?, code: Int?, name: String?, system: Boolean, launcher: Boolean): Boolean {
         if (!source.groupEnabled(if (group is RawSubscription.RawAppGroup) app else "*", group)) return false
         if (source.apps[app] == false) return false
+        if (group is RawSubscription.RawGlobalGroup && source.globalApps[source.groupKey(app, group.key)] == false) return false
+        if (!matchesApp(group, raw, app, current, code, name, system, launcher)) return false
+        if (group is RawSubscription.RawGlobalGroup) {
+            val prefix = group.disableIfAppGroupMatch?.ifEmpty { group.name }
+            if (prefix != null && source.subscription.getAppGroups(app).any { it.ignoreGlobalGroupMatch != true &&
+                    it.name.startsWith(prefix) && source.groupEnabled(app, it) }) return false
+        }
+        return true
+    }
+    /** The management page lists scope-compatible rules even when their saved switch is off. */
+    fun matchesApp(group: RawSubscription.RawGroupProps, raw: RawSubscription.RawRuleProps,
+        app: String, current: String?, code: Int?, name: String?, system: Boolean, launcher: Boolean): Boolean {
         if (group is RawSubscription.RawAppGroup && raw is RawSubscription.RawAppRule) {
             return activity(app, current, raw.activityIds ?: group.activityIds, raw.excludeActivityIds ?: group.excludeActivityIds) &&
                 version(code, name, raw.versionCode ?: group.versionCode, raw.versionName ?: group.versionName)
@@ -115,9 +127,6 @@ object SkipScope {
             if (system && group.matchSystemApp != true) return false
             if (group.matchAnyApp == false) return false
         }
-        val prefix = group.disableIfAppGroupMatch?.ifEmpty { group.name }
-        if (prefix != null && source.subscription.getAppGroups(app).any { it.ignoreGlobalGroupMatch != true &&
-                it.name.startsWith(prefix) && source.groupEnabled(app, it) }) return false
         return activity(app, current, child?.activityIds ?: parent?.activityIds, child?.excludeActivityIds ?: parent?.excludeActivityIds) &&
             version(code, name, child?.versionCode ?: parent?.versionCode, child?.versionName ?: parent?.versionName)
     }

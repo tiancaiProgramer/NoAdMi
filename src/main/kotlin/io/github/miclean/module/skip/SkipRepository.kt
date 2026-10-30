@@ -20,6 +20,20 @@ import kotlinx.serialization.json.Json
 class SkipRepository private constructor(context: Context) {
     private val app = context.applicationContext
     val preferences: SharedPreferences = app.getSharedPreferences("smart_skip", Context.MODE_PRIVATE)
+    @Volatile private var blockedApps: Set<String> = preferences.getStringSet(GLOBAL_WHITELIST, emptySet()).orEmpty().toSet()
+    private val whitelistListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == GLOBAL_WHITELIST) blockedApps = preferences.getStringSet(GLOBAL_WHITELIST, emptySet()).orEmpty().toSet()
+    }
+    init { preferences.registerOnSharedPreferenceChangeListener(whitelistListener) }
+    fun isWhitelisted(packageName: String): Boolean = packageName in blockedApps
+    fun whitelist(): Set<String> = blockedApps.toSet()
+    @Synchronized fun setWhitelisted(packageName: String, value: Boolean) {
+        require(packageName.isNotBlank())
+        val before = preferences.getStringSet(GLOBAL_WHITELIST, emptySet()).orEmpty()
+        val after = if (value) before + packageName else before - packageName
+        check(preferences.edit().putStringSet(GLOBAL_WHITELIST, after).commit()) { "保存全局白名单失败" }
+        blockedApps = after
+    }
     private val usage = app.getSharedPreferences("smart_skip_usage", Context.MODE_PRIVATE)
     private val directory = File(app.filesDir, "smart_skip")
     val sources = SkipSources(File(directory, "sources.json"))
@@ -53,6 +67,8 @@ class SkipRepository private constructor(context: Context) {
     fun recentVisits(): Map<String, Long> = usage.all.mapNotNull { (key, value) ->
         (value as? Long)?.let { key to it }
     }.toMap()
+    @Synchronized fun recentTriggers(): Map<String, Long> = logs.filter { it.result.startsWith("已执行 ") }
+        .groupBy { it.app }.mapValues { (_, entries) -> entries.maxOf { it.time } }
     @Synchronized fun recentTriggers(id: Long): Map<String, Long> {
         val name = sources.find(id).name
         return logs.filter { (it.sourceId == id || (it.sourceId == null && it.subscription == name)) &&
@@ -90,6 +106,7 @@ class SkipRepository private constructor(context: Context) {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == expected }
     }
     companion object {
+        const val GLOBAL_WHITELIST = "global_whitelist"
         val persistence = Executors.newSingleThreadExecutor { task -> Thread(task, "NoAdMi-records") }
         private const val JOB_ID = 0x4e41444d
         @Volatile private var instance: SkipRepository? = null

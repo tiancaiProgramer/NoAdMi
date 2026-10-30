@@ -14,6 +14,7 @@ data class SkipSource(
     val id: Long, val document: String, val url: String = "", val enabled: Boolean = false,
     val apps: Map<String, Boolean> = emptyMap(), val groups: Map<String, Boolean> = emptyMap(),
     val checkedAt: Long = 0, val categories: Map<Int, Boolean> = emptyMap(),
+    val globalApps: Map<String, Boolean> = emptyMap(),
 ) {
     val subscription: RawSubscription by lazy { RawSubscription.parse(document) }
     val name: String get() = subscription.name
@@ -97,6 +98,11 @@ class SkipSources(private val file: File) {
     @Synchronized fun enableApp(id: Long, app: String, value: Boolean) = modify(id) { it.copy(apps = it.apps + (app to value)) }
     @Synchronized fun enableGroup(id: Long, app: String, key: Int, value: Boolean) = modify(id) {
         it.copy(groups = it.groups + (it.groupKey(app, key) to value))
+    }
+    /** App management may opt one app out of a global group without changing its shared switch. */
+    @Synchronized fun enableGlobalForApp(id: Long, app: String, key: Int, value: Boolean) = modify(id) {
+        require(it.subscription.globalGroups.any { group -> group.key == key }) { "全局规则组已不存在" }
+        it.copy(globalApps = it.globalApps + (it.groupKey(app, key) to value))
     }
     @Synchronized fun enableCategory(id: Long, key: Int, value: Boolean) = modify(id) {
         require(it.subscription.categories.any { category -> category.key == key }) { "规则分类已不存在" }

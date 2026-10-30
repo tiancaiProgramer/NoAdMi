@@ -23,4 +23,7 @@
  <instrumentation android:name=".SkipRuntimeRecoverySmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi own worker recovery" />
  <instrumentation android:name=".ShizukuRestartProbe" android:targetPackage="io.github.miclean.skipfixture" android:label="Existing Shizuku restart probe" />
  <instrumentation android:name=".SkipInputModeUiSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi reversible input comparison UI" />
+ <instrumentation android:name=".AppManagementSmoke" android:targetPackage="io.github.miclean.module" android:label="NoAdMi independent installed app management" />
+ <instrumentation android:name=".AppManagementEngineSetup" android:targetPackage="io.github.miclean.module" android:label="NoAdMi fixture whitelist setup" />
+ <instrumentation android:name=".AppManagementEngineProbe" android:targetPackage="io.github.miclean.skipfixture" android:label="NoAdMi real whitelist exclusion probe" />
 </manifest>
