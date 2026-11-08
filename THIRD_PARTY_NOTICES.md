@@ -6,7 +6,8 @@ This integrated NoAdMi version is distributed under GPL-3.0-only. The complete l
 
 - Project: https://github.com/gkd-kit/gkd
 - Authors: GKD contributors.
-- Commit: `fe6736fb083ba90d7bace124e30b61ff6e5701f2`.
+- Selector: GKD v1.13.0 / `0ee5d146a382d1066cddfdb6d0ace9d9563a8464`; unchanged commonMain/JVM sources and hashes in `third_party/gkd-selector/SOURCE.json`.
+- Subscription model/parser: `fe6736fb083ba90d7bace124e30b61ff6e5701f2`; group-only global scope is adapted separately in NoAdMi.
 - License: GPL-3.0-only. Upstream README additionally states that commercial use is prohibited.
 - Original selector sources and license are retained in `third_party/gkd-selector/`.
 - Original subscription model, parser, expression and execution parameter sources are retained in `third_party/gkd-core/`.
@@ -32,5 +33,7 @@ Subscription rules are separate works with their own licenses. No third-party su
 Shizuku API / provider / aidl / shared 13.1.5, MIT License, copyright Rikka. Source: https://github.com/RikkaApps/Shizuku-API . Unmodified Maven binaries and SHA-256 values are retained in `third_party/shizuku/`; the full license is also embedded in the APK as `licenses/Shizuku-MIT.txt`. Shizuku controls the module's own accessibility service and, when selected and authorized, a separate runtime worker for default-display foreground tasks and bounded touch input. No generic command execution IPC is exposed.
 
 ## GKD Android runtime reference
+
+0.12.19 additionally follows GKD v1.13.0 / `0ee5d146a382d1066cddfdb6d0ace9d9563a8464`, GPL-3.0-only, for group scope, node vid and continuous accessibility swipes. New reference sources remain unchanged under `third_party/gkd-runtime/reference/v1.13.0`; only NoAdMi's adaptation is compiled. The following pin is retained historical material.
 
 Android execution adaptation additionally references installed GKD 1.12.1 / 92, upstream commit `5a00f844989471458e4cf4601acb3f4710438f9a`, GPL-3.0-only. Unmodified reference files and original paths are recorded in [third_party/gkd-runtime/UPSTREAM.md](third_party/gkd-runtime/UPSTREAM.md). These files are review material and are not compiled as a second service. No third-party subscriptions are distributed.

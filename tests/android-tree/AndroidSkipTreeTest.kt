@@ -33,6 +33,16 @@ fun main(args:Array<String>){
    for(i in 0..1){val n=SkipRule(source,"test.app",group,group.rules[i],i).query(start,adapter=tree.adapter);verify(n===matches[if(i==0)4 else 7])}
   }
   verify(Native.liveHandles==0)
+  if(!baseline){
+   // A vid is relative to the node's own package, never android:id or another app.
+   for((full,expected) in listOf("test.app:id/skip" to "skip", "android:id/skip" to null,
+       "other.app:id/skip" to null, "malformed" to null, null to null)){
+    AndroidSkipTree(Native(Native.Data(999,"text",full)),reader).use { tree ->
+     verify(tree.root().attrs["vid"]==expected)
+    }
+   }
+   verify(Native.liveHandles==0)
+  }
   // A new inspection must observe changed positive AND formerly empty results.
   val dynamic=Native.Data(100,null,null);val child=Native.Data(101,"广告",null);dynamic.add(child)
   AndroidSkipTree(Native(dynamic),reader).use{t ->

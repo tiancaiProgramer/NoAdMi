@@ -1,5 +1,11 @@
 # 已知问题：智能跳过执行器
 
+## 0.12.19 GKD 1.13 跟进（预发布）
+
+选择器、组级范围、vid、连续无障碍滑动和有界诊断通过构建/回归；code104已原签名安装，8组隔离实测通过。初始无延迟页面在Activity信息补全时发生一次失效取消并重试，留下两对DOWN/UP；通过样本使用350ms夹具等待，未修改用户规则。锁屏/服务中断、释放拒绝后的恢复及第三方广告仍待验收。Shizuku控制回连超时，普通无障碍借原Root授权恢复；已切回原Shizuku选项，增强连接尚未确认，未重启全局Shizuku。详见 [实机摘要](diagnostics/gkd-compat/gkd-1.13-device-0.12.19.json)。
+
+Root/Shizuku方式和特权输入保持，未整体引入GKD新独立Root/ADB服务、伴生无障碍、快照/HTTP或自更新接口。分段取消仅用于无障碍滑动。详见 [跟进范围](docs/gkd-1.13-followup-0.12.19.md)。下方保留历史验证。
+
 ## 0.12.17 当前恢复范围
 
 当前待测项目统一见 [PENDING_TESTS.md](PENDING_TESTS.md)。当前 MIX Fold 3 的 Root 专项七轮有效开屏提前关闭，四轮无目标开屏的热重开不计入验收；详见 [专项记录](diagnostics/gkd-compat/root-validation-0.12.17.json)。
@@ -85,3 +91,6 @@ LSPosed 的 HyperOS Runtime 原生注入告警仍存在，属于框架环境；�
 ## 服务测试注意
 
 Android 16 对以 NoAdMi 自身为目标的 instrumentation 会停止模块进程，可能留下已启用但断开的状态。服务实测应使用独立夹具进程或正常应用进程，结束后确认真实 `onServiceConnected` 与系统 Bound，不能只看设置值。Root 恢复和 Shizuku 控制的已有证据见 [SMART_SKIP_VERIFICATION.md](SMART_SKIP_VERIFICATION.md)。
+
+
+2026-11-08 Root专项补验：默认Root10组隔离检查、拍机堂3/3轮提前关闭及总开关关闭对照通过；其余真实应用仍待扩大。GKD1.13独立Root特权服务/输入/前台监听尚未接入，不能称为新版Root完整对齐。见 [专项记录](docs/root-mode-0.12.19.md)。

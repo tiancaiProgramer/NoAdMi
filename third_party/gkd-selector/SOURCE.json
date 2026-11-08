@@ -1,0 +1,164 @@
+{
+  "repository": "https://github.com/gkd-kit/gkd",
+  "tag": "v1.13.0",
+  "commit": "0ee5d146a382d1066cddfdb6d0ace9d9563a8464",
+  "license": "GPL-3.0-only",
+  "files": [
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/DefaultSelectorTypeModel.kt",
+      "sha256": "691fd838a3a3fcd5a52bef70b21eea93fcba46ff3547a5a6085d5a5d3feefd5c"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/engine/CompiledUnitSelector.kt",
+      "sha256": "a68415b66d2e3489ab973a7c706e0333747333bea13ed5efd9bb86e1772b1a5a"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/engine/SelectorExpression.kt",
+      "sha256": "94f1f62631c49882c53b0293829fc004cf2efddeabec92a3f1d5df52f00c8d76"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/engine/SelectorProgram.kt",
+      "sha256": "e3c2ee26281479a3e021733c75f1809d4068268d9070ff4649c6b8a396c19ff5"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/FastQuery.kt",
+      "sha256": "cda3e01205f5f512fc2c04d39859309727a8f1d3820a91a231bb8e897a49552f"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/LogicalOperator.kt",
+      "sha256": "454f3192ff47c8dfaabdb22b66336291ae517f73a43bcc05a07b83a2101b0154"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/MatchContext.kt",
+      "sha256": "853897cd5ca47baea25f1ad39b2959f1cf7a258fef3a58216896edb517eac025"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/MatchOptions.kt",
+      "sha256": "5dc66d4fd6b8810c9ec5c05373f4119f5efc78ce458696e14d3c2744302c6a56"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/NodeAdapter.kt",
+      "sha256": "929e417bcb4ec89fc259153854e5e2f73500b021b58d57f80469101b1765da80"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/BuiltinMembers.kt",
+      "sha256": "5df42c46e1ca6d279323ee98d48368b6bf2de8573cb9cb29588ff4fb6558e18e"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/CompareOperator.kt",
+      "sha256": "91c785e6aba900ae270484936911ece46394dde0043409194b96aaf30014cc58"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/ExpressionEvaluator.kt",
+      "sha256": "b9238f771518e5639229ccdcdea0d3357b6edbd8b603645053bf7a455ad935bc"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/ExpressionTypeChecker.kt",
+      "sha256": "28b834efe5fbf782851e983b5f7c6ec73c1ee1dbcd625586430f9445ea23cad9"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/PropertyExpression.kt",
+      "sha256": "0fe27cdef56429546bdc1332df16fc04eb1a835622bb62144bb6133fed9ecc6d"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/PropertySelector.kt",
+      "sha256": "7c52a966f19032a009cb0c73ae4f8651dff770f61ebea2a47cd7b395aed45036"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/RegexCompiler.kt",
+      "sha256": "e4ad6256563b44d3efccfa533e3c674fd369b1dff07c55aeaa0bbdd0b822284b"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/ValueEvaluator.kt",
+      "sha256": "fced4aafc3f77e3597fc867dce55c32468b118a953d93261d275064d9e3c847e"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/property/ValueExpression.kt",
+      "sha256": "994e305abe4581fc1dd3fcd799adf948410c026bf55ee17e83fa879fa7adcb06"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/relation/RelationExpression.kt",
+      "sha256": "f5034971b19e829074d3901c9210a4b058e066d67c19c3f4cac6f339cf774979"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/relation/RelationOperator.kt",
+      "sha256": "c9cfc683d3a3cd99d4c9a864cf0ad8a3b3432088de50eec9b585fca22d7ca463"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/relation/RelationSelector.kt",
+      "sha256": "cad0489db46c809cd8122c05e8ec4ea5be30f9ad51ea65ac37a7325732b2a665"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/Selector.kt",
+      "sha256": "d2b02a67d2abed66b2f75169e78143dfa8b97a728131838ec881256b1a49578d"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorException.kt",
+      "sha256": "db61394e418e8a67c31a727b858e0662dd6f6cb24a75391a302be8371f3ccd97"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorMatch.kt",
+      "sha256": "6f44d3d4c5f94f248ea92ec89a578a988dbd42adf6427097c558d2ed9ae9754b"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorObserver.kt",
+      "sha256": "22846fe6e815487a493065dd9665d3f9f05d5b477e749f48015e95748032d89e"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorPosition.kt",
+      "sha256": "52c493bca7401cf2fd055754f851a0297feb591731387197a0645875471e09d3"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorResults.kt",
+      "sha256": "fe8f4972242ed44ce6a9c37e607d6fb879dd629135a0bc4ff3c75b8251cfe566"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorToken.kt",
+      "sha256": "995a74d73bddf5ee82f8c1a5d6cd28ce6faf824f5c7eb3ab8de71aaba1dffe13"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/SelectorTypeModel.kt",
+      "sha256": "18c18b07705a4c2f50e05b5fbca485c785ed3527ca6595495b53f2ada54ff137"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/ParserContext.kt",
+      "sha256": "3e3a54c8f7872703bdda526a2fb3b94fd4f671404f3461c4333a4316449679ff"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/ParserCursor.kt",
+      "sha256": "1dfdf814d35be435675f5b8d467c2867dea152537bed4b46c346384632339b5e"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/PositionRecorder.kt",
+      "sha256": "f9a8372c669cfe72bf54433a267fd12b4f8f9246408e998ced777fd2a5838d61"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/PropertySyntaxParser.kt",
+      "sha256": "3e0308785c8613bcd58e6f3ea6ed8aece18ea0609eacb9930f3b58087d868d2a"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/RelationSyntaxParser.kt",
+      "sha256": "69db61939acc85d390855f7fd4d3d8e481dd53f1faef2f59ceea8372c9396fbb"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/SelectorParser.kt",
+      "sha256": "06b773e53ba993b9240aff9132c0ee83bec7fdbfd9de01a4b48bf760b0c286bf"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/SelectorPrinter.kt",
+      "sha256": "db325d6816c00eef69f6b6b71f6510730abaed2073f3ffe4e29ec09572494c86"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/SelectorTokenizer.kt",
+      "sha256": "53747dfc3969ffe97077dc8b39bac9b21f3c5366179f52f164f281b2c33366c5"
+    },
+    {
+      "path": "gkd-selector/src/commonMain/kotlin/li/gkd/selector/syntax/StringScanner.kt",
+      "sha256": "60a62ed82d73fbfd7a1f7a944b8b614f6d35ebe2260e99d2a00bbcc755f09c26"
+    },
+    {
+      "path": "gkd-selector/src/jvmMain/kotlin/li/gkd/selector/property/RegexCompiler.jvm.kt",
+      "sha256": "2a55ec6d193c65184e5dc201f421b1c4833a26719d822b7766f52bcb441cda76"
+    }
+  ]
+}

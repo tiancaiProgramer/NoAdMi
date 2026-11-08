@@ -16,6 +16,7 @@ import li.gkd.app.subscription.RawSubscription
 import li.gkd.app.subscription.RuleBounds
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.roundToInt
 
 open class SkipAccessibilityService : AccessibilityService() {
     private lateinit var thread: HandlerThread
@@ -36,6 +37,7 @@ open class SkipAccessibilityService : AccessibilityService() {
     private var lastTriggerTime = 0L
     private var lastEventTime = 0L
     private var lastEventDiagnostic = 0L
+    private var nextSelectorSample = 0L
     private val stateEpoch = java.util.concurrent.atomic.AtomicLong()
     private lateinit var eventThread: HandlerThread
     private lateinit var eventWorker: Handler
@@ -86,6 +88,8 @@ open class SkipAccessibilityService : AccessibilityService() {
     private var packageReceiverRegistered = false
     private var session = SkipSession { SystemClock.elapsedRealtime() }
     private var gesturePending = false
+    @Volatile private var activeSwipe: SkipGestureSequence<GestureDescription.StrokeDescription>? = null
+    private var gestureId = 0L
     private val schedule = SkipCheckSchedule()
     private val followup = SkipFollowupSchedule()
     private var actionFailure = ""
@@ -189,6 +193,7 @@ open class SkipAccessibilityService : AccessibilityService() {
     }
     override fun onServiceConnected() {
         super.onServiceConnected()
+        activeSwipe?.cancel(); activeSwipe = null; gestureId++; gesturePending = false
         if (::repository.isInitialized) repository.preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener)
         if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); thread.quitSafely() }
         repository = SkipRepository.get(this)
@@ -345,7 +350,8 @@ open class SkipAccessibilityService : AccessibilityService() {
         var inspectedWindow = start.windowId
         var origin = if (fromEvent) "event" else "root"
         var previousNodeCount = 0
-        fun detail() = "window=$inspectedWindow display=0 origin=$origin scene=${activityTracker.current.generation} activity=$activity stage=$stage runtime=${SkipRuntimeClient.status} fastCounts=${nodes.queryCounts} reads=${nodes.nativeReads} parents=${nodes.parentReads} queryHits=${nodes.fastQueryHits}"
+        val selectorMetrics = if (started >= nextSelectorSample) SkipSelectorMetrics().also { nextSelectorSample = started + 2000 } else null
+        fun detail() = "window=$inspectedWindow display=0 origin=$origin scene=${activityTracker.current.generation} activity=$activity stage=$stage runtime=${SkipRuntimeClient.status} fastCounts=${nodes.queryCounts} reads=${nodes.nativeReads} parents=${nodes.parentReads} queryHits=${nodes.fastQueryHits} selector=${selectorMetrics?.summary().orEmpty()}"
         try {
             var tree = nodes.root()
             var refreshAfterAction = false
@@ -366,7 +372,7 @@ open class SkipAccessibilityService : AccessibilityService() {
                     tree = nodes.root(); refreshAfterAction = false
                 }
                 val target = rule.query(tree, excluded = { outcome = "excluded" }, adapter = nodes.adapter,
-                    stage = { stage = "${rule.identity}/$it" }, windowRootProvider = { nodes.windowRoot { currentRoot() } })
+                    stage = { stage = "${rule.identity}/$it" }, windowRootProvider = { nodes.windowRoot { currentRoot() } }, observer = selectorMetrics)
                 if (target == null) { session.missed(rule); continue }
                 if (!session.matched(rule)) continue
                 // GKD checks current event/app/rule state before action. A new
@@ -403,7 +409,8 @@ open class SkipAccessibilityService : AccessibilityService() {
         val actionGeneration = activityTracker.current.generation
         var inputMs = 0L
         var gestureStarted: Long? = null
-        fun stillCurrent() = !repository.isWhitelisted(app) && session === actionSession && eventApp == app && activityTracker.current.generation == actionGeneration && repository.sources.revision == actionRevision
+        fun stillCurrent() = connected && screenInteractive && repository.enabled && !repository.isWhitelisted(app) &&
+            session === actionSession && eventApp == app && activityTracker.current.generation == actionGeneration && repository.sources.revision == actionRevision
         actionFailure = "unsupported"
         fun rejected(reason: String): Boolean { actionFailure = reason; return false }
         if (repository.isWhitelisted(app)) return rejected("whitelisted")
@@ -448,6 +455,9 @@ open class SkipAccessibilityService : AccessibilityService() {
         fun inside(p: Pair<Float, Float>) = p.first.isFinite() && p.second.isFinite() && p.first >= 0 && p.second >= 0 &&
             p.first < metrics.widthPixels && p.second < metrics.heightPixels
         if (!inside(start) || !inside(end)) return rejected("offscreen")
+        if (action == "swipe" && listOf(start, end).any {
+                !inside(it.first.roundToInt().toFloat() to it.second.roundToInt().toFloat())
+            }) return rejected("offscreen")
         val duration = if (action == "swipe") raw.swipeArg!!.duration else if (action.startsWith("long")) 500L else android.view.ViewConfiguration.getTapTimeout().toLong()
         if (duration !in 1..60000L) return false
         // GKD prefers its Shizuku input worker for coordinate actions. Native
@@ -470,7 +480,52 @@ open class SkipAccessibilityService : AccessibilityService() {
                 return rejected(if (result == 2) "privileged_uncertain" else "privileged_stale")
             }
         }
-        val path = Path().apply { moveTo(start.first, start.second); if (action == "swipe") lineTo(end.first, end.second) }
+        val currentGesture = ++gestureId
+        if (action == "swipe") {
+            gesturePending = true
+            gestureStarted = SystemClock.elapsedRealtime()
+            val sequence = SkipGestureSequence<GestureDescription.StrokeDescription>(
+                start.first, start.second, end.first, end.second, duration,
+                valid = ::stillCurrent,
+                now = { SystemClock.elapsedRealtime() },
+                later = { delay, task -> noticeHandler.postDelayed({ task() }, delay) },
+                create = { previous, segment ->
+                    val segmentPath = Path().apply {
+                        moveTo(segment.start.x.toFloat(), segment.start.y.toFloat())
+                        if (segment.start != segment.end) lineTo(segment.end.x.toFloat(), segment.end.y.toFloat())
+                    }
+                    previous?.continueStroke(segmentPath, 0, segment.duration, segment.continues)
+                        ?: GestureDescription.StrokeDescription(segmentPath, 0, segment.duration, segment.continues)
+                },
+                dispatch = { stroke, done ->
+                    val builder = GestureDescription.Builder().addStroke(stroke)
+                    if (android.os.Build.VERSION.SDK_INT >= 30) builder.setDisplayId(displayId)
+                    dispatchGesture(builder.build(), object : GestureResultCallback() {
+                        override fun onCompleted(gesture: GestureDescription?) { done(true) }
+                        override fun onCancelled(gesture: GestureDescription?) { done(false) }
+                    }, Handler(mainLooper))
+                },
+                finished = { completed, reason ->
+                    worker.post {
+                        if (gestureId != currentGesture) return@post
+                        activeSwipe = null
+                        if (reason == "gesture_release_unconfirmed") {
+                            // Do not start another input while Android may still own a
+                            // down pointer. A real service reconnection resets the lane.
+                            gesturePending = true
+                            repository.record(rule, app, "滑动结束未确认，已暂停动作，请重新连接无障碍服务")
+                            return@post
+                        }
+                        gesturePending = false
+                        if (completed && stillCurrent()) { success("swipe", "连续无障碍手势完成"); requestCheck(0) }
+                        else if (connected) { repository.record(rule, app, "滑动未完成（$reason）"); retry() }
+                    }
+                },
+            )
+            activeSwipe = sequence
+            return sequence.start().also { if (!it) { gesturePending = false; actionFailure = "gesture_rejected" } }
+        }
+        val path = Path().apply { moveTo(start.first, start.second) }
         val builder = GestureDescription.Builder().addStroke(GestureDescription.StrokeDescription(path, 0, duration))
         if (android.os.Build.VERSION.SDK_INT >= 30) builder.setDisplayId(displayId)
         val gesture = builder.build()
@@ -484,8 +539,9 @@ open class SkipAccessibilityService : AccessibilityService() {
         if (!accepted) { gesturePending = false; actionFailure = "gesture_rejected" }
         return accepted
     }
-    override fun onInterrupt() { if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); schedule.consume(); followup.clear(); clearEvents() } }
+    override fun onInterrupt() { if (::worker.isInitialized) { worker.removeCallbacksAndMessages(null); schedule.consume(); followup.clear(); clearEvents() }; activeSwipe?.cancel() }
     override fun onDestroy() {
+        activeSwipe?.cancel()
         runtime?.close(); runtime = null
         noticeHandler.removeCallbacksAndMessages(null); noticeOverlay?.dismiss(); noticeOverlay = null
         removeAliveView()

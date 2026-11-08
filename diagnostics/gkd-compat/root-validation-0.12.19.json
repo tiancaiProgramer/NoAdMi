@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-08",
+  "version": "0.12.19-preview",
+  "versionCode": 104,
+  "apkSha256": "b374a11e47a6c5381099a5f4489f7c770c31b76e2dfbfc58ad9724d4d842034f",
+  "device": {
+    "model": "MIX Fold 3",
+    "android": 16,
+    "installedGkd": "1.12.1/92"
+  },
+  "mode": {
+    "method": "root",
+    "inputSelection": 0,
+    "coordinateRoute": "accessibility",
+    "gkdOff": true,
+    "noadmiPrivilegedRuntimeWorkerAbsent": true,
+    "fixtureMatchDelayMs": 350,
+    "touchElapsedTimeBasis": "Milliseconds from actual DOWN to UP/CANCEL; not disabling response time or ad latency."
+  },
+  "isolatedCases": [
+    {
+      "case": "tap",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "up": 1,
+        "elapsed": 97
+      },
+      "actionResults": [
+        "已执行 clickCenter（无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "long",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "up": 1,
+        "elapsed": 504
+      },
+      "actionResults": [
+        "已执行 longClickCenter（无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "normal",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 146,
+        "up": 1,
+        "elapsed": 1228
+      },
+      "actionResults": [
+        "已执行 swipe（连续无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "stationary",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 1,
+        "up": 1,
+        "elapsed": 1015
+      },
+      "actionResults": [
+        "已执行 swipe（连续无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "master",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 24,
+        "up": 1,
+        "elapsed": 207
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "whitelist",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 24,
+        "up": 1,
+        "elapsed": 209
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "source",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 36,
+        "up": 1,
+        "elapsed": 307
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "navigate",
+      "passed": true,
+      "actualTouch": {
+        "maxPointers": 1,
+        "down": 1,
+        "move": 18,
+        "endShown": true,
+        "cancel": 1,
+        "elapsed": 203
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "scope_block",
+      "passed": true,
+      "actualTouch": {},
+      "actionResults": []
+    },
+    {
+      "case": "scope_allow",
+      "passed": true,
+      "actualTouch": {
+        "clicked": 1
+      },
+      "actionResults": [
+        "已执行 clickNode（节点接口返回成功）"
+      ]
+    }
+  ],
+  "productionRootUiControl": {
+    "enable": true,
+    "disable": true,
+    "reenable": true
+  },
+  "realAdTrials": [
+    {
+      "id": "pjt-root-1",
+      "masterEnabled": true,
+      "targetSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "countdownObserved": "3 then home before countdown completed",
+      "newNoAdMiActions": 1,
+      "actualAction": "clickNode",
+      "videoSha256": "02f58a6471d2e5ba9b5339b3853d4ab84a92fe108037746b4774880760391fdd"
+    },
+    {
+      "id": "pjt-master-off",
+      "masterEnabled": false,
+      "targetSplashObserved": true,
+      "earlyClosureVisuallyVerified": false,
+      "countdownObserved": "3->2->1",
+      "newNoAdMiActions": 0,
+      "actualAction": null,
+      "videoSha256": "2d5e75863b0be06d5fb7db760e91265708ac583cbe7b32561ecb7aeaa0b09214"
+    },
+    {
+      "id": "pjt-root-2",
+      "masterEnabled": true,
+      "targetSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "countdownObserved": "3 then home before countdown completed",
+      "newNoAdMiActions": 1,
+      "actualAction": "clickNode",
+      "videoSha256": "36a7131bda53ba732d7069dbb72ad446947b552e2bfa8c63413a6088fbb83a97"
+    },
+    {
+      "id": "pjt-root-3",
+      "masterEnabled": true,
+      "targetSplashObserved": true,
+      "earlyClosureVisuallyVerified": true,
+      "countdownObserved": "3 then home before countdown completed",
+      "newNoAdMiActions": 1,
+      "actualAction": "clickNode",
+      "videoSha256": "caa964daaee93e21d1cddb865fbafb3cda97673b82400b43d55ac0ad4fad1577"
+    }
+  ],
+  "restoration": {
+    "freshProcessAuditFiles": 13,
+    "mismatches": [],
+    "noadmiBound": true,
+    "otherOriginalServiceBound": true,
+    "originalServiceListRestored": true,
+    "helperRemoved": true,
+    "gkdStillOff": true,
+    "originalMethodRestored": "shizuku",
+    "originalAdvertisingMenuCollapsed": true
+  },
+  "reference": {
+    "gkdRelease": "v1.13.0",
+    "commit": "0ee5d146a382d1066cddfdb6d0ace9d9563a8464",
+    "privKitVersion": "0.17.11",
+    "comparison": "source review, not on-device GKD 1.13 benchmark"
+  },
+  "remainingGaps": [
+    "Independent Root privileged worker not integrated",
+    "Root privileged touch optimization not integrated",
+    "Root foreground-task enhancement not integrated",
+    "Screen-off, platform interruption, rejected-release recovery, wider apps and long-running tests pending",
+    "Original Shizuku enhanced connection remains unconfirmed; Root tests do not mark it passed"
+  ],
+  "productionSourceChanged": false,
+  "publishedDuringTest": false,
+  "releaseTag": "v0.12.19-preview"
+}

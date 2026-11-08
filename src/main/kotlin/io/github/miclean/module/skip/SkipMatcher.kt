@@ -4,6 +4,7 @@ import li.gkd.app.rule.RuleExecutionParameters
 import li.gkd.app.subscription.RawSubscription
 import li.gkd.selector.NodeAdapter
 import li.gkd.selector.Selector
+import li.gkd.selector.SelectorObserver
 
 /** Stable snapshot: selector traversal never mixes nodes from different accessibility events. */
 class SkipNode(val attrs: Map<String, Any?>, val handle: Any? = null,
@@ -67,12 +68,13 @@ class SkipRule(val source: SkipSource, val app: String, val group: RawSubscripti
     val identity = "${source.id}/$app/${group.key}/$index"
     fun query(root: SkipNode, excluded: () -> Unit = {}, adapter: NodeAdapter<SkipNode> = SkipAdapter,
         stage: (String) -> Unit = {}, windowRoot: SkipNode = root,
-        windowRootProvider: (() -> SkipNode)? = null): SkipNode? {
+        windowRootProvider: (() -> SkipNode)? = null,
+        observer: SelectorObserver<SkipNode>? = null): SkipNode? {
         val actualWindow by lazy { windowRootProvider?.invoke() ?: windowRoot }
         val queryRoot by lazy { if (params.matchRoot) actualWindow else root }
         fun query(selector: Selector): SkipNode? =
-            if (selector.isMatchRoot) selector.match(actualWindow, adapter, params.matchOptions)
-            else selector.match(queryRoot, adapter, params.matchOptions) ?: adapter.querySelector(queryRoot, selector, params.matchOptions)
+            if (selector.isMatchRoot) selector.match(actualWindow, adapter, params.matchOptions, observer)
+            else selector.match(queryRoot, adapter, params.matchOptions, observer) ?: adapter.querySelector(queryRoot, selector, params.matchOptions, observer)
         var target: SkipNode? = null
         if (params.anyMatches.isNotEmpty()) target = params.anyMatches.withIndex().firstNotNullOfOrNull {
             stage("any/${it.index}"); query(it.value)
@@ -122,7 +124,9 @@ object SkipScope {
         val parent = group.apps.orEmpty().lastOrNull { it.id == app }
         val child = raw.apps.orEmpty().lastOrNull { it.id == app }
         if (parent?.enable == false) return false
-        if (parent == null && child == null) {
+        // GKD 1.13: only group.apps explicitly includes an application.
+        // A child apps entry overrides activity/version restrictions, not scope.
+        if (parent == null) {
             if (launcher && group.matchLauncher != true) return false
             if (system && group.matchSystemApp != true) return false
             if (group.matchAnyApp == false) return false

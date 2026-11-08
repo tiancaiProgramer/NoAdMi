@@ -1,6 +1,8 @@
 # NoAdMi
 
-> **当前预发布：[0.12.18-r2 / code103](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.18-r2)。** “详情与规则”新增独立应用管理，支持跨订阅规则与全局白名单；原订阅列表及“只看白名单”保持。Fold 3 上 47 项界面检查、5 组真实动作对照通过。[验证摘要](diagnostics/gkd-compat/app-management-0.12.18-r2.json) · [待测试清单](PENDING_TESTS.md)。
+> **当前预发布：[0.12.19-preview / code104](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.19-preview)。** 跟进 GKD 1.13.0 稳定版选择器，修正全局组应用范围与节点 `vid`，补充可失效收尾的连续无障碍滑动和有界诊断。完整构建、原签名和回归通过；已覆盖安装到 Fold 3，8 组隔离实测通过，原设置已恢复。普通无障碍已连接，Shizuku 增强连接尚未确认；Root专项10组隔离及拍机堂3轮实测通过，其他广告待扩验。见 [跟进范围](docs/gkd-1.13-followup-0.12.19.md) · [Root实测](docs/root-mode-0.12.19.md)。
+
+> **历史预发布：[0.12.18-r2 / code103](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.18-r2)。** “详情与规则”新增独立应用管理，支持跨订阅规则与全局白名单；原订阅列表及“只看白名单”保持。Fold 3 上 47 项界面检查、5 组真实动作对照通过。[验证摘要](diagnostics/gkd-compat/app-management-0.12.18-r2.json) · [待测试清单](PENDING_TESTS.md)。
 
 
 > **历史预发布：[0.12.17-preview / code101](https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.17-preview)。** 合入匹配线程、节点读取和 Shizuku 连接恢复优化；保留原签名与原设置。当前实测范围及限制见 [验证记录](SMART_SKIP_VERIFICATION.md)，后续项目见 [待测试清单](PENDING_TESTS.md)。

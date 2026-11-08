@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-08",
+  "status": "validated-prerelease-artifact",
+  "module": {
+    "version": "0.12.19-preview",
+    "versionCode": 104,
+    "apkSha256": "b374a11e47a6c5381099a5f4489f7c770c31b76e2dfbfc58ad9724d4d842034f",
+    "signerSha256": "9baa7091b7b84e4d76c662656a432b2f03d1a8f4322b3762792613ac11daf642",
+    "signatureSchemes": [
+      "v2",
+      "v3"
+    ]
+  },
+  "upstream": {
+    "repository": "https://github.com/gkd-kit/gkd",
+    "release": "v1.13.0",
+    "published": "2026-11-06",
+    "commit": "0ee5d146a382d1066cddfdb6d0ace9d9563a8464",
+    "unchangedSelectorSourceFiles": 39,
+    "subscriptionModelParserPin": "fe6736fb083ba90d7bace124e30b61ff6e5701f2"
+  },
+  "implemented": [
+    "stable commonMain/JVM selector sources",
+    "group-only global application inclusion; child apps only override activity/version",
+    "package-qualified vid",
+    "100ms continuing accessibility swipe segments with stale/cancel final UP and held-pointer input-lane protection",
+    "at most 64 private-free selector event counters per sample, at most one sample per two seconds"
+  ],
+  "validation": {
+    "fullBuild": true,
+    "kotlinSuites": 13,
+    "javaSuites": 27,
+    "nativeAdapterChecks": 414,
+    "newScopeChecks": 21,
+    "newGestureChecks": 48,
+    "newSelectorDiagnosticChecks": 57,
+    "newVidChecks": 6,
+    "sourceBytesMatchedOfficialPin": true,
+    "testDoublesExcludedFromApk": true,
+    "originalSignatureVerified": true,
+    "deviceTestsRun": true,
+    "isolatedPhysicalCasesPassed": 8,
+    "deviceReport": "gkd-1.13-device-0.12.19.json",
+    "installedApkHashMatches": true,
+    "originalDataFreshProcessAuditFiles": 13,
+    "rootModeDeviceReport": "root-validation-0.12.19.json",
+    "rootDefaultPhysicalCasesPassed": 10,
+    "pjtRootEarlyClosures": 3,
+    "pjtMasterOffControlPassed": true
+  },
+  "preserved": [
+    "source document format",
+    "existing rules and delays/cooldowns",
+    "subscription and global whitelist separation",
+    "saved-off controls",
+    "Root/Shizuku selection and existing privileged input routes"
+  ],
+  "notImported": [
+    "GKD standalone Root/ADB/manual-start privileged stack",
+    "companion accessibility mode",
+    "snapshot and HTTP APIs",
+    "self-install/update",
+    "full upstream editor/statistics UI"
+  ],
+  "limitations": [
+    "Initial no-delay fixture produced one stale cancellation and retry while activity metadata settled (two DOWN/UP pairs); retained as a limitation, not counted as a clean pass.",
+    "Eight passing fixtures use a 350ms match delay to isolate gesture and scope behavior after the page settles; durations are gesture measurements, not ad-skip latency.",
+    "Lock/screen-off, platform service interruption, rejected release and reconnect recovery remain pending physical tests.",
+    "Per-rule disabling, child activity/version overrides and wider whitelist combinations remain pending physical tests.",
+    "Shizuku privileged input was not reaccepted; subsequent default Root tests passed 10 isolated cases and 3 PJT early closures plus a master-off control. Other apps remain pending.",
+    "No GKD speed, CPU or battery equivalence conclusion.",
+    "Shizuku control reconnect timed out; ordinary accessibility binding restored via original Root grant, then original Shizuku choice restored. Enhanced connection remains unconfirmed.",
+    "Segmented cancellation applies only to accessibility swipes, not current privileged input."
+  ],
+  "publication": {
+    "releaseTag": "v0.12.19-preview",
+    "releaseUrl": "https://github.com/tiancaiProgramer/NoAdMi/releases/tag/v0.12.19-preview",
+    "prerelease": true,
+    "note": "Publication is verified separately against the GitHub release API; these checks describe the unchanged tested APK."
+  }
+}

@@ -4,6 +4,28 @@ Source: https://github.com/gkd-kit/gkd
 Commit: 5a00f844989471458e4cf4601acb3f4710438f9a (installed GKD 1.12.1 / 92)
 License: GPL-3.0-only; see the project LICENSE and THIRD_PARTY_NOTICES.md.
 
+## 0.12.19 stable-release follow-up (2026-11-08)
+
+Additional source: GKD v1.13.0 / 0ee5d146a382d1066cddfdb6d0ace9d9563a8464.
+The unmodified GlobalRule, RuleScopePolicy, ContinuousSwipe, A11yGestures and
+A11yNodes files in reference/v1.13.0 are review material, not compiled services.
+NoAdMi adapts group-only global application inclusion, package-qualified vid
+handling and 100ms continuing accessibility swipe segments. Invalidated scenes,
+master/source/whitelist changes and shutdown stop further segments; a held pointer
+receives a final stationary UP before the action lane is released. A rejected
+release pauses further input until service reconnection. Existing enhanced-input
+routes are retained and are not claimed to support this accessibility-only
+cancellation path. Bounded selector event counts sample once per two seconds,
+without storing expression strings, node values, screen text or trees.
+
+The complete compiled selector is separately updated under ../gkd-selector.
+Root/Shizuku transport, companion accessibility, generic ADB/manual privileged
+startup, HTTP/snapshot APIs and self-update/install are not imported from 1.13.0.
+Existing settings, input selection and private data formats are preserved. Device
+ad-scene and actual continuing-stroke acceptance remain separate from JVM tests.
+
+The following sections describe earlier pins and validation, not new acceptance.
+
 0.12.13 additionally follows the service component class declared in the pinned
 [upstream manifest](https://github.com/gkd-kit/gkd/blob/5a00f844989471458e4cf4601acb3f4710438f9a/app/src/main/AndroidManifest.xml):
 `com.google.android.accessibility.selecttospeak.SelectToSpeakService`.

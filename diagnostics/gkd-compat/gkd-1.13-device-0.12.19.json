@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-08",
+  "moduleVersion": "0.12.19-preview",
+  "versionCode": 104,
+  "device": {
+    "name": "MIX Fold 3",
+    "model": "2308CPXD0C",
+    "android": "16",
+    "api": "36"
+  },
+  "installedApkSha256": "b374a11e47a6c5381099a5f4489f7c770c31b76e2dfbfc58ad9724d4d842034f",
+  "originalSignatureVerified": true,
+  "testSetup": {
+    "isolatedOwnFixture": true,
+    "inputMode": "ACCESSIBILITY",
+    "accessMethodDuringTests": "root",
+    "fixtureMatchDelayMs": 350,
+    "productionRuleDelaysChanged": false,
+    "userSubscriptionsTemporarilyDisabledAndRestored": true,
+    "touchElapsedTimeBasis": "Milliseconds from fixture receiving DOWN until UP/CANCEL; not time since disabling and not ad latency."
+  },
+  "cases": [
+    {
+      "case": "normal",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 145,
+        "up": 1,
+        "elapsed": 1227,
+        "maxPointers": 1
+      },
+      "actionResults": [
+        "已执行 swipe（连续无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "stationary",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 1,
+        "up": 1,
+        "elapsed": 1016,
+        "maxPointers": 1
+      },
+      "actionResults": [
+        "已执行 swipe（连续无障碍手势完成）"
+      ]
+    },
+    {
+      "case": "master",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 24,
+        "up": 1,
+        "elapsed": 207,
+        "maxPointers": 1
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "whitelist",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 24,
+        "up": 1,
+        "elapsed": 206,
+        "maxPointers": 1
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "source",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 36,
+        "up": 1,
+        "elapsed": 310,
+        "maxPointers": 1
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "navigate",
+      "passed": true,
+      "touch": {
+        "down": 1,
+        "move": 19,
+        "cancel": 1,
+        "elapsed": 192,
+        "maxPointers": 1,
+        "endShown": true
+      },
+      "actionResults": [
+        "滑动未完成（gesture_stale）"
+      ]
+    },
+    {
+      "case": "scope_block",
+      "passed": true,
+      "touch": {},
+      "actionResults": []
+    },
+    {
+      "case": "scope_allow",
+      "passed": true,
+      "touch": {
+        "clicked": 1
+      },
+      "actionResults": [
+        "已执行 clickNode（节点接口返回成功）"
+      ]
+    }
+  ],
+  "restoration": {
+    "originalFilesCheckedInFreshProcess": 13,
+    "originalFileByteHashesEqual": true,
+    "subscriptionsSettingsAndOriginalRecordsRestored": true,
+    "accessMethodRestored": "shizuku",
+    "advertisingMenuRestoredCollapsed": true,
+    "temporaryFixtureRulesAndRecordsRemoved": true,
+    "phoneBackupCacheRemoved": true,
+    "temporaryHelperRemoved": true,
+    "noadmiAccessibilityBound": true,
+    "otherOriginalAccessibilityServiceBound": true,
+    "accessibilityServiceListMatchesOriginal": true
+  },
+  "connectionCaveat": {
+    "shizukuControlReconnectTimedOut": true,
+    "restoredAccessibilityThroughExistingRootGrant": true,
+    "originalShizukuSelectionRestored": true,
+    "shizukuEnhancedConnectionConfirmed": false,
+    "lastObservedEnhancedUi": "正在连接 Shizuku 增强…",
+    "globalShizukuRestarted": false
+  },
+  "limitations": [
+    "Initial no-delay fixture produced one stale cancellation and retry while activity metadata settled (two DOWN/UP pairs); retained as a limitation, not counted as a clean pass.",
+    "Eight passing fixtures use a 350ms match delay to isolate gesture and scope behavior after the page settles; durations are gesture measurements, not ad-skip latency.",
+    "Lock/screen-off, platform service interruption, rejected release and reconnect recovery remain pending physical tests.",
+    "Per-rule disabling, child activity/version overrides and wider whitelist combinations remain pending physical tests.",
+    "Existing privileged Root/Shizuku input paths and third-party real ads were not reaccepted in this batch.",
+    "No GKD speed, CPU or battery equivalence conclusion."
+  ],
+  "publishedDuringTest": false,
+  "releaseTag": "v0.12.19-preview"
+}

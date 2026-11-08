@@ -84,7 +84,9 @@ class AndroidSkipTree(private val nativeRoot: AccessibilityNodeInfo, private val
         val bounds = Rect(); node.getBoundsInScreen(bounds)
         val id = node.viewIdResourceName
         val baseAttrs = mapOf(
-            "id" to id, "vid" to id?.substringAfter(":id/", ""), "name" to node.className?.toString(),
+            "id" to id, "vid" to node.packageName?.toString()?.let { pkg ->
+                id?.takeIf { it.startsWith("$pkg:id/") }?.substringAfter(":id/")
+            }, "name" to node.className?.toString(),
             "text" to node.text?.toString(), "desc" to node.contentDescription?.toString(),
             "clickable" to node.isClickable, "focusable" to node.isFocusable, "checkable" to node.isCheckable,
             "checked" to node.isChecked, "editable" to node.isEditable, "longClickable" to node.isLongClickable,
