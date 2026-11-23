@@ -67,11 +67,20 @@ final class AccountAdHost {
         HookEntry.report("installed account.ad.background bridge");
     }
     private static final class Binding {
+        private static final String FRAGMENT = "com.xiaomi.account.settings.SystemAdFragment";
         final Constructor<?> constructor;
         final Method background,child;
         final Field code,status;
         Binding(ClassLoader loader)throws Exception{
-            Class<?> task=Class.forName("com.xiaomi.account.settings.SystemAdFragment$c",false,loader);
+            Class<?> task;
+            boolean namedBinding;
+            try {
+                task = Class.forName(FRAGMENT + "$QueryAdStatusTask", false, loader);
+                namedBinding = true;
+            } catch (ClassNotFoundException absent) {
+                task = Class.forName(FRAGMENT + "$c", false, loader);
+                namedBinding = false;
+            }
             Constructor<?> selected=null;
             for(Constructor<?> candidate:task.getDeclaredConstructors()){
                 Class<?>[] args=candidate.getParameterTypes();
@@ -82,11 +91,17 @@ final class AccountAdHost {
             }
             if(selected==null)throw new NoSuchMethodException("account ad worker constructor");
             constructor=selected;constructor.setAccessible(true);
-            background=task.getDeclaredMethod("b",Void[].class);background.setAccessible(true);
+            background=task.getDeclaredMethod(namedBinding ? "doInBackground" : "b",Void[].class);
+            background.setAccessible(true);
             Class<?> result=background.getReturnType();
             if(result==Object.class||result.isPrimitive())throw new NoSuchMethodException("account ad result");
-            code=result.getDeclaredField("a");status=result.getDeclaredField("c");
-            if(code.getType()!=int.class||status.getType()!=String.class)throw new NoSuchFieldException("account ad status");
+            if (namedBinding && !result.getName().equals("com.xiaomi.account.data.SystemAdResult"))
+                throw new NoSuchMethodException("account ad result type");
+            code=result.getDeclaredField(namedBinding ? "code" : "a");
+            status=result.getDeclaredField(namedBinding ? "status" : "c");
+            if(code.getType()!=int.class||status.getType()!=String.class
+                    ||Modifier.isStatic(code.getModifiers())||Modifier.isStatic(status.getModifiers()))
+                throw new NoSuchFieldException("account ad status");
             code.setAccessible(true);status.setAccessible(true);
             child=Class.forName("com.xiaomi.accountsdk.account.a",false,loader).getDeclaredMethod("b",Context.class);
             if(child.getReturnType()!=boolean.class||!Modifier.isStatic(child.getModifiers()))throw new NoSuchMethodException("child account guard");

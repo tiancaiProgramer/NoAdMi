@@ -6,8 +6,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.TextView;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,6 +18,8 @@ import org.json.JSONObject;
 
 /** Rules are opt-in and restricted to these two system apps' main UI processes. */
 final class SystemAdHooks {
+    private static final String GAME_ACTIVITY = "com.miui.gamebooster.GameBoosterRichWebActivity";
+
     static void network(ClassLoader loader, SharedPreferences prefs) {
         boolean[] selected = new boolean[Rules.NETWORK_KEYS.length];
         boolean any = false;
@@ -41,14 +46,13 @@ final class SystemAdHooks {
 
     static void game(ClassLoader loader, SharedPreferences prefs) {
         if (prefs.getBoolean(Rules.GAME_RECOMMEND_SWITCH, false)) {
+            if (HyperOsVersion.MAJOR == 4) gameNativeRecommendation(loader);
             try {
                 // The page provider is private to GameBoosterRichWebActivity. Change only
                 // its H5 promotion-layout hint; retain language, GPU, account and native region.
-                Class<?> cls = Reflect.findClass("com.miui.gamebooster.GameBoosterRichWebActivity$13", loader);
                 Class<?> contract = Reflect.findClass("com.miui.securityadd.richweb.bridge.IPageProvider", loader);
-                if (!contract.isAssignableFrom(cls)) throw new NoSuchMethodException("page provider contract");
-                Method method = cls.getDeclaredMethod("getConfiguration");
-                if (method.getReturnType() != String.class) throw new NoSuchMethodException("configuration result");
+                Method method = gameMethod(loader, HyperOsVersion.MAJOR, 13, 14, contract,
+                        "getConfiguration", String.class);
                 HookRuntime.hookMethod(method, new MethodHook() {
                     final AtomicBoolean logged = new AtomicBoolean();
                     @Override protected void afterHookedMethod(Param p) {
@@ -63,7 +67,7 @@ final class SystemAdHooks {
                         } catch (Exception ignored) { /* Unknown page configuration stays intact. */ }
                     }
                 });
-                HookEntry.report("installed system.game.promotion-layout");
+                HookEntry.report("installed system.game.promotion-layout " + method.getDeclaringClass().getName());
             } catch (Throwable e) { HookEntry.report("skip system.game.promotion-layout: " + e.getClass().getSimpleName()); }
             gameEmptyPromotion(loader);
         }
@@ -86,16 +90,44 @@ final class SystemAdHooks {
         }
     }
 
+    private static void gameNativeRecommendation(ClassLoader loader) {
+        try {
+            Class<?> page = Reflect.findClass(
+                    "com.miui.gamebooster.homepage.game.GamePageFragment", loader);
+            Method method = page.getDeclaredMethod("shouldShowRecommendCard");
+            if (method.getReturnType() != boolean.class || Modifier.isStatic(method.getModifiers()))
+                throw new NoSuchMethodException("native recommendation visibility");
+            HookRuntime.hookMethod(method, new MethodHook() {
+                private final AtomicBoolean checked = new AtomicBoolean();
+                private final AtomicBoolean hidden = new AtomicBoolean();
+
+                @Override protected void afterHookedMethod(Param p) {
+                    if (p.hasThrowable()) return;
+                    if (checked.compareAndSet(false, true))
+                        HookEntry.report("checked system.game.native-recommendation");
+                    if (!Boolean.TRUE.equals(p.getResult())) return;
+                    p.setResult(Boolean.FALSE);
+                    if (hidden.compareAndSet(false, true))
+                        HookEntry.report("hit system.game.native-recommendation");
+                }
+            });
+            HookEntry.report("installed system.game.native-recommendation");
+        } catch (Throwable e) {
+            HookEntry.report("skip system.game.native-recommendation: " + e.getClass().getSimpleName());
+        }
+    }
+
     private static void gameEmptyPromotion(ClassLoader loader) {
         try {
-            Reflect.findAndHookMethod("com.miui.gamebooster.GameBoosterRichWebActivity$10", loader,
-                "onPageFinished", android.webkit.WebView.class, String.class, new MethodHook() {
+            Method method = gameMethod(loader, HyperOsVersion.MAJOR, 10, 11, WebViewClient.class,
+                    "onPageFinished", void.class, WebView.class, String.class);
+            HookRuntime.hookMethod(method, new MethodHook() {
                     @Override protected void afterHookedMethod(Param p) {
-                        if (p.hasThrowable() || !(p.args[0] instanceof android.webkit.WebView)) return;
+                        if (p.hasThrowable() || !(p.args[0] instanceof WebView)) return;
                         android.net.Uri uri = android.net.Uri.parse(String.valueOf(p.args[1]));
                         if (!"https".equals(uri.getScheme()) || !"gamespace.sec.miui.com".equals(uri.getHost())
                                 || !("/".equals(uri.getPath()) || "".equals(uri.getPath()))) return;
-                        android.webkit.WebView web = (android.webkit.WebView) p.args[0];
+                        WebView web = (WebView) p.args[0];
                         // Match the empty-game promotion's three unique siblings. No global
                         // DOM text scan, network filter, localStorage or settings mutation.
                         String script = "(()=>{if(window.__noadmiEmptyPromotion)return;"
@@ -109,8 +141,26 @@ final class SystemAdHooks {
                         HookEntry.report("applied system.game.empty-promotion observer");
                     }
                 });
-            HookEntry.report("installed system.game.empty-promotion");
+            HookEntry.report("installed system.game.empty-promotion " + method.getDeclaringClass().getName());
         } catch (Throwable e) { HookEntry.report("skip system.game.empty-promotion: " + e.getClass().getSimpleName()); }
+    }
+
+    static Method gameMethod(ClassLoader loader, int osMajor, int legacy, int os4,
+            Class<?> contract, String name, Class<?> result, Class<?>... parameters)
+            throws NoSuchMethodException {
+        // SecurityAdd updates independently of the ROM, so verify both known declarations.
+        int[] candidates = osMajor == 4 ? new int[]{os4, legacy} : new int[]{legacy, os4};
+        for (int candidate : candidates) {
+            try {
+                Class<?> cls = Class.forName(GAME_ACTIVITY + "$" + candidate, false, loader);
+                if (!contract.isAssignableFrom(cls)) continue;
+                Method method = cls.getDeclaredMethod(name, parameters);
+                if (method.getReturnType() == result && !Modifier.isStatic(method.getModifiers())) return method;
+            } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+                // Try the other audited declaration.
+            }
+        }
+        throw new NoSuchMethodException(GAME_ACTIVITY + "#" + name);
     }
 
     private static final class NetworkWatcher implements ViewTreeObserver.OnGlobalLayoutListener,
