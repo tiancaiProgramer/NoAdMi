@@ -35,6 +35,11 @@ public final class NativeAdRulesTest {
             try { NativeAdRules.group(bad); throw new AssertionError(); }
             catch (IllegalArgumentException expected) { count++; }
         }
+        check(NativeAdRules.forInstalled(java.util.Collections.emptySet()).isEmpty());
+        java.util.Set<String> installed = new HashSet<>(java.util.Arrays.asList("com.android.settings", "com.miui.weather2"));
+        java.util.List<NativeAdRules.Entry> available = NativeAdRules.forInstalled(installed);
+        check(available.size() == 3);
+        for (NativeAdRules.Entry entry : available) check(installed.contains(entry.pkg));
         check(NativeAdRules.groups().size() == 8);
         check(NativeAdRules.backgroundWriteCount() == 11);
         for (NativeAdRules.Entry entry : NativeAdRules.ENTRIES)

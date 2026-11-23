@@ -2,6 +2,7 @@ package io.github.miclean.module;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /** Fixed official toggle definitions, independently checked against native settings code. */
 final class NativeAdRules {
@@ -40,6 +41,11 @@ final class NativeAdRules {
         new Entry("calendar_content", "calendar", "com.android.calendar", "日历 · 内容推广", "com.android.calendar_preferences",
             "user_experience_preferences", "key_content_promotion", PREFS, "key_content_promotion")
     };
+    static List<Entry> forInstalled(Set<String> packages) {
+        List<Entry> result = new ArrayList<>();
+        for (Entry entry : ENTRIES) if (packages.contains(entry.pkg)) result.add(entry);
+        return result;
+    }
     static Entry find(String id) {
         for (Entry e : ENTRIES) if (e.id.equals(id)) return e;
         throw new IllegalArgumentException("未知广告开关");

@@ -4,7 +4,7 @@ public final class SettingCountsTest {
     static int checks;
     public static void main(String[] args) {
         // Exercise every partial/all/off combination for all five group sizes.
-        for (int total : new int[]{2, 7, 2, 2, 4}) {
+        for (int total : new int[]{2, 7, 2, 2, 2, 2}) {
             for (int mask = 0; mask < (1 << total); mask++) {
                 SettingCounts counts = new SettingCounts();
                 for (int i = 0; i < total; i++) counts.include(true, (mask & (1 << i)) != 0);
@@ -24,16 +24,21 @@ public final class SettingCountsTest {
                 check(counts.settingsSummary().endsWith("（另有 2 项不可用）"));
             }
         }
-        // The unified App-ad master covers all 19 advertising keys, including recharge.
-        for (int selected = 0; selected <= 19; selected++) {
+        // The unified App-ad master covers up to 17 displayed advertising switches.
+        for (int selected = 0; selected <= 17; selected++) {
             SettingCounts counts = new SettingCounts();
-            for (int i = 0; i < 19; i++) counts.include(true, i < selected);
-            check(counts.available == 19 && counts.enabled == selected);
-            check(counts.allEnabled() == (selected == 19));
-            check(counts.state().equals(selected == 0 ? "全部关闭" : selected == 19 ? "全部开启" : "部分开启"));
+            for (int i = 0; i < 17; i++) counts.include(true, i < selected);
+            check(counts.available == 17 && counts.enabled == selected);
+            check(counts.allEnabled() == (selected == 17));
+            check(counts.state().equals(selected == 0 ? "全部关闭" : selected == 17 ? "全部开启" : "部分开启"));
             counts.include(false, true);
-            check(counts.available == 19 && counts.enabled == selected && counts.unavailable == 1);
+            check(counts.available == 17 && counts.enabled == selected && counts.unavailable == 1);
         }
+        SettingCounts mixed = new SettingCounts();
+        mixed.include(1, 3);
+        check(!mixed.allEnabled() && mixed.state().equals("部分开启"));
+        check(mixed.available == 1 && mixed.enabled == 0);
+        check(mixed.advertisingSummary().contains("部分开启 1 项"));
         SettingCounts absent = new SettingCounts();
         absent.include(false, true);
         check(!absent.allEnabled());

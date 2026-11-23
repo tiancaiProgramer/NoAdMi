@@ -29,28 +29,67 @@ public final class BulkUiSmoke extends Instrumentation {
     void officialPanel(Switch appMaster) throws Exception {
         ClassLoader loader=getTargetContext().getClassLoader();
         Class<?> type=loader.loadClass("io.github.miclean.module.NativeAdsPanel"),notice=loader.loadClass("io.github.miclean.module.NativeAdsPanel$Notice");
-        Constructor<?> constructor=type.getDeclaredConstructor(Activity.class,LinearLayout.class,notice);constructor.setAccessible(true);
+        List<?> entries = (List<?>)field(field(activity, "nativeAds"), "entries");
+        int total = entries.size();
+        Constructor<?> constructor=type.getDeclaredConstructor(Activity.class,LinearLayout.class,notice,List.class);constructor.setAccessible(true);
         LinearLayout detached=new LinearLayout(activity);detached.setOrientation(LinearLayout.VERTICAL);
-        Object panel=constructor.newInstance(activity,detached,Proxy.newProxyInstance(loader,new Class<?>[]{notice},(proxy,method,args)->null));
+        Object panel=constructor.newInstance(activity,detached,Proxy.newProxyInstance(loader,new Class<?>[]{notice},(proxy,method,args)->null),entries);
         Switch close=(Switch)field(panel,"close");TextView state=(TextView)field(panel,"closeState");
         check(close.getMinHeight()==appMaster.getMinHeight(),"Official master has different height");
         check(close.getPaddingTop()==appMaster.getPaddingTop()&&close.getTextSize()==appMaster.getTextSize(),"Official master has different row style");
         for(int i=0;i<detached.getChildCount();i++)check(!(detached.getChildAt(i) instanceof Button) || detached.getChildAt(i) instanceof CompoundButton,"Large button in official settings");
-        check(!close.isChecked()&&state.getText().toString().contains("未确认 11 项"),"Unread states falsely complete");
-        Map<?,?> rows=(Map<?,?>)field(panel,"rows");check(rows.size()==11,"Official setting count changed");
+        check(!close.isChecked()&&state.getText().toString().contains("未确认 "+total+" 项"),"Unread states falsely complete");
+        Map<?,?> rows=(Map<?,?>)field(panel,"rows");check(rows.size()==total,"Official setting count changed");
         Map<String,JSONObject> states=new LinkedHashMap<>();
         for(Object key:rows.keySet())states.put((String)key,new JSONObject().put("id",key).put("ok",true).put("enabled",false).put("writable",true));
         Method apply=type.getDeclaredMethod("apply",Map.class);apply.setAccessible(true);apply.invoke(panel,states);invoke(panel,"controls");
         check(close.isChecked()&&!close.isEnabled(),"Completed close must be checked and disabled");
-        check(state.getText().toString().equals("已关闭 11/11 项 · 已完成"),"Completed count unclear");
+        check(state.getText().toString().equals("已关闭 "+total+"/"+total+" 项 · 已完成"),"Completed count unclear");
         String first=states.keySet().iterator().next();states.get(first).put("enabled",true);apply.invoke(panel,states);invoke(panel,"controls");
         check(!close.isChecked()&&close.isEnabled(),"One official setting on must allow closing");
-        check(state.getText().toString().contains("已关闭 10/11 项")&&state.getText().toString().contains("仍开启 1 项"),"Official enabled count unclear");
+        check(state.getText().toString().contains("已关闭 "+(total-1)+"/"+total+" 项")&&state.getText().toString().contains("仍开启 1 项"),"Official enabled count unclear");
         states.put(first,new JSONObject().put("id",first).put("ok",false).put("error","simulated unread state"));apply.invoke(panel,states);invoke(panel,"controls");
         check(!close.isChecked()&&state.getText().toString().contains("未确认 1 项"),"Failed read falsely complete");
         Field busy=type.getDeclaredField("busy");busy.setAccessible(true);busy.setBoolean(panel,true);invoke(panel,"controls");
         check(!close.isEnabled()&&!((View)field(panel,"refresh")).isEnabled(),"Busy official controls enabled");
         check(!close.isChecked(),"Busy operation falsely complete");
+    }
+    List<String> keys(Switch row) {
+        String tag = (String)row.getTag();
+        if ("network_recharge".equals(tag))
+            return Arrays.asList("system_network_traffic_recharge", "system_network_phone_recharge");
+        if ("network_plan_promotion".equals(tag))
+            return Arrays.asList("system_network_daily_offer", "system_network_sim_offer",
+                    "system_network_product_promotion");
+        return Collections.singletonList(tag);
+    }
+
+    void verifyMissingMarket(SharedPreferences prefs, int presentCount) throws Exception {
+        Field installed = activity.getClass().getDeclaredField("installed");
+        installed.setAccessible(true);
+        Map<?,?> original = (Map<?,?>)installed.get(activity);
+        Map<?,?> withoutMarket = new LinkedHashMap<>(original);
+        boolean hadMarket = withoutMarket.remove("com.xiaomi.market") != null;
+        Map<String,?> before = new HashMap<>(prefs.getAll());
+        try {
+            installed.set(activity, withoutMarket);
+            invoke(activity, "render");
+            View root = activity.getWindow().getDecorView();
+            check(tagged(root, "group:ad_market") == null, "Uninstalled market category rendered");
+            Map<?,?> officialRows = (Map<?,?>)field(field(activity, "nativeAds"), "rows");
+            check(!officialRows.containsKey("market_personal"), "Uninstalled market official setting rendered");
+            List<Switch> ads = new ArrayList<>();
+            switches(tagged(root, "body:app_ads"), ads);
+            check(ads.size() == presentCount - (hadMarket ? 2 : 0), "Absent market changes advertised count");
+            TextView summary = (TextView)tagged(root, "App 广告隐藏状态");
+            check(summary.getText().toString().contains("/"+ads.size()+" 项"), "Hidden market counted in master");
+            check(before.equals(prefs.getAll()), "Filtering the installed-app list changed a saved setting");
+        } finally {
+            installed.set(activity, original);
+            invoke(activity, "render");
+        }
+        check((tagged(activity.getWindow().getDecorView(), "group:ad_market") != null) == hadMarket,
+                "Market group not restored with package visibility");
     }
     @Override public void onCreate(Bundle args){super.onCreate(args);start();}
     @Override public void callActivityOnCreate(Activity created,Bundle state){super.callActivityOnCreate(created,state);if(created.getClass().getName().equals("io.github.miclean.module.MainActivity"))activity=created;}
@@ -70,25 +109,49 @@ public final class BulkUiSmoke extends Instrumentation {
             check(tagged(root,"group:system_official").getParent()==tagged(root,"group:app_ads").getParent()&&((ViewGroup)tagged(root,"group:system_official").getParent()).indexOfChild(tagged(root,"group:system_official"))<((ViewGroup)tagged(root,"group:app_ads").getParent()).indexOfChild(tagged(root,"group:app_ads")),"Official settings must precede App ads");
             open(root,"app_ads");check(master.isShown()&&master.isEnabled(),"Advertising master unavailable");
             List<Switch> advertising=new ArrayList<>(),functional=new ArrayList<>();switches(ads,advertising);switches(program,functional);
-            check(advertising.size()==19&&functional.size()==29,"19/29 classification count changed");
+            Map<?,?> installed = (Map<?,?>)field(activity, "installed");
+            String[] packages = {"com.xiaomi.smarthome", "com.mi.health", "com.android.browser", "com.xiaomi.market",
+                    "com.miui.securitycenter", "com.miui.securityadd"};
+            String[] groups = {"ad_home", "ad_health", "ad_browser", "ad_market", "ad_network", "ad_game"};
+            int[] counts = {2, 7, 2, 2, 2, 2};
+            int expectedAds = 0;
+            for (int i=0;i<groups.length;i++) {
+                boolean present = installed.containsKey(packages[i]) || (i==1 && installed.containsKey("com.xiaomi.wearable"));
+                check((tagged(root, "group:"+groups[i]) != null) == present, "Package visibility mismatch "+groups[i]);
+                if (present) { expectedAds += counts[i]; open(ads, groups[i]); }
+            }
+            boolean play = installed.containsKey("com.xiaomi.wearable");
+            check(advertising.size()==expectedAds&&functional.size()==(play?29:28),"Displayed classification count changed");
+            check((tagged(root,"health_play_mainland")!=null)==play,"Absent Play-only option rendered");
             for (String id : new String[]{"system_official","app_ads","app_home","app_health","home_tabs","home_mine","health_mine"}) {
                 View heading=tagged(root,"fold:"+id),guide=tagged(root,"guide:"+id);
                 check(heading!=null&&heading.getBackground()!=null,"Nested heading lacks its own surface "+id);
                 check(guide!=null,"Expanded content lacks a nesting guide "+id);
             }
             check(tagged(root,"fold:advertising").getBackground()==null,"Primary heading lost its white-card style");
-            Set<String> eligible=new HashSet<>();for(Switch row:advertising){check(eligible.add((String)row.getTag()),"Duplicate advertising key");check(!row.getText().toString().contains("·"),"Repeated app prefix");}
+            Set<String> eligible=new HashSet<>();
+            for(Switch row:advertising) for(String key:keys(row))
+                check(eligible.add(key),"Duplicate advertising key " + key);
             check(eligible.contains("system_network_traffic_recharge")&&eligible.contains("system_network_phone_recharge"),"Recharge entries not classified as ads");
             for(Switch row:functional)check(!eligible.contains(row.getTag()),"Functional item included in advertising");
-            int headings=0;for(int i=0;i<ads.getChildCount();i++)if(String.valueOf(ads.getChildAt(i).getTag()).startsWith("ad_heading:"))headings++;check(headings==6,"App advertising headings missing");
             open(root,"app_home");open(root,"app_health");
-            for(String key:new String[]{"home_play_mainland","health_play_mainland","health_sport_group"}){Switch row=(Switch)tagged(root,key);String parent=key.startsWith("home")?"body:app_home":"body:app_health";check(row!=null&&row.getParent()==tagged(root,parent),"Single option has extra category "+key);check(row.getMinHeight()==master.getMinHeight(),"Direct and ad row heights differ");check(row.getPaddingLeft()==Math.round(22*activity.getResources().getDisplayMetrics().density),"Direct row text not aligned");}
+            for(String key:new String[]{"home_play_mainland","health_play_mainland","health_sport_group"}){if("health_play_mainland".equals(key)&&!play)continue;Switch row=(Switch)tagged(root,key);String parent=key.startsWith("home")?"body:app_home":"body:app_health";check(row!=null&&row.getParent()==tagged(root,parent),"Single option has extra category "+key);check(row.getMinHeight()==master.getMinHeight(),"Direct and ad row heights differ");check(row.getPaddingLeft()==Math.round(22*activity.getResources().getDisplayMetrics().density),"Direct row text not aligned");}
             for(String id:new String[]{"home_tabs","home_mine","health_mine"}){View header=tagged(root,"fold:"+id);check(header!=null&&header.getMinimumHeight()==master.getMinHeight(),"Fold and direct row heights differ");}
-            Map<String,?> before=new HashMap<>(prefs.getAll());SharedPreferences.Editor seed=prefs.edit();int available=0;for(Switch row:advertising)if(row.isEnabled()){seed.putBoolean((String)row.getTag(),false);available++;}check(available>1,"Insufficient installed test controls");check(seed.commit(),"Seed failed");refresh();
+            Map<String,?> before=new HashMap<>(prefs.getAll());SharedPreferences.Editor seed=prefs.edit();int available=0;for(Switch row:advertising)if(row.isEnabled()){for(String key:keys(row))seed.putBoolean(key,false);available++;}check(available>1,"Insufficient installed test controls");check(seed.commit(),"Seed failed");refresh();
             TextView summary=(TextView)tagged(root,"App 广告隐藏状态");check(summary!=null,"Advertising summary missing");
             check(!master.isChecked()&&summary.getText().toString().startsWith("全部关闭 · 已启用广告隐藏 0/"+available+" 项"),"All-off count unclear");
+            Switch plans = (Switch)tagged(root, "network_plan_promotion");
+            check(plans!=null,"Combined plan switch missing");
+            prefs.edit().putBoolean("system_network_product_promotion",true).commit();
+            refresh();
+            check(!plans.isChecked()&&plans.getText().toString().contains("部分开启"),"Mixed legacy rules not indicated");
+            check(summary.getText().toString().contains("部分开启 1 项"),"Master drops partial group");
+            plans.performClick();
+            for (String key:keys(plans))check(prefs.getBoolean(key,false),"Combined plan did not enable "+key);
+            plans.performClick();
+            for (String key:keys(plans))check(!prefs.getBoolean(key,true),"Combined plan did not disable "+key);
             master.performClick();check(master.isChecked(),"All-on master state missing");
-            for(Switch row:advertising)if(row.isEnabled())check(row.isChecked()&&prefs.getBoolean((String)row.getTag(),false),"Master did not enable "+row.getTag());
+            for(Switch row:advertising)if(row.isEnabled())for(String key:keys(row))check(row.isChecked()&&prefs.getBoolean(key,false),"Master did not enable "+key);
             unchanged(before,prefs.getAll(),eligible);
             master.performClick();check(!master.isChecked(),"Master did not disable");
             for(Switch row:advertising)if(row.isEnabled())check(!row.isChecked(),"Master did not disable "+row.getTag());
@@ -105,10 +168,11 @@ public final class BulkUiSmoke extends Instrumentation {
             // Collapsing either ancestor hides all descendants; expansion keeps nested state.
             tagged(root,"fold:advertising").performClick();check(!master.isShown(),"Parent fold leaks advertising controls");tagged(root,"fold:advertising").performClick();check(master.isShown(),"Nested fold state lost");
             TextView about=text(root,"▸  关于");if(about==null)about=text(root,"▾  关于");check(about!=null,"About missing");ViewGroup card=(ViewGroup)about.getParent(),list=(ViewGroup)card.getParent();check(list.indexOfChild(card)==list.getChildCount()-1,"About not last");
+            verifyMissingMarket(prefs, expectedAds);
         }catch(Throwable failure){error[0]=failure;}finally{try{
             if(prefs!=null&&original!=null){restore(prefs,original);Class<?> settings=getTargetContext().getClassLoader().loadClass("io.github.miclean.module.Settings");Method backup=settings.getDeclaredMethod("backup",Context.class);backup.setAccessible(true);backup.invoke(null,getTargetContext());}
             if(ui!=null&&originalUi!=null)restore(ui,originalUi);invoke(activity,"render");
         }catch(Throwable failure){if(error[0]!=null)error[0].addSuppressed(failure);else error[0]=failure;}}});
-        if(error[0]!=null)throw error[0];result.putString("stream","PASS: "+checks+" classification, 19 ad / 29 program controls, recharge inclusion, all-on/off/partial, isolation, aligned rows, folds and simulated official-state checks; original preferences restored; no official writes.\n");finish(Activity.RESULT_OK,result);
+        if(error[0]!=null)throw error[0];result.putString("stream","PASS: "+checks+" classification, installed App advertising / program controls and combined network switches, recharge inclusion, all-on/off/partial, isolation, aligned rows, folds and simulated official-state checks; original preferences restored; no official writes.\n");finish(Activity.RESULT_OK,result);
     }catch(Throwable failure){result.putString("stream","FAIL: "+failure+"\n");finish(Activity.RESULT_CANCELED,result);}}
 }

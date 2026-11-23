@@ -19,22 +19,32 @@ import org.json.JSONObject;
 /** Rules are opt-in and restricted to these two system apps' main UI processes. */
 final class SystemAdHooks {
     private static final String GAME_ACTIVITY = "com.miui.gamebooster.GameBoosterRichWebActivity";
+    private static final String NETWORK_ACTIVITY = "com.miui.networkassistant.ui.NetworkAssistantActivity";
+    private static final String MAIN_TOOLBAR = "com.miui.networkassistant.ui.view.MainToolbarItemView";
 
     static void network(ClassLoader loader, SharedPreferences prefs) {
         boolean[] selected = new boolean[Rules.NETWORK_KEYS.length];
-        boolean any = false;
+        boolean hideProductPromotions = prefs.getBoolean(Rules.NETWORK_PRODUCT_PROMOTION, false);
+        boolean any = hideProductPromotions;
         for (int i = 0; i < selected.length; i++) {
             selected[i] = prefs.getBoolean(Rules.NETWORK_KEYS[i], false);
             any |= selected[i];
         }
         if (!any) return;
+        if (hideProductPromotions) {
+            try {
+                NetworkProductPromotions.install(loader, Reflect.findClass(NETWORK_ACTIVITY, loader));
+            } catch (Throwable e) {
+                HookEntry.report("skip system.network.product-feed: " + e.getClass().getSimpleName());
+            }
+        }
         try {
-            Reflect.findAndHookMethod("com.miui.networkassistant.ui.NetworkAssistantActivity", loader,
+            Reflect.findAndHookMethod(NETWORK_ACTIVITY, loader,
                 "onCreate", Bundle.class, new MethodHook() {
                     @Override protected void afterHookedMethod(Param p) {
                         if (p.hasThrowable() || !(p.thisObject instanceof Activity)) return;
                         View root = ((Activity) p.thisObject).getWindow().getDecorView();
-                        NetworkWatcher watcher = new NetworkWatcher(root, selected);
+                        NetworkWatcher watcher = new NetworkWatcher(root, selected, hideProductPromotions);
                         root.addOnAttachStateChangeListener(watcher);
                         watcher.observe();
                         watcher.apply();
@@ -167,11 +177,18 @@ final class SystemAdHooks {
             View.OnAttachStateChangeListener {
         final View root;
         final boolean[] selected;
+        final int productListId;
+        boolean productPromotionLogged;
         final boolean[] logged = new boolean[Rules.NETWORK_KEYS.length];
         final Map<View, Integer> hidden = new HashMap<>();
         ViewTreeObserver observer;
         boolean applying;
-        NetworkWatcher(View root, boolean[] selected) { this.root = root; this.selected = selected.clone(); }
+        NetworkWatcher(View root, boolean[] selected, boolean hideProductPromotions) {
+            this.root = root;
+            this.selected = selected.clone();
+            this.productListId = hideProductPromotions
+                    ? root.getResources().getIdentifier("product_list", "id", Rules.SECURITY_CENTER) : 0;
+        }
         void observe() {
             if (!root.isAttachedToWindow()) return;
             if (observer != null && observer.isAlive()) observer.removeOnGlobalLayoutListener(this);
@@ -193,18 +210,26 @@ final class SystemAdHooks {
         }
         void visit(View view) {
             String name = view.getClass().getName();
-            if (name.equals("com.miui.networkassistant.ui.view.MainToolbarItemView")
+            if (name.equals(MAIN_TOOLBAR)
                     || name.equals("com.miui.networkassistant.ui.view.EnhancedToolbarItemView")
                     || name.equals("com.miui.networkassistant.ui.view.EnhancedBannerItemView")) {
                 String titleId = name.endsWith("EnhancedToolbarItemView") ? "tv_tab_title"
                     : name.endsWith("EnhancedBannerItemView") ? "tv_title" : "name";
                 int id = view.getResources().getIdentifier(titleId, "id", Rules.SECURITY_CENTER);
                 View title = id == 0 ? null : view.findViewById(id);
-                int item = title instanceof TextView ? Rules.networkItem(((TextView) title).getText().toString()) : -1;
-                if (item >= 0 && selected[item]) {
+                String text = title instanceof TextView ? ((TextView) title).getText().toString() : null;
+                int item = Rules.networkItem(text);
+                boolean productPromotion = productListId != 0 && name.equals(MAIN_TOOLBAR)
+                        && view.getParent() instanceof View && ((View) view.getParent()).getId() == productListId
+                        && NetworkProductPromotions.matches(text);
+                if ((item >= 0 && selected[item]) || productPromotion) {
                     if (!hidden.containsKey(view)) hidden.put(view, view.getVisibility());
                     if (view.getVisibility() != View.GONE) view.setVisibility(View.GONE);
-                    if (!logged[item]) {
+                    if (productPromotion && !productPromotionLogged) {
+                        productPromotionLogged = true;
+                        HookEntry.report("hit system.network.product-feed-view-fallback");
+                    }
+                    if (item >= 0 && selected[item] && !logged[item]) {
                         logged[item] = true;
                         HookEntry.report("hit " + Rules.NETWORK_KEYS[item]);
                     }

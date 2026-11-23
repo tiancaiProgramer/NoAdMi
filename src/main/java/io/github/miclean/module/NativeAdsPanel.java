@@ -30,6 +30,8 @@ final class NativeAdsPanel {
     private final ProgressBar spinner;
     private final TextView refresh, closeState;
     private final Switch close;
+    private final List<NativeAdRules.Entry> entries;
+    private final Map<String, List<NativeAdRules.Entry>> groups = new LinkedHashMap<>();
     private final Map<String, Row> rows = new LinkedHashMap<>();
     private volatile boolean busy;
     private boolean updating;
@@ -39,8 +41,9 @@ final class NativeAdsPanel {
         Boolean enabled;
         String error;
     }
-    NativeAdsPanel(Activity activity, LinearLayout root, Notice notice) {
+    NativeAdsPanel(Activity activity, LinearLayout root, Notice notice, List<NativeAdRules.Entry> entries) {
         this.activity=activity; this.root=root; this.notice=notice;
+        this.entries=new ArrayList<>(entries);
         LinearLayout status=new LinearLayout(activity);
         status.setOrientation(LinearLayout.HORIZONTAL);status.setGravity(Gravity.CENTER_VERTICAL);
         status.setPadding(0,gap(6),0,gap(6));root.addView(status);
@@ -59,11 +62,14 @@ final class NativeAdsPanel {
         closeState = text("", 12); closeState.setTag("官方广告关闭状态");
         closeState.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         text("仅执行关闭，全部回读确认关闭后显示完成；不会批量开启官方广告。下方单项打开表示官方广告或推荐已开启。", 13);
-        text("需要 Root；本地配置保存时会停止对应应用。系统工具广告另需勾选“小米账号”作用域，并重启账号应用；后台保存由账号服务确认。", 12);
+        text("需要 Root。本地配置保存时会停止对应应用。", 12);
+        if (entries.stream().anyMatch(entry -> entry.kind == NativeAdRules.ACCOUNT))
+            text("系统工具广告需勾选“小米账号”作用域，并重启账号应用。后台保存由账号服务确认。", 12);
         refresh = text("刷新真实开关状态  ↻", 14);
         refresh.setMinHeight(dp(52)); refresh.setGravity(Gravity.CENTER_VERTICAL);
         refresh.setTextColor(Color.rgb(202,88,27)); refresh.setFocusable(true);
-        for (NativeAdRules.Entry e : NativeAdRules.ENTRIES) {
+        for (NativeAdRules.Entry e : entries) {
+            groups.computeIfAbsent(e.group, ignored -> new ArrayList<>()).add(e);
             Row row = new Row(); row.toggle=new Switch(activity); row.toggle.setText(e.title);
             SettingsRow.style(activity, row.toggle);
             row.toggle.setVisibility(View.GONE); root.addView(row.toggle);
@@ -79,12 +85,11 @@ final class NativeAdsPanel {
             // This is a one-way action: an unchecked state never re-enables official ads.
             if (checked) closeAll(); else controls();
         });
-        text("文件管理扩展服务包含云盘等普通功能，不纳入批量关闭；手机管家目前没有已适配的独立官方广告开关。",12);
         controls();
     }
     void refreshIfVisible() { if (root.isShown()) refresh(); }
     void refresh() {
-        if (busy) return;
+        if (busy || rows.isEmpty()) return;
         busy=true; controls(); progress.setText("正在读取广告开关，请稍候…（0/"+rows.size()+"）");
         EXECUTOR.execute(() -> {
             Map<String, JSONObject> states = readAll();
@@ -99,13 +104,15 @@ final class NativeAdsPanel {
     private Map<String,JSONObject> readAll() {
         Map<String,JSONObject> states=new LinkedHashMap<>();
         int completed=0;
-        for(String group:NativeAdRules.groups()) {
-            final int current=completed;
-            final String title=NativeAdRules.group(group).get(0).title;
+        for (Map.Entry<String, List<NativeAdRules.Entry>> group : groups.entrySet()) {
+            final int current = completed;
+            final String title = group.getValue().get(0).title;
             ui(() -> progress.setText("正在读取广告开关，请稍候…（"+current+"/"+rows.size()+"）\n"+title));
-            try { merge(states,NativeAdController.read(activity.getApplicationContext(),group)); }
-            catch(Exception error) { for(NativeAdRules.Entry e:NativeAdRules.group(group)) states.put(e.id,failure(e.id,error)); }
-            completed+=NativeAdRules.group(group).size();
+            try { merge(states, NativeAdController.read(activity.getApplicationContext(), group.getKey())); }
+            catch (Exception error) {
+                for (NativeAdRules.Entry e : group.getValue()) states.put(e.id, failure(e.id, error));
+            }
+            completed += group.getValue().size();
         }
         return states;
     }
@@ -124,12 +131,12 @@ final class NativeAdsPanel {
         });
     }
     private void closeAll() {
-        if(busy)return;
+        if(busy || rows.isEmpty())return;
         busy=true;controls();progress.setText("正在读取并关闭已支持广告开关…");
         EXECUTOR.execute(() -> {
             Map<String,JSONObject> states=readAll(); int changed=0, already=0;
             List<String> failed=new ArrayList<>();
-            for(NativeAdRules.Entry e:NativeAdRules.ENTRIES) {
+            for(NativeAdRules.Entry e:entries) {
                 JSONObject before=states.get(e.id);
                 if(before==null || !before.optBoolean("ok") || !(before.opt("enabled") instanceof Boolean)) { failed.add(e.title);continue; }
                 if(!before.optBoolean("enabled")) { already++;continue; }
@@ -181,10 +188,10 @@ final class NativeAdsPanel {
         for (Row row : rows.values()) counts.include(row.enabled);
         updating = true;
         try { close.setChecked(!busy && counts.allClosed()); } finally { updating = false; }
-        close.setEnabled(!busy && !counts.allClosed());
+        close.setEnabled(!busy && counts.total()>0 && !counts.allClosed());
         closeState.setText(busy ? "正在读取或保存，完成后回读确认…" : counts.summary());
         if (android.os.Build.VERSION.SDK_INT >= 30) close.setStateDescription(closeState.getText());
-        refresh.setEnabled(!busy);
+        refresh.setEnabled(!busy && counts.total()>0);
         for(Row row:rows.values()){row.toggle.setEnabled(!busy && row.enabled!=null);row.state.setEnabled(!busy);}
     }
     private void ui(Runnable action){activity.runOnUiThread(() -> {if(!activity.isFinishing()&&!activity.isDestroyed())action.run();});}

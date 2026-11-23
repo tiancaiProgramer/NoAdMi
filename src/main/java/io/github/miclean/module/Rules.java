@@ -15,6 +15,7 @@ public final class Rules {
     public static final String[] NETWORK_KEYS = {"system_network_traffic_recharge", "system_network_phone_recharge",
         "system_network_daily_offer", "system_network_sim_offer"};
     public static final String[] NETWORK_TITLES = {"流量充值", "话费充值", "1元/天任性用", "0元领通用大流量卡"};
+    public static final String NETWORK_PRODUCT_PROMOTION = "system_network_product_promotion";
     public static final String GAME_RECOMMEND_SWITCH = "system_game_recommend";
     public static final String GAME_POPUP_SWITCH = "system_game_xunyou_popup";
     public static int networkItem(String title) {

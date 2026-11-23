@@ -1,7 +1,9 @@
 package io.github.miclean.module;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.IntentFilter;
 import android.content.Intent;
 import android.net.Uri;
 import android.content.ComponentName;
@@ -20,15 +22,39 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class MainActivity extends Activity {
     private SharedPreferences prefs, uiPrefs;
     private boolean updatingRuleToggles;
     private final List<RuleToggle> ruleToggles=new ArrayList<>();
     private static final class RuleToggle {
-        final Switch view;final String key;final boolean installed,defaultValue;
-        RuleToggle(Switch view,String key,boolean installed,boolean defaultValue){this.view=view;this.key=key;this.installed=installed;this.defaultValue=defaultValue;}
+        final Switch view;
+        final String[] keys;
+        final boolean defaultValue;
+
+        RuleToggle(Switch view, String[] keys, boolean defaultValue) {
+            this.view = view;
+            this.keys = keys;
+            this.defaultValue = defaultValue;
+        }
+
+        int selected(SharedPreferences prefs) {
+            int count = 0;
+            for (String key : keys) if (prefs.getBoolean(key, defaultValue)) count++;
+            return count;
+        }
+
+        void write(SharedPreferences.Editor edit, boolean checked) {
+            for (String key : keys) edit.putBoolean(key, checked);
+        }
     }
+    private Map<String, PackageInfo> installed;
+    private final BroadcastReceiver packageChanges = new BroadcastReceiver() {
+        @Override public void onReceive(Context context, Intent intent) {
+            if (reloadInstalledTargets()) render();
+        }
+    };
     private boolean frameworkReady;
     private Switch launcherIconSwitch;
     private boolean updatingLauncherIcon;
@@ -48,16 +74,45 @@ public final class MainActivity extends Activity {
         super.onCreate(state);
         subscriptionActions=new SubscriptionActions(this,()->{if(smartSkip!=null)smartSkip.refresh();},()->{if(smartSkip!=null)smartSkip.refresh();});
         Settings.listen(settingsListener);
+        installed = InstalledTargets.read(getPackageManager());
         render();
     }
     @Override public void onDestroy() { Settings.unlisten(settingsListener); if(smartSkip!=null)smartSkip.close(); if(subscriptionActions!=null)subscriptionActions.close(); super.onDestroy(); }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(subscriptionActions!=null)subscriptionActions.onActivityResult(request,result,data);}
+    @Override protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        filter.addDataScheme("package");
+        registerReceiver(packageChanges, filter);
+    }
+
+    @Override protected void onStop() {
+        unregisterReceiver(packageChanges);
+        super.onStop();
+    }
+
     @Override public void onResume() {
         super.onResume();
-        if (frameworkReady != (Settings.ready())) render();
+        if (reloadInstalledTargets() || frameworkReady != Settings.ready()) render();
         syncLauncherIconSwitch();
         if (nativeAds != null) nativeAds.refreshIfVisible();
         if (smartSkip != null) smartSkip.refresh();
+    }
+
+    private boolean reloadInstalledTargets() {
+        Map<String, PackageInfo> current = InstalledTargets.read(getPackageManager());
+        boolean changed = !current.keySet().equals(installed.keySet());
+        if (!changed) {
+            for (Map.Entry<String, PackageInfo> entry : current.entrySet())
+                if (entry.getValue().lastUpdateTime != installed.get(entry.getKey()).lastUpdateTime) {
+                    changed = true;
+                    break;
+                }
+        }
+        installed = current;
+        return changed;
     }
 
     private void render() {
@@ -179,49 +234,65 @@ public final class MainActivity extends Activity {
 
     private void advertisingCard() {
         LinearLayout box = fold(card(), "advertising", "广告管理", "官方广告设置 · App 广告 · 智能跳过", 0, 21, true);
-        LinearLayout official = fold(box, "system_official", "官方广告设置", "独立操作原应用的 11 项真实开关", 0, 16, false);
-        nativeAds = new NativeAdsPanel(this, official, this::savedNotice);
+        List<NativeAdRules.Entry> officialEntries = NativeAdRules.forInstalled(installed.keySet());
+        nativeAds = null;
+        if (!officialEntries.isEmpty()) {
+            LinearLayout official = fold(box, "system_official", "官方广告设置",
+                    "独立操作原应用的 " + officialEntries.size() + " 项真实开关", 0, 16, false);
+            nativeAds = new NativeAdsPanel(this, official, this::savedNotice, officialEntries);
+        }
         LinearLayout ads = fold(box, "app_ads", "App 广告", "按应用管理广告与推广隐藏", 2, 16, false);
         bulkAdControl(ads);
         label(ads, "按应用分组的下方单项就是总开关联动清单。打开补全可用广告隐藏，关闭停用；官方广告与程序管理独立操作。", 12, MUTED, false);
-        LinearLayout homeAds = adCategory(ads, "ad_home", "米家", 2);
-        boolean home = installedAppInfo(homeAds, Rules.HOME, "");
-        addToggle(homeAds, "隐藏启动页广告", Rules.HOME_SWITCH, true, home);
-        addToggle(homeAds, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true, home);
-        LinearLayout healthAds = adCategory(ads, "ad_health", "小米运动健康", 7);
-        boolean domestic = installedAppInfo(healthAds, Rules.HEALTH, "国内版：");
-        boolean play = installedAppInfo(healthAds, Rules.HEALTH_PLAY, "Play 版：");
-        boolean health = domestic || play;
-        label(healthAds, "同时作用于已安装的国内版与 Play 版。", 12, MUTED, false);
-        addToggle(healthAds, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true, health);
-        addToggle(healthAds, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true, health);
-        addToggle(healthAds, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true, health);
-        addToggle(healthAds, "隐藏运动页活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true, health);
-        addToggle(healthAds, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true, health);
-        addToggle(healthAds, "隐藏“我的”页活动横幅", Rules.HEALTH_BANNER_SWITCH, true, health);
-        addToggle(healthAds, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true, health);
-        LinearLayout browserAds = adCategory(ads, "ad_browser", "小米浏览器", 2);
-        boolean browser = installedAppInfo(browserAds, Rules.BROWSER, "");
-        addToggle(browserAds, "隐藏主动与第三方唤起开屏广告", PromotionRules.BROWSER_SPLASH, false, browser);
-        addToggle(browserAds, "过滤信息流广告卡片", PromotionRules.BROWSER_FEED, false, browser);
-        label(browserAds, "需勾选浏览器作用域；仅处理浏览器自身推广，保留普通信息流内容，网页内广告不在此范围。", 12, MUTED, false);
-        LinearLayout marketAds = adCategory(ads, "ad_market", "应用商店", 2);
-        boolean market = installedAppInfo(marketAds, Rules.MARKET, "");
-        addToggle(marketAds, "隐藏开屏广告", PromotionRules.MARKET_SPLASH, false, market);
-        addToggle(marketAds, "隐藏应用内推荐", PromotionRules.MARKET_RECOMMEND, false, market);
-        label(marketAds, "需勾选应用商店作用域。应用内推荐包含已适配的首页横幅、首次／回流、下载／更新、详情小卡及同类推荐。", 12, MUTED, false);
-        LinearLayout networkAds = adCategory(ads, "ad_network", "网络助手（手机管家）", 4);
-        boolean network = installedAppInfo(networkAds, Rules.SECURITY_CENTER, "");
-        addToggle(networkAds, "隐藏流量充值入口", Rules.NETWORK_KEYS[0], false, network);
-        addToggle(networkAds, "隐藏话费充值入口", Rules.NETWORK_KEYS[1], false, network);
-        addToggle(networkAds, "隐藏“1元/天任性用”", Rules.NETWORK_KEYS[2], false, network);
-        addToggle(networkAds, "隐藏“0元领通用大流量卡”", Rules.NETWORK_KEYS[3], false, network);
-        label(networkAds, "需勾选手机管家 / 安全服务作用域。保留流量统计、联网管理和流量排行；充值入口也纳入广告总开关，请按需设置。", 12, MUTED, false);
-        LinearLayout gameAds = adCategory(ads, "ad_game", "游戏助手（系统服务组件）", 2);
-        boolean game = installedAppInfo(gameAds, Rules.SECURITY_ADD, "");
-        addToggle(gameAds, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false, game);
-        addToggle(gameAds, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false, game);
-        label(gameAds, "需勾选系统服务组件作用域。推荐隐藏会收起热玩排行、游戏盒子等推广入口，保留已添加游戏与设置。", 12, MUTED, false);
+        if (installed.containsKey(Rules.HOME)) {
+            LinearLayout homeAds = adCategory(ads, "ad_home", "米家", 2);
+            installedAppInfo(homeAds, Rules.HOME, "");
+            addToggle(homeAds, "隐藏启动页广告", Rules.HOME_SWITCH, true);
+            addToggle(homeAds, "隐藏“我的”页商城活动横幅", Rules.HOME_BANNER_SWITCH, true);
+        }
+        if (healthInstalled()) {
+            LinearLayout healthAds = adCategory(ads, "ad_health", "小米运动健康", 7);
+            installedAppInfo(healthAds, Rules.HEALTH, "国内版：");
+            installedAppInfo(healthAds, Rules.HEALTH_PLAY, "Play 版：");
+            label(healthAds, "同时作用于已安装的国内版与 Play 版。", 12, MUTED, false);
+            addToggle(healthAds, "隐藏启动页广告与素材预取", Rules.HEALTH_SWITCH, true);
+            addToggle(healthAds, "隐藏健康页底部推广横幅", Rules.HEALTH_HOME_BANNER_SWITCH, true);
+            addToggle(healthAds, "隐藏设备页推广横幅", Rules.HEALTH_DEVICE_BANNER_SWITCH, true);
+            addToggle(healthAds, "隐藏运动页活动推荐", Rules.HEALTH_SPORT_ACTIVITY_SWITCH, true);
+            addToggle(healthAds, "隐藏运动页底部横幅", Rules.HEALTH_SPORT_BANNER_SWITCH, true);
+            addToggle(healthAds, "隐藏“我的”页活动横幅", Rules.HEALTH_BANNER_SWITCH, true);
+            addToggle(healthAds, "隐藏会员、支付与问诊推广", Rules.HEALTH_MEMBER_SWITCH, true);
+        }
+        if (installed.containsKey(Rules.BROWSER)) {
+            LinearLayout browserAds = adCategory(ads, "ad_browser", "小米浏览器", 2);
+            installedAppInfo(browserAds, Rules.BROWSER, "");
+            addToggle(browserAds, "隐藏主动与第三方唤起开屏广告", PromotionRules.BROWSER_SPLASH, false);
+            addToggle(browserAds, "过滤信息流广告卡片", PromotionRules.BROWSER_FEED, false);
+            label(browserAds, "需勾选浏览器作用域；仅处理浏览器自身推广，保留普通信息流内容，网页内广告不在此范围。", 12, MUTED, false);
+        }
+        if (installed.containsKey(Rules.MARKET)) {
+            LinearLayout marketAds = adCategory(ads, "ad_market", "应用商店", 2);
+            installedAppInfo(marketAds, Rules.MARKET, "");
+            addToggle(marketAds, "隐藏开屏广告", PromotionRules.MARKET_SPLASH, false);
+            addToggle(marketAds, "隐藏应用内推荐", PromotionRules.MARKET_RECOMMEND, false);
+            label(marketAds, "需勾选应用商店作用域。应用内推荐包含已适配的首页横幅、首次／回流、下载／更新、详情小卡及同类推荐。", 12, MUTED, false);
+        }
+        if (installed.containsKey(Rules.SECURITY_CENTER)) {
+            LinearLayout networkAds = adCategory(ads, "ad_network", "网络助手（手机管家）", 2);
+            installedAppInfo(networkAds, Rules.SECURITY_CENTER, "");
+            addToggle(networkAds, "隐藏充值入口", "network_recharge", false,
+                    Rules.NETWORK_KEYS[0], Rules.NETWORK_KEYS[1]);
+            addToggle(networkAds, "隐藏流量套餐推广", "network_plan_promotion", false,
+                    Rules.NETWORK_KEYS[2], Rules.NETWORK_KEYS[3], Rules.NETWORK_PRODUCT_PROMOTION);
+            label(networkAds, "需勾选手机管家 / 安全服务作用域。保留流量统计、联网管理和流量排行；充值入口也纳入广告总开关，请按需设置。", 12, MUTED, false);
+        }
+        if (installed.containsKey(Rules.SECURITY_ADD)) {
+            LinearLayout gameAds = adCategory(ads, "ad_game", "游戏助手（系统服务组件）", 2);
+            installedAppInfo(gameAds, Rules.SECURITY_ADD, "");
+            addToggle(gameAds, "隐藏游戏推荐与推广卡片", Rules.GAME_RECOMMEND_SWITCH, false);
+            addToggle(gameAds, "隐藏迅游新人加速推广弹窗", Rules.GAME_POPUP_SWITCH, false);
+            label(gameAds, "需勾选系统服务组件作用域。推荐隐藏会收起热玩排行、游戏盒子等推广入口，保留已添加游戏与设置。", 12, MUTED, false);
+        }
         LinearLayout skip = fold(box, "smart_skip", "智能跳过", "GKD 格式订阅 · 无障碍自动执行", 0, 16, false);
         smartSkip = new SmartSkipPanel(this, skip, subscriptionActions);
     }
@@ -239,34 +310,40 @@ public final class MainActivity extends Activity {
     }
 
     private void programCard() {
-        LinearLayout box = fold(card(), "program", "程序管理", "米家 19 项 · 小米运动健康 10 项", 1, 21, true);
-        label(box, "功能入口、底栏与地区兼容按程序设置，不参与广告总开关。未安装版本保留设置值，不计入可用数量。", 12, MUTED, false);
-        LinearLayout home = fold(box, "app_home", "米家", "", 1, 16, true);
-        boolean installed = installedAppInfo(home, Rules.HOME, "");
-        directToggle(home, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false, installed);
-        indentedHelp(home, "Play 版：跳过下载大陆版的提示，仍按所选地区使用；登录与设备服务需实际验证。");
-        LinearLayout tabs = fold(home, "home_tabs", "底栏", "", 1, 14, false);
-        indentedHelp(tabs, "至少保留一个页面，否则恢复原底栏；关闭隐藏后遵循米家原配置。");
-        for (int i = 0; i < Rules.HOME_TAB_IDS.length; i++) directToggle(tabs,
-            "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", Rules.tabKey(Rules.HOME_TAB_IDS[i]), Rules.productTab(Rules.HOME_TAB_IDS[i]), installed);
-        LinearLayout mine = fold(home, "home_mine", "我的", "", 1, 14, false);
-        indentedHelp(mine, "包含常用功能，请按需隐藏；原本未显示的入口不会被强制打开。");
-        for (int i = 0; i < Rules.HOME_MINE_IDS.length; i++) directToggle(mine,
-            "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", Rules.mineKey(Rules.HOME_MINE_IDS[i]), false, installed);
-        LinearLayout health = fold(box, "app_health", "小米运动健康", "", 1, 16, true);
-        boolean domestic = installedAppInfo(health, Rules.HEALTH, "国内版：");
-        boolean play = installedAppInfo(health, Rules.HEALTH_PLAY, "Play 版：");
-        directToggle(health, "Play 版中国大陆兼容（实验）", Rules.HEALTH_REGION_SWITCH, false, play);
-        indentedHelp(health, "允许选择中国大陆并跳过大陆版迁移引导；需安装并勾选 Play 版作用域。");
-        directToggle(health, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true, domestic || play);
-        LinearLayout healthMine = fold(health, "health_mine", "我的", "", 1, 14, false);
-        for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) directToggle(healthMine,
-            "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true, domestic || play);
+        if (!installed.containsKey(Rules.HOME) && !healthInstalled()) return;
+        LinearLayout box = fold(card(), "program", "程序管理", "功能入口、底栏与地区兼容", 1, 21, true);
+        if (installed.containsKey(Rules.HOME)) {
+            LinearLayout home = fold(box, "app_home", "米家", "", 1, 16, true);
+            installedAppInfo(home, Rules.HOME, "");
+            directToggle(home, "中国大陆兼容（实验）", Rules.HOME_REGION_SWITCH, false);
+            indentedHelp(home, "Play 版：跳过下载大陆版的提示，仍按所选地区使用；登录与设备服务需实际验证。");
+            LinearLayout tabs = fold(home, "home_tabs", "底栏", "", 1, 14, false);
+            indentedHelp(tabs, "至少保留一个页面，否则恢复原底栏；关闭隐藏后遵循米家原配置。");
+            for (int i = 0; i < Rules.HOME_TAB_IDS.length; i++) directToggle(tabs,
+                "隐藏“" + Rules.HOME_TAB_TITLES[i] + "”页", Rules.tabKey(Rules.HOME_TAB_IDS[i]), Rules.productTab(Rules.HOME_TAB_IDS[i]));
+            LinearLayout mine = fold(home, "home_mine", "我的", "", 1, 14, false);
+            indentedHelp(mine, "包含常用功能，请按需隐藏；原本未显示的入口不会被强制打开。");
+            for (int i = 0; i < Rules.HOME_MINE_IDS.length; i++) directToggle(mine,
+                "隐藏“" + Rules.HOME_MINE_TITLES[i] + "”", Rules.mineKey(Rules.HOME_MINE_IDS[i]), false);
+        }
+        if (healthInstalled()) {
+            LinearLayout health = fold(box, "app_health", "小米运动健康", "", 1, 16, true);
+            installedAppInfo(health, Rules.HEALTH, "国内版：");
+            installedAppInfo(health, Rules.HEALTH_PLAY, "Play 版：");
+            if (installed.containsKey(Rules.HEALTH_PLAY)) {
+                directToggle(health, "Play 版中国大陆兼容（实验）", Rules.HEALTH_REGION_SWITCH, false);
+                indentedHelp(health, "允许选择中国大陆并跳过大陆版迁移引导。请勾选 Play 版作用域。");
+            }
+            directToggle(health, "隐藏运动团", Rules.HEALTH_SPORT_GROUP_SWITCH, true);
+            LinearLayout healthMine = fold(health, "health_mine", "我的", "", 1, 14, false);
+            for (int i = 0; i < Rules.HEALTH_MINE_IDS.length; i++) directToggle(healthMine,
+                "隐藏“" + Rules.HEALTH_MINE_TITLES[i] + "”", Rules.healthMineKey(Rules.HEALTH_MINE_IDS[i]), true);
+        }
     }
 
-    private void directToggle(LinearLayout parent, String text, String key, boolean initial, boolean installed) {
+    private void directToggle(LinearLayout parent, String text, String key, boolean initial) {
         divider(parent);
-        Switch toggle = addToggle(parent, text, key, initial, installed);
+        Switch toggle = addToggle(parent, text, key, initial);
         toggle.setPadding(dp(22), gap(12), 0, gap(12));
     }
 
@@ -346,7 +423,7 @@ public final class MainActivity extends Activity {
             if (countMode != 0) {
                 SettingCounts counts = new SettingCounts();
                 for (RuleToggle row : ruleToggles) if (within(row.view, body))
-                    counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
+                    counts.include(row.selected(prefs), row.keys.length);
                 summary = countMode == 2 ? counts.advertisingSummary() : counts.settingsSummary();
                 quantity.setText(counts.enabled + "/" + counts.available + " 项"
                     + (counts.unavailable == 0 ? "" : "\n不可用 " + counts.unavailable + " 项"));
@@ -431,18 +508,16 @@ public final class MainActivity extends Activity {
         return body;
     }
 
-    private boolean installedAppInfo(LinearLayout parent, String pkg, String prefix) {
-        boolean installed = false;
-        String text;
-        try {
-            PackageInfo p = getPackageManager().getPackageInfo(pkg, 0);
-            installed = true;
-            long code = android.os.Build.VERSION.SDK_INT >= 28 ? p.getLongVersionCode() : p.versionCode;
-            text = "已安装 " + p.versionName + " · "
-                + (Rules.testedVersion(pkg, p.versionName, code) ? "已测试" : "未测试");
-        } catch (PackageManager.NameNotFoundException e) { text = "未安装"; }
-        label(parent, prefix + text, 12, MUTED, false);
-        return installed;
+    private boolean healthInstalled() {
+        return installed.containsKey(Rules.HEALTH) || installed.containsKey(Rules.HEALTH_PLAY);
+    }
+
+    private void installedAppInfo(LinearLayout parent, String pkg, String prefix) {
+        PackageInfo info = installed.get(pkg);
+        if (info == null) return;
+        long code = android.os.Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+        label(parent, prefix + "已安装 " + info.versionName + " · "
+                + (Rules.testedVersion(pkg, info.versionName, code) ? "已测试" : "未测试"), 12, MUTED, false);
     }
 
     private static boolean within(View child,View parent){
@@ -453,7 +528,7 @@ public final class MainActivity extends Activity {
     private List<RuleToggle> bulkMembers(View parent) {
         List<RuleToggle> result = new ArrayList<>();
         for (RuleToggle row : ruleToggles)
-            if (within(row.view, parent) && BulkEnablePolicy.eligible(row.key)) result.add(row);
+            if (within(row.view, parent) && BulkEnablePolicy.eligible(row.keys[0])) result.add(row);
         return result;
     }
 
@@ -467,7 +542,7 @@ public final class MainActivity extends Activity {
         final boolean[] updating = {false};
         refreshers.add(() -> {
             SettingCounts counts = new SettingCounts();
-            for (RuleToggle row : bulkMembers(parent)) counts.include(row.installed, prefs.getBoolean(row.key, row.defaultValue));
+            for (RuleToggle row : bulkMembers(parent)) counts.include(row.selected(prefs), row.keys.length);
             updating[0] = true;
             try { toggle.setChecked(counts.allEnabled()); } finally { updating[0] = false; }
             toggle.setEnabled(frameworkReady && counts.available > 0);
@@ -477,29 +552,40 @@ public final class MainActivity extends Activity {
         toggle.setOnCheckedChangeListener((button, checked) -> {
             if (updating[0]) return;
             SharedPreferences.Editor edit = prefs.edit();
-            for (RuleToggle row : bulkMembers(parent)) if (row.installed) edit.putBoolean(row.key, checked);
+            for (RuleToggle row : bulkMembers(parent)) row.write(edit, checked);
             boolean saved = edit.commit(); if (saved) Settings.backup(this);
             for (Runnable refresh : refreshers) refresh.run();
             savedNotice(saved, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块");
         });
     }
 
-    private Switch addToggle(LinearLayout parent, String text, String key, boolean defaultValue,
-            boolean installed) {
+    private Switch addToggle(LinearLayout parent, String text, String key, boolean defaultValue) {
+        return addToggle(parent, text, key, defaultValue, key);
+    }
+
+    private Switch addToggle(LinearLayout parent, String text, String tag, boolean defaultValue, String... keys) {
         Switch toggle = new Switch(this);
         toggle.setText(text);
         SettingsRow.style(this, toggle);
-        toggle.setChecked(prefs.getBoolean(key, defaultValue));
-        ruleToggles.add(new RuleToggle(toggle,key,installed,defaultValue));
-        toggle.setTag(key);
+        RuleToggle row = new RuleToggle(toggle, keys, defaultValue);
+        ruleToggles.add(row);
+        toggle.setTag(tag);
         refreshers.add(() -> {
-            toggle.setEnabled(frameworkReady && installed);
-            updatingRuleToggles=true;
-            try{toggle.setChecked(prefs.getBoolean(key,defaultValue));}finally{updatingRuleToggles=false;}
+            int selected = row.selected(prefs);
+            boolean mixed = selected > 0 && selected < keys.length;
+            toggle.setEnabled(frameworkReady);
+            toggle.setText(mixed ? text + " · 部分开启" : text);
+            if (android.os.Build.VERSION.SDK_INT >= 30)
+                toggle.setStateDescription(mixed ? "部分开启" : null);
+            updatingRuleToggles = true;
+            try { toggle.setChecked(selected == keys.length); }
+            finally { updatingRuleToggles = false; }
         });
         toggle.setOnCheckedChangeListener((button, checked) -> {
-            if(updatingRuleToggles)return;
-            boolean saved = prefs.edit().putBoolean(key, checked).commit();
+            if (updatingRuleToggles) return;
+            SharedPreferences.Editor edit = prefs.edit();
+            row.write(edit, checked);
+            boolean saved = edit.commit();
             if (saved) Settings.backup(this);
             for (Runnable refresh : refreshers) refresh.run();
             savedNotice(saved, saved ? "已保存，请强行停止并重新打开对应应用" : "保存失败，请重新打开模块");
